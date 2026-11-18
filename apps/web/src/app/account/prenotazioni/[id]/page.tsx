@@ -31,6 +31,7 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
   ]);
   const b = rows?.[0];
   if (!b) notFound();
+  await db.rpc("mark_booking_updates_seen", { p_booking: id, p_as: "customer" });
   const canCancel = ["requested", "accepted", "confirmed"].includes(b.status);
 
   return (

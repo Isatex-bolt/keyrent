@@ -4,6 +4,8 @@ import { requireUser, getMemberships, getStaffRole } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { FormError, FormNotice } from "@/components/AuthCard";
 import { updateProfile } from "./actions";
+import { getBadges } from "@/lib/badges";
+import { Count } from "@/components/Count";
 import { Badge } from "@/lib/status";
 import { bookingStatus, fmtDateTime } from "@/lib/bookings";
 
@@ -21,9 +23,9 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
   const sp = await searchParams;
   const user = await requireUser("/account");
   const db = await userDb();
-  const [{ data: profile }, memberships, staff, { data: bookings }] = await Promise.all([
+  const [{ data: profile }, memberships, staff, badges, { data: bookings }] = await Promise.all([
     db.from("profiles").select("first_name, last_name, phone").eq("id", user.id).maybeSingle(),
-    getMemberships(), getStaffRole(),
+    getMemberships(), getStaffRole(), getBadges(),
     db.rpc("my_bookings"),
   ]);
   return (
@@ -40,7 +42,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/messaggi" className="card p-5 transition hover:border-teal-500/60">
-          <p className="font-semibold">Messaggi</p>
+          <p className="font-semibold">Messaggi<Count n={badges.messages} /></p>
           <p className="mt-1 text-sm text-mute">Le conversazioni con i noleggiatori e con i tuoi clienti</p>
         </Link>
         <Link href="/pro" className="card p-5 transition hover:border-teal-500/60">
@@ -56,7 +58,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       </div>
 
       <section className="card p-5">
-        <h2 className="font-semibold">Le mie prenotazioni</h2>
+        <h2 className="font-semibold">Le mie prenotazioni<Count n={badges.customer_bookings} /></h2>
         {bookings?.length ? (
           <ul className="mt-3 divide-y divide-line text-sm">{(bookings as { id: string; code: string; status: string; listing_title: string; pickup_at: string }[]).map((b) => (
             <li key={b.id}><Link href={`/account/prenotazioni/${b.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:text-navy-700">

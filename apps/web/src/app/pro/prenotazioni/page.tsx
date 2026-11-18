@@ -21,6 +21,7 @@ async function Bookings() {
     .select("id, code, status, pickup_at, return_at, total_cents, provider_net_cents, provider_response_due_at, driver, listings(title), locations(name)")
     .neq("status", "requested").order("pickup_at", { ascending: false }).limit(100);
   const rows = (data ?? []) as unknown as ProBooking[];
+  await db.rpc("mark_booking_updates_seen", { p_booking: null, p_as: "provider" });
   const now = new Date().toISOString();
   const upcoming = rows.filter((b) => ["accepted", "confirmed", "picked_up"].includes(b.status) || (b.pickup_at > now && !["cancelled", "declined", "expired"].includes(b.status)));
   const past = rows.filter((b) => !upcoming.includes(b));

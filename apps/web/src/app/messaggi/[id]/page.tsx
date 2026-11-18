@@ -24,6 +24,7 @@ async function Thread({ params, searchParams }: { params: Promise<{ id: string }
   ]);
   const c = convs?.[0];
   if (!c) notFound();
+  await db.rpc("mark_conversation_read", { p_conversation: id });
   return (
     <div className="space-y-4">
       <div>

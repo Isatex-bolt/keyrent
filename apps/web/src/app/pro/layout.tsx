@@ -1,22 +1,21 @@
-import Link from "next/link";
+import { SideNav, type NavItem } from "@/components/SideNav";
 
-const nav = [
-  ["/pro", "Dashboard"], ["/pro/richieste", "Richieste"], ["/pro/prenotazioni", "Prenotazioni"], ["/messaggi", "Messaggi"], ["/pro/mezzi", "I miei mezzi"], ["/pro/sedi", "Le mie sedi"], ["/pro/attivita", "La mia attività"],
-] as const;
+const nav: NavItem[] = [
+  { href: "/pro", label: "Dashboard" },
+  { href: "/pro/richieste", label: "Richieste", badge: "requests" },
+  { href: "/pro/prenotazioni", label: "Prenotazioni", badge: "provider_bookings" },
+  { href: "/messaggi", label: "Messaggi", badge: "messages" },
+  { href: "/pro/mezzi", label: "I miei mezzi", badge: "listings_to_fix" },
+  { href: "/pro/sedi", label: "Le mie sedi" },
+  { href: "/pro/attivita", label: "La mia attività" },
+];
 
 export default function ProLayout({ children }: LayoutProps<"/pro">) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">Area noleggiatore</p>
-      </div>
+      <p className="mb-6 text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">Area noleggiatore</p>
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:px-0">
-          {nav.map(([href, label]) => (
-            <Link key={href} href={href} className="whitespace-nowrap rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-white hover:text-navy-900">{label}</Link>
-          ))}
-          <span className="hidden px-3.5 pt-3 text-xs text-mute lg:block">In arrivo: incassi, statistiche, team.</span>
-        </nav>
+        <SideNav items={nav} footer="In arrivo: incassi, statistiche, team." />
         <div className="min-w-0">{children}</div>
       </div>
     </div>
