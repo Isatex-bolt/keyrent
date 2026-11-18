@@ -182,12 +182,12 @@ export async function createUploadUrl(listingId: string, fileName: string) {
   return { path, token: data.token };
 }
 
-export async function registerMedia(listingId: string, path: string) {
+export async function registerMedia(listingId: string, path: string, indicative = false) {
   await assertListingAccess(listingId);
   if (!path.startsWith(`${listingId}/`)) throw new Error("FORBIDDEN");
   const db = await userDb();
   const { count } = await db.from("listing_media").select("id", { count: "exact", head: true }).eq("listing_id", listingId);
-  const { error } = await db.from("listing_media").insert({ listing_id: listingId, storage_path: path, sort: count ?? 0 });
+  const { error } = await db.from("listing_media").insert({ listing_id: listingId, storage_path: path, sort: count ?? 0, ...(indicative ? { is_indicative: true } : {}) });
   if (error) throw new Error(dbMessage(error.message));
   revalidatePath(`/pro/mezzi/${listingId}`);
 }

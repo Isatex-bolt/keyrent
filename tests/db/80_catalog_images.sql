@@ -8,3 +8,6 @@ set role authenticated;
 select test.fails($$delete from catalog_images$$, 'permission denied', 'un utente non può cancellarle');
 reset role;
 select test.fails($$insert into catalog_images (category_id, storage_path) select id, 'y' from categories where slug = 'camper'$$, 'duplicate key', 'una sola immagine generica per categoria');
+set role anon;
+select test.ok((select count(*) >= 0 from public.public_listing_media where is_indicative = false), 'la vista pubblica espone il flag immagine indicativa');
+reset role;

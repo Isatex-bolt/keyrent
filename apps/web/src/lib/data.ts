@@ -39,11 +39,13 @@ export async function searchListings(args: {
 }
 
 async function coverImages(ids: string[]) {
-  const map = new Map<string, string>();
+  const map = new Map<string, { url: string; indicative: boolean }>();
   if (ids.length === 0) return map;
-  const { data } = await publicDb().from("public_listing_media").select("listing_id, storage_path, sort")
+  let res = await publicDb().from("public_listing_media").select("listing_id, storage_path, sort, is_indicative")
     .in("listing_id", ids).order("sort");
-  for (const m of data ?? []) if (!map.has(m.listing_id)) map.set(m.listing_id, mediaUrl(m.storage_path));
+  if (res.error) res = await publicDb().from("public_listing_media").select("listing_id, storage_path, sort")
+    .in("listing_id", ids).order("sort") as typeof res;
+  for (const m of res.data ?? []) if (!map.has(m.listing_id)) map.set(m.listing_id, { url: mediaUrl(m.storage_path), indicative: !!m.is_indicative });
   return map;
 }
 
@@ -71,7 +73,7 @@ async function covers(ids: string[]) {
   const real = await coverImages(ids);
   const missing = ids.filter((id) => !real.has(id));
   const result = new Map<string, { url: string; indicative: boolean }>();
-  for (const [id, url] of real) result.set(id, { url, indicative: false });
+  for (const [id, v] of real) result.set(id, v);
   if (missing.length === 0) return result;
   const { data } = await publicDb().from("public_listings").select("id, category_slug, make_slug, model_slug").in("id", missing);
   const keys = (data ?? []) as (CatalogKey & { id: string })[];
@@ -110,14 +112,14 @@ export async function getListing(id: string) {
   const db = publicDb();
   const [listing, media, prices, extras] = await Promise.all([
     db.from("public_listings").select("*").eq("id", id).maybeSingle(),
-    db.from("public_listing_media").select("storage_path, alt, sort").eq("listing_id", id).order("sort"),
+    db.from("public_listing_media").select("*").eq("listing_id", id).order("sort"),
     db.from("public_listing_prices").select("unit, price_cents, valid_from, valid_to").eq("listing_id", id),
     db.from("public_listing_extras").select("id, name, price_cents, charge, max_qty").eq("listing_id", id),
   ]);
   if (listing.error) throw new Error(listing.error.message);
   if (!listing.data) return null;
   let gallery = (media.data ?? []).map((m) => ({ url: mediaUrl(m.storage_path), alt: m.alt as string | null }));
-  let indicative = false;
+  let indicative = (media.data ?? []).length > 0 && (media.data ?? []).every((m) => m.is_indicative);
   if (gallery.length === 0) {
     const l = listing.data as CatalogKey;
     const img = (await catalogImages([l])).get(`${l.category_slug}|${l.make_slug ?? ""}|${l.model_slug ?? ""}`);

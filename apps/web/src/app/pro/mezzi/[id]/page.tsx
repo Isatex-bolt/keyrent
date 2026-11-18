@@ -10,6 +10,7 @@ import { euro, priceUnitLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
+import { AiPhotoHelper } from "./AiPhotoHelper";
 import { deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../actions";
 
 export const metadata = { title: "Scheda annuncio" };
@@ -32,11 +33,11 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
   const db = await userDb();
   const [{ data: l }, { data: media }, { data: prices }, { data: terms }, { data: revs }, { data: units }] = await Promise.all([
     db.from("listings").select("*, categories(name_it, slug), makes(name), models(name), locations(name, city)").eq("id", id).maybeSingle(),
-    db.from("listing_media").select("id, storage_path, moderation_status, sort").eq("listing_id", id).order("sort"),
+    db.from("listing_media").select("id, storage_path, moderation_status, sort, is_indicative").eq("listing_id", id).order("sort"),
     db.from("pricing_rules").select("unit, price_cents, valid_from").eq("listing_id", id),
     db.from("rental_terms").select("*").eq("listing_id", id).maybeSingle(),
     db.from("listing_revisions").select("number, status, review_notes, reviewed_at, submitted_at, snapshot").eq("listing_id", id).order("number", { ascending: false }).limit(5),
-    db.from("listing_units").select("vehicle_unit_id").eq("listing_id", id),
+    db.from("listing_units").select("vehicle_unit_id, vehicle_units(year, custom_make, custom_model)").eq("listing_id", id),
   ]);
   if (!l) notFound();
   const edit = canEdit(membership);
@@ -90,6 +91,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
           {(media ?? []).map((m) => (
             <div key={m.id} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-navy-50">
               <Image src={mediaUrl(m.storage_path)} alt="" fill sizes="25vw" className="object-cover" />
+              {m.is_indicative && <span className="absolute bottom-2 left-2 rounded bg-navy-950/70 px-2 py-0.5 text-[11px] text-white">Indicativa (AI)</span>}
               {m.moderation_status === "pending" && l.status === "published" && <span className="absolute left-2 top-2 rounded bg-white/90 px-2 py-0.5 text-[11px]">In revisione</span>}
               {edit && (
                 <form action={deleteMedia} className="absolute right-2 top-2">
@@ -101,6 +103,15 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
           ))}
         </div>
       </section>
+
+      {edit && (
+        <AiPhotoHelper
+          listingId={id}
+          category={l.categories?.slug ?? ""}
+          vehicle={[l.makes?.name ?? (units?.[0] as any)?.vehicle_units?.custom_make, l.models?.name ?? (units?.[0] as any)?.vehicle_units?.custom_model].filter(Boolean).join(" ") || l.title}
+          year={(units?.[0] as any)?.vehicle_units?.year ?? null}
+        />
+      )}
 
       {/* Dettagli */}
       <section className="card p-5">
