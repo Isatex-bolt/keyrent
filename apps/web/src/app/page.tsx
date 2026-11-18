@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <>
       <section className="relative overflow-hidden bg-navy-900">
-        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(18,194,181,0.22),transparent_55%)]" />
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(2,168,169,0.25),transparent_55%)]" />
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-teal-400">Noleggio da professionisti verificati</p>
           <h1 className="max-w-2xl text-[34px] font-bold leading-[1.1] tracking-tight text-white sm:text-5xl">
