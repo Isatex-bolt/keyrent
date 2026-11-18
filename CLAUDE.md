@@ -30,7 +30,11 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Fase 1b FATTA e provata dall'utente: auth Supabase, area noleggiatore (attività, sedi, wizard 7 passi, foto su Storage
   bucket "listings", invio revisione), area admin (revisione, anagrafiche). Migrazioni 0006 e 0007 applicate.
   L'utente è admin (staff_members) e ha una sua attività di prova.
-- Prossimo: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
+- Fase 2a FATTA (18/11): badge (0009), selettore attività in /pro, ricerca mappa `public.search_map` (0010, bbox + totale per date + ⚡),
+  nuova home (Prenota/Lungo termine), campo Dove con Mapbox Search Box (token pubblico NEXT_PUBLIC_MAPBOX_TOKEN su Vercel), /cerca con mappa,
+  cluster, "Cerca in questa zona", pannello mobile a 3 altezze. api.mapbox.com non raggiungibile dalla sandbox: la mappa la prova l'utente.
+- Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
+- Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).
 - Nota operativa: l'utente applica le migrazioni incollando SQL nell'editor di Supabase. Blocchi corti (< ~150 righe),
   niente tabelle temporanee (l'editor non mantiene la sessione), sempre rieseguibili.
