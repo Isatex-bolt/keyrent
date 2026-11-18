@@ -19,7 +19,7 @@ async function Queue({ searchParams }: { searchParams: SP }) {
     .select("id, number, submitted_at, snapshot, listing:listings(id, title, status, organizations(legal_name, trade_name))")
     .eq("status", "pending_review").order("submitted_at");
   const { data: all } = await db.from("listings").select("id, title, status, updated_at, organizations(legal_name)")
-    .in("status", ["published", "changes_required", "suspended", "unpublished"]).order("updated_at", { ascending: false }).limit(30);
+    .in("status", ["draft", "published", "changes_required", "suspended", "unpublished", "rejected"]).order("updated_at", { ascending: false }).limit(30);
   type R = { id: string; number: number; submitted_at: string; snapshot: { changes?: object };
     listing: { id: string; title: string; status: string; organizations: { legal_name: string; trade_name: string | null } } };
   return (
