@@ -51,7 +51,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     .filter(Boolean) as { label: string; value: string }[];
 
   const sortedPrices = [...prices].sort((a, b) => ["hour", "half_day", "day", "week"].indexOf(a.unit) - ["hour", "half_day", "day", "week"].indexOf(b.unit));
-  const requestHref = `/prenota/${id}?${new URLSearchParams({ ...(dal ? { dal } : {}), ...(al ? { al } : {}) })}`;
+  const requestHref = `/prenota/${id}?${new URLSearchParams({ ...(dal ? { dal } : {}), ...(al ? { al } : {}), ...(first(sp.ora_ritiro) ? { ora_ritiro: first(sp.ora_ritiro)! } : {}), ...(first(sp.ora_riconsegna) ? { ora_riconsegna: first(sp.ora_riconsegna)! } : {}) })}`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
@@ -172,7 +172,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
             ) : null}
             <Link href={requestHref} className="btn-primary w-full">Richiedi prenotazione</Link>
             <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
-            <Link href={`/accedi?next=/mezzo/${ref}`} className="btn-ghost w-full">Fai una domanda</Link>
+            <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost w-full">Fai una domanda</Link>
           </div>
         </aside>
       </div>

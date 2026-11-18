@@ -4,6 +4,8 @@ import { requireUser, getMemberships, getStaffRole } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { FormError, FormNotice } from "@/components/AuthCard";
 import { updateProfile } from "./actions";
+import { Badge } from "@/lib/status";
+import { bookingStatus, fmtDateTime } from "@/lib/bookings";
 
 export const metadata = { title: "Il mio account" };
 
@@ -22,7 +24,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
   const [{ data: profile }, memberships, staff, { data: bookings }] = await Promise.all([
     db.from("profiles").select("first_name, last_name, phone").eq("id", user.id).maybeSingle(),
     getMemberships(), getStaffRole(),
-    db.from("bookings").select("id, code, status, pickup_at").eq("customer_id", user.id).order("pickup_at", { ascending: false }).limit(10),
+    db.rpc("my_bookings"),
   ]);
   return (
     <div className="space-y-6">
@@ -37,6 +39,10 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       {sp.ok && <FormNotice message="Profilo aggiornato." />}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/messaggi" className="card p-5 transition hover:border-teal-500/60">
+          <p className="font-semibold">Messaggi</p>
+          <p className="mt-1 text-sm text-mute">Le conversazioni con i noleggiatori e con i tuoi clienti</p>
+        </Link>
         <Link href="/pro" className="card p-5 transition hover:border-teal-500/60">
           <p className="font-semibold">{memberships.length ? "Area noleggiatore" : "Sei un noleggiatore?"}</p>
           <p className="mt-1 text-sm text-mute">{memberships.length ? `${memberships[0].org.trade_name ?? memberships[0].org.legal_name}: mezzi, sedi, richieste` : "Registra la tua attività e pubblica i tuoi mezzi."}</p>
@@ -52,7 +58,10 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       <section className="card p-5">
         <h2 className="font-semibold">Le mie prenotazioni</h2>
         {bookings?.length ? (
-          <ul className="mt-3 divide-y divide-line text-sm">{bookings.map((b) => <li key={b.id} className="flex justify-between py-2"><span>{b.code}</span><span className="text-mute">{b.status}</span></li>)}</ul>
+          <ul className="mt-3 divide-y divide-line text-sm">{(bookings as { id: string; code: string; status: string; listing_title: string; pickup_at: string }[]).map((b) => (
+            <li key={b.id}><Link href={`/account/prenotazioni/${b.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:text-navy-700">
+              <span><span className="font-medium">{b.listing_title}</span> <span className="text-mute">· {fmtDateTime(b.pickup_at)}</span></span><Badge map={bookingStatus} value={b.status} />
+            </Link></li>))}</ul>
         ) : <p className="mt-2 text-sm text-mute">Nessuna prenotazione per ora.</p>}
       </section>
 

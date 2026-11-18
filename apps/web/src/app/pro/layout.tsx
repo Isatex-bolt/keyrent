@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const nav = [
-  ["/pro", "Dashboard"], ["/pro/mezzi", "I miei mezzi"], ["/pro/sedi", "Le mie sedi"], ["/pro/attivita", "La mia attività"],
+  ["/pro", "Dashboard"], ["/pro/richieste", "Richieste"], ["/pro/prenotazioni", "Prenotazioni"], ["/messaggi", "Messaggi"], ["/pro/mezzi", "I miei mezzi"], ["/pro/sedi", "Le mie sedi"], ["/pro/attivita", "La mia attività"],
 ] as const;
 
 export default function ProLayout({ children }: LayoutProps<"/pro">) {
@@ -15,7 +15,7 @@ export default function ProLayout({ children }: LayoutProps<"/pro">) {
           {nav.map(([href, label]) => (
             <Link key={href} href={href} className="whitespace-nowrap rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-white hover:text-navy-900">{label}</Link>
           ))}
-          <span className="hidden px-3.5 pt-3 text-xs text-mute lg:block">In arrivo: richieste, prenotazioni, incassi, statistiche, team.</span>
+          <span className="hidden px-3.5 pt-3 text-xs text-mute lg:block">In arrivo: incassi, statistiche, team.</span>
         </nav>
         <div className="min-w-0">{children}</div>
       </div>

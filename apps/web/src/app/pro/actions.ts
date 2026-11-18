@@ -202,3 +202,18 @@ export async function deleteMedia(f: FormData) {
   }
   redirect(`/pro/mezzi/${listingId}`);
 }
+
+// ---------- Richieste di prenotazione ----------
+export async function respondBooking(f: FormData) {
+  const ctx = await requireProvider("/pro/richieste");
+  if (!ctx.membership) redirect("/pro");
+  const id = str(f, "id");
+  const decision = str(f, "decision");
+  const { bookingError } = await import("@/lib/bookings");
+  const { error } = decision === "accept"
+    ? await serviceDb().rpc("svc_accept_booking", { p_booking: id, p_actor: ctx.user.id })
+    : await serviceDb().rpc("svc_decline_booking", { p_booking: id, p_actor: ctx.user.id, p_reason: str(f, "reason") || null });
+  if (error) fail("/pro/richieste", bookingError(error.message));
+  revalidatePath("/pro/richieste");
+  redirect(`/pro/richieste?ok=${decision === "accept" ? "accettata" : "rifiutata"}`);
+}
