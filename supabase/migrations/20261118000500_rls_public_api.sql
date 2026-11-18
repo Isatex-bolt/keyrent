@@ -344,6 +344,9 @@ create view public.public_listing_extras with (security_barrier = true) as
 select e.id, e.listing_id, e.name, e.price_cents, e.charge, e.max_qty
 from extras e join listings l on l.id = e.listing_id where l.status = 'published';
 
+-- Supabase concede per default tutti i privilegi sui nuovi oggetti: lasciamo solo la lettura
+revoke all on public.public_listings, public.public_listing_media, public.public_listing_prices,
+              public.public_listing_extras from anon, authenticated;
 grant select on public.public_listings, public.public_listing_media, public.public_listing_prices,
                 public.public_listing_extras to anon, authenticated;
 
