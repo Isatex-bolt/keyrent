@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { userDb } from "./supabase/server";
 
 export type Membership = {
@@ -29,10 +30,15 @@ export async function getMemberships(): Promise<Membership[]> {
 }
 
 /** L'organizzazione su cui l'utente lavora (la prima; il selettore multi-azienda arriverà se servirà). */
+export const ORG_COOKIE = "kr_org";
+
+/** L'attività su cui l'utente sta lavorando: quella scelta nel selettore (cookie), altrimenti la prima. */
 export async function requireProvider(next = "/pro") {
   const user = await requireUser(next);
   const memberships = await getMemberships();
-  return { user, membership: memberships[0] ?? null, memberships };
+  const chosen = (await cookies()).get(ORG_COOKIE)?.value;
+  const membership = memberships.find((m) => m.organization_id === chosen) ?? memberships[0] ?? null;
+  return { user, membership, memberships };
 }
 
 export async function getStaffRole(): Promise<string | null> {

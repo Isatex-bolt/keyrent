@@ -20,7 +20,7 @@ async function Mezzi({ searchParams }: { searchParams: SP }) {
   const db = await userDb();
   const { data: rows } = await db.from("listings")
     .select("id, title, status, quantity_mode, price_from_cents, updated_at, categories(name_it), locations(city)")
-    .order("updated_at", { ascending: false });
+    .eq("organization_id", membership.organization_id).order("updated_at", { ascending: false });
   type Row = { id: string; title: string; status: string; quantity_mode: string; price_from_cents: number | null;
     categories: { name_it: string } | null; locations: { city: string } | null };
   return (

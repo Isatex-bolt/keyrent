@@ -17,7 +17,7 @@ async function Sedi({ searchParams }: { searchParams: SP }) {
   const { membership } = await requireProvider("/pro/sedi");
   if (!membership) redirect("/pro");
   const db = await userDb();
-  const { data: sedi } = await db.from("locations").select("id, name, address_line, postal_code, city, province, phone, active").order("created_at");
+  const { data: sedi } = await db.from("locations").select("id, name, address_line, postal_code, city, province, phone, active").eq("organization_id", membership.organization_id).order("created_at");
   return (
     <div className="space-y-6">
       <ProHeader title="Le mie sedi" subtitle="Indirizzo, telefono e istruzioni restano riservati: il cliente li vede solo a prenotazione pagata." />

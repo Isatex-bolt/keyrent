@@ -21,7 +21,7 @@ async function New({ searchParams }: { searchParams: SP }) {
   const db = await userDb();
   const pub = publicDb();
   const [{ data: locations }, { data: cats }, { data: models }, { data: attrs }] = await Promise.all([
-    db.from("locations").select("id, name, city").eq("active", true).order("created_at"),
+    db.from("locations").select("id, name, city").eq("active", true).eq("organization_id", membership.organization_id).order("created_at"),
     pub.from("categories").select("slug, name_it, sort, subcategories(slug, name_it, sort)").eq("active", true).order("sort"),
     pub.from("models").select("slug, name, makes(slug, name), categories(slug)").order("name"),
     pub.from("attribute_definitions").select("key, label_it, data_type, unit, options, sort, categories(slug)").order("sort"),

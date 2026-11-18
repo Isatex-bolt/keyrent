@@ -22,7 +22,7 @@ async function Requests({ searchParams }: { searchParams: SP }) {
   if (!membership) redirect("/pro");
   await serviceDb().rpc("svc_expire_stale_bookings");
   const db = await userDb();
-  const { data } = await db.from("bookings").select(COLS).eq("status", "requested").order("provider_response_due_at");
+  const { data } = await db.from("bookings").select(COLS).eq("status", "requested").eq("organization_id", membership.organization_id).order("provider_response_due_at");
   const rows = (data ?? []) as unknown as ProBooking[];
   return (
     <div className="space-y-4">

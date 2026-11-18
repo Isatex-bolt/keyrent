@@ -19,7 +19,7 @@ async function Bookings() {
   const db = await userDb();
   const { data } = await db.from("bookings")
     .select("id, code, status, pickup_at, return_at, total_cents, provider_net_cents, provider_response_due_at, driver, listings(title), locations(name)")
-    .neq("status", "requested").order("pickup_at", { ascending: false }).limit(100);
+    .neq("status", "requested").eq("organization_id", membership.organization_id).order("pickup_at", { ascending: false }).limit(100);
   const rows = (data ?? []) as unknown as ProBooking[];
   await db.rpc("mark_booking_updates_seen", { p_booking: null, p_as: "provider" });
   const now = new Date().toISOString();

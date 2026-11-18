@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { userDb } from "@/lib/supabase/server";
 import { serviceDb } from "@/lib/supabase/admin";
-import { requireProvider, canEdit } from "@/lib/auth";
+import { requireProvider, canEdit, ORG_COOKIE } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
 
@@ -216,4 +217,15 @@ export async function respondBooking(f: FormData) {
   if (error) fail("/pro/richieste", bookingError(error.message));
   revalidatePath("/pro/richieste");
   redirect(`/pro/richieste?ok=${decision === "accept" ? "accettata" : "rifiutata"}`);
+}
+
+// ---------- Selettore attività ----------
+export async function switchOrganization(f: FormData) {
+  const { memberships } = await requireProvider();
+  const id = str(f, "organization_id");
+  if (memberships.some((m) => m.organization_id === id)) {
+    (await cookies()).set(ORG_COOKIE, id, { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 60 * 60 * 24 * 365 });
+  }
+  revalidatePath("/pro", "layout");
+  redirect("/pro");
 }
