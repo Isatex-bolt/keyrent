@@ -43,3 +43,48 @@ export async function setOrgVerification(f: FormData) {
   revalidatePath("/admin/anagrafiche");
   redirect("/admin/anagrafiche?ok=1");
 }
+
+// ---------- Immagini indicative di catalogo ----------
+async function ensureListingsBucket() {
+  const admin = serviceDb();
+  const { error } = await admin.storage.getBucket("listings");
+  if (error) await admin.storage.createBucket("listings", { public: true, fileSizeLimit: 10 * 1024 * 1024, allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"] });
+}
+
+export async function createCatalogUploadUrl(categoryId: string, modelId: string | null, fileName: string) {
+  await requireStaff();
+  await ensureListingsBucket();
+  const ext = (fileName.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "png";
+  const path = `catalog/${modelId ?? `cat-${categoryId}`}/${crypto.randomUUID()}.${ext}`;
+  const { data, error } = await serviceDb().storage.from("listings").createSignedUploadUrl(path);
+  if (error) throw new Error(error.message);
+  return { path, token: data.token };
+}
+
+export async function saveCatalogImage(categoryId: string, modelId: string | null, path: string) {
+  const { user } = await requireStaff();
+  if (!path.startsWith("catalog/")) throw new Error("Percorso non valido");
+  const db = serviceDb();
+  let q = db.from("catalog_images").select("id, storage_path").eq("category_id", categoryId);
+  q = modelId ? q.eq("model_id", modelId) : q.is("model_id", null);
+  const { data: old } = await q;
+  for (const o of old ?? []) {
+    await db.from("catalog_images").delete().eq("id", o.id);
+    await db.storage.from("listings").remove([o.storage_path]);
+  }
+  const { error } = await db.from("catalog_images").insert({ category_id: categoryId, model_id: modelId, storage_path: path, source: "ai", created_by: user.id });
+  if (error) throw new Error(dbMessage(error.message));
+  revalidatePath("/admin/foto");
+}
+
+export async function removeCatalogImage(f: FormData) {
+  await requireStaff();
+  const db = serviceDb();
+  const { data } = await db.from("catalog_images").select("storage_path").eq("id", str(f, "id")).maybeSingle();
+  if (data) {
+    await db.from("catalog_images").delete().eq("id", str(f, "id"));
+    await db.storage.from("listings").remove([data.storage_path]);
+  }
+  revalidatePath("/admin/foto");
+  redirect("/admin/foto?ok=rimossa");
+}

@@ -9,7 +9,7 @@ export type SearchParams = {
 export type SearchResult = {
   id: string; slug: string; title: string; category_slug: string; make_name: string | null; model_name: string | null;
   city: string; province: string; price_from_cents: number | null; distance_km: number | null;
-  available_units: number; total_count: number; cover: string | null;
+  available_units: number; total_count: number; cover: string | null; cover_indicative?: boolean;
 };
 
 export type AttributeDef = {
@@ -34,8 +34,8 @@ export async function searchListings(args: {
   });
   if (error) throw new Error(`Ricerca non riuscita: ${error.message}`);
   const rows = (data ?? []) as Omit<SearchResult, "cover">[];
-  const covers = await coverImages(rows.map((r) => r.id));
-  return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null }));
+  const cov = await covers(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, cover: cov.get(r.id)?.url ?? null, cover_indicative: cov.get(r.id)?.indicative ?? false }));
 }
 
 async function coverImages(ids: string[]) {
@@ -45,6 +45,42 @@ async function coverImages(ids: string[]) {
     .in("listing_id", ids).order("sort");
   for (const m of data ?? []) if (!map.has(m.listing_id)) map.set(m.listing_id, mediaUrl(m.storage_path));
   return map;
+}
+
+type CatalogKey = { category_slug: string; make_slug: string | null; model_slug: string | null };
+
+/** Immagine indicativa di catalogo: prima quella del modello, poi quella generica della categoria. */
+export async function catalogImages(keys: CatalogKey[]) {
+  const out = new Map<string, string>();
+  if (keys.length === 0) return out;
+  const cats = [...new Set(keys.map((k) => k.category_slug))];
+  const { data, error } = await publicDb().from("public_catalog_images")
+    .select("category_slug, make_slug, model_slug, storage_path").in("category_slug", cats);
+  if (error) return out; // tabella non ancora installata: nessuna immagine indicativa
+  const byKey = new Map<string, string>();
+  for (const r of data ?? []) byKey.set(`${r.category_slug}|${r.make_slug ?? ""}|${r.model_slug ?? ""}`, mediaUrl(r.storage_path));
+  for (const k of keys) {
+    const img = byKey.get(`${k.category_slug}|${k.make_slug ?? ""}|${k.model_slug ?? ""}`) ?? byKey.get(`${k.category_slug}||`);
+    if (img) out.set(`${k.category_slug}|${k.make_slug ?? ""}|${k.model_slug ?? ""}`, img);
+  }
+  return out;
+}
+
+/** Copertina per ogni annuncio: prima foto vera, altrimenti immagine indicativa di catalogo. */
+async function covers(ids: string[]) {
+  const real = await coverImages(ids);
+  const missing = ids.filter((id) => !real.has(id));
+  const result = new Map<string, { url: string; indicative: boolean }>();
+  for (const [id, url] of real) result.set(id, { url, indicative: false });
+  if (missing.length === 0) return result;
+  const { data } = await publicDb().from("public_listings").select("id, category_slug, make_slug, model_slug").in("id", missing);
+  const keys = (data ?? []) as (CatalogKey & { id: string })[];
+  const imgs = await catalogImages(keys);
+  for (const k of keys) {
+    const url = imgs.get(`${k.category_slug}|${k.make_slug ?? ""}|${k.model_slug ?? ""}`);
+    if (url) result.set(k.id, { url, indicative: true });
+  }
+  return result;
 }
 
 export async function makesForCategory(category: string) {
@@ -80,9 +116,17 @@ export async function getListing(id: string) {
   ]);
   if (listing.error) throw new Error(listing.error.message);
   if (!listing.data) return null;
+  let gallery = (media.data ?? []).map((m) => ({ url: mediaUrl(m.storage_path), alt: m.alt as string | null }));
+  let indicative = false;
+  if (gallery.length === 0) {
+    const l = listing.data as CatalogKey;
+    const img = (await catalogImages([l])).get(`${l.category_slug}|${l.make_slug ?? ""}|${l.model_slug ?? ""}`);
+    if (img) { gallery = [{ url: img, alt: null }]; indicative = true; }
+  }
   return {
     listing: listing.data as Record<string, any>,
-    media: (media.data ?? []).map((m) => ({ url: mediaUrl(m.storage_path), alt: m.alt as string | null })),
+    media: gallery,
+    indicative,
     prices: (prices.data ?? []) as { unit: string; price_cents: number; valid_from: string | null; valid_to: string | null }[],
     extras: (extras.data ?? []) as { id: string; name: string; price_cents: number; charge: string; max_qty: number }[],
   };
@@ -150,6 +194,6 @@ export async function searchMap(args: {
   } else {
     rows = (data ?? []) as Omit<MapResult, "cover">[];
   }
-  const covers = await coverImages(rows.map((r) => r.id));
-  return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null }));
+  const cov = await covers(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, cover: cov.get(r.id)?.url ?? null, cover_indicative: cov.get(r.id)?.indicative ?? false }));
 }

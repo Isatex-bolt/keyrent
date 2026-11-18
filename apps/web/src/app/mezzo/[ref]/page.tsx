@@ -26,7 +26,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   if (!id || !isSupabaseConfigured()) notFound();
   const data = await getListing(id);
   if (!data) notFound();
-  const { listing: l, media, prices, extras } = data;
+  const { listing: l, media, prices, extras, indicative } = data;
 
   const dal = first(sp.dal), al = first(sp.al);
   const pickup = dal ? romeToIso(dal, first(sp.ora_ritiro) ?? "10:00") : null;
@@ -61,7 +61,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
         {l.model_name && <> / {l.model_name}</>}
       </nav>
 
-      <Gallery media={media} title={l.title} category={l.category_slug} />
+      <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
@@ -184,7 +184,17 @@ function Row({ k, v }: { k: string; v: string }) {
   return <li className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:justify-between sm:gap-6"><span className="text-mute">{k}</span><span className="font-medium sm:text-right">{v}</span></li>;
 }
 
-function Gallery({ media, title, category }: { media: { url: string; alt: string | null }[]; title: string; category: string }) {
+function Gallery({ media, title, category, indicative }: { media: { url: string; alt: string | null }[]; title: string; category: string; indicative: boolean }) {
+  if (indicative && media[0]) {
+    return (
+      <figure className="card relative aspect-[16/8] overflow-hidden bg-navy-50">
+        <Image src={media[0].url} alt={`Immagine indicativa: ${title}`} fill priority sizes="100vw" className="object-contain" />
+        <figcaption className="absolute bottom-3 left-3 rounded-full bg-navy-950/75 px-3 py-1 text-xs font-medium text-white">
+          Immagine indicativa del modello: il mezzo reale può differire per colore e allestimento
+        </figcaption>
+      </figure>
+    );
+  }
   if (media.length === 0) {
     return <div className="card grid aspect-[16/7] place-items-center bg-navy-50 text-navy-700/40"><CategoryIcon slug={category} className="h-20 w-20" /></div>;
   }

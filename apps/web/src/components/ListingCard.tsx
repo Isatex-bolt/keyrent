@@ -15,6 +15,11 @@ export function ListingCard({ r, href, active = false }: { r: CardData; href: st
         ) : (
           <div className="grid h-full place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-14 w-14" /></div>
         )}
+        {r.cover && r.cover_indicative && (
+          <span className="absolute bottom-2 right-2 rounded-full bg-navy-950/70 px-2 py-0.5 text-[11px] font-medium text-white">
+            Immagine indicativa
+          </span>
+        )}
         {r.available_units > 1 && (
           <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-navy-900">
             {r.available_units} disponibili
