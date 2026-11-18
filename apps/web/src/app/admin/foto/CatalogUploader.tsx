@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { createCatalogUploadUrl, saveCatalogImage } from "../actions";
+import { createCatalogUploadUrl, generateCatalogImage, saveCatalogImage } from "../actions";
 
 export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId: string; modelId: string | null; hasImage: boolean }) {
   const input = useRef<HTMLInputElement>(null);
@@ -43,12 +43,22 @@ export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId:
   );
 }
 
-export function CopyPrompt({ text }: { text: string }) {
-  const [done, setDone] = useState(false);
+export function AutoImage({ categoryId, modelId }: { categoryId: string; modelId: string | null }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   return (
-    <button type="button" className="text-sm font-semibold text-teal-600 hover:underline"
-      onClick={async () => { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 2000); }}>
-      {done ? "Copiato ✓" : "Copia testo per ChatGPT"}
-    </button>
+    <span>
+      <button type="button" disabled={busy} className="text-sm font-semibold text-teal-600 hover:underline disabled:opacity-60"
+        onClick={async () => {
+          setBusy(true); setErr("");
+          const r = await generateCatalogImage(categoryId, modelId).catch(() => ({ error: "Errore, riprova." }));
+          setBusy(false);
+          if ("error" in r && r.error) setErr(r.error); else router.refresh();
+        }}>
+        {busy ? "Sto creando… (fino a 30 s)" : "✨ Crea in automatico"}
+      </button>
+      {err && <span className="ml-2 text-xs text-red-700">{err}</span>}
+    </span>
   );
 }

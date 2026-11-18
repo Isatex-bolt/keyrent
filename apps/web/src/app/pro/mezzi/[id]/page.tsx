@@ -11,8 +11,10 @@ import { listingHref } from "@/lib/urls";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
 import { AiPhotoHelper } from "./AiPhotoHelper";
+import { settingsFor } from "@/lib/aiImage";
 import { deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../actions";
 
+export const maxDuration = 90;
 export const metadata = { title: "Scheda annuncio" };
 
 export default function Page({ params, searchParams }: PageProps<"/pro/mezzi/[id]">) {
@@ -107,7 +109,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
       {edit && (
         <AiPhotoHelper
           listingId={id}
-          category={l.categories?.slug ?? ""}
+          settings={settingsFor(l.categories?.slug ?? "").map(({ key, label }) => ({ key, label }))}
           vehicle={[l.makes?.name ?? (units?.[0] as any)?.vehicle_units?.custom_make, l.models?.name ?? (units?.[0] as any)?.vehicle_units?.custom_model].filter(Boolean).join(" ") || l.title}
           year={(units?.[0] as any)?.vehicle_units?.year ?? null}
         />

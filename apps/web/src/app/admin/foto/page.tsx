@@ -4,22 +4,12 @@ import { requireStaff } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { mediaUrl } from "@/lib/supabase/public";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
-import { CatalogUploader, CopyPrompt } from "./CatalogUploader";
+import { AutoImage, CatalogUploader } from "./CatalogUploader";
 import { removeCatalogImage } from "../actions";
 
 export const metadata = { title: "Foto catalogo" };
 
-const SUBJECT: Record<string, string> = {
-  auto: "un'automobile", moto: "una moto", bici: "una bicicletta", camper: "un camper",
-  barche: "una barca", furgoni: "un furgone", "quad-motoslitte": "un quad",
-};
-
-function prompt(category: string, what?: string) {
-  const subject = what ? `${SUBJECT[category] ?? "un veicolo"}: ${what}` : `${SUBJECT[category] ?? "un veicolo"} generico e moderno`;
-  return `Crea una fotografia realistica da catalogo di ${subject}. Vista di tre quarti anteriore, mezzo intero e centrato, `
-    + `sfondo da studio grigio chiaro uniforme, luce morbida, colore bianco o grigio metallizzato. `
-    + `Nessun logo o scritta del marchio, nessuna targa, nessuna persona, nessun testo. Formato orizzontale 4:3.`;
-}
+export const maxDuration = 90;
 
 export default function Page({ searchParams }: PageProps<"/admin/foto">) {
   return <Suspense fallback={<Skeleton />}><Catalog searchParams={searchParams} /></Suspense>;
@@ -60,9 +50,8 @@ async function Catalog({ searchParams }: { searchParams: SP }) {
       <div className="card bg-teal-50 p-4 text-sm text-navy-800">
         <p className="font-semibold">Come si fa</p>
         <ol className="mt-1 list-decimal space-y-0.5 pl-5">
-          <li>Premi &quot;Copia testo per ChatGPT&quot; sul modello che ti serve.</li>
-          <li>Apri ChatGPT, incolla il testo e invia: genera l&apos;immagine.</li>
-          <li>Scarica l&apos;immagine sul telefono o sul Mac, poi torna qui e premi &quot;Carica immagine&quot;.</li>
+          <li>Premi &quot;✨ Crea in automatico&quot;: l&apos;immagine si crea in circa 20-30 secondi.</li>
+          <li>Se non ti piace premi di nuovo per crearne un&apos;altra, oppure carica una tua immagine.</li>
         </ol>
         <p className="mt-2 text-xs text-mute">Sul sito comparirà sempre l&apos;etichetta &quot;Immagine indicativa&quot;. Appena il noleggiatore carica le sue foto, vengono mostrate quelle.</p>
       </div>
@@ -88,7 +77,7 @@ async function Catalog({ searchParams }: { searchParams: SP }) {
                       <p className="text-xs text-mute">
                         {i ? "Immagine presente" : "Nessuna immagine"}{n > 0 ? ` · ${n} ${n === 1 ? "annuncio" : "annunci"} senza foto` : ""}
                       </p>
-                      <CopyPrompt text={prompt(c.slug, r.what)} />
+                      <AutoImage categoryId={c.id} modelId={r.id} />
                     </div>
                     <div className="flex items-center gap-2">
                       <CatalogUploader categoryId={c.id} modelId={r.id} hasImage={!!i} />

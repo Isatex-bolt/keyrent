@@ -8,6 +8,7 @@ import { requireProvider, canEdit, ORG_COOKIE } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
+import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const cents = (f: FormData, k: string) => {
@@ -228,4 +229,36 @@ export async function switchOrganization(f: FormData) {
   }
   revalidatePath("/pro", "layout");
   redirect("/pro");
+}
+
+// ---------- Foto creata automaticamente con l'AI ----------
+export async function generateListingPhoto(listingId: string, input: { color: string; year: string; setting: string }) {
+  await assertListingAccess(listingId);
+  await ensureBucket();
+  const db = await userDb();
+  const { data: l } = await db.from("listings")
+    .select("id, title, categories(slug), makes(name), models(name), listing_units(vehicle_units(year, custom_make, custom_model))")
+    .eq("id", listingId).maybeSingle();
+  if (!l) throw new Error("FORBIDDEN");
+  const { count } = await db.from("listing_media").select("id", { count: "exact", head: true }).eq("listing_id", listingId);
+  if ((count ?? 0) >= 20) return { error: "Hai già 20 foto: eliminane qualcuna prima di crearne altre." };
+  type Row = { title: string; categories: { slug: string } | null; makes: { name: string } | null; models: { name: string } | null;
+    listing_units: { vehicle_units: { year: number | null; custom_make: string | null; custom_model: string | null } | null }[] };
+  const r = l as unknown as Row;
+  const vu = r.listing_units[0]?.vehicle_units;
+  const vehicle = [r.makes?.name ?? vu?.custom_make, r.models?.name ?? vu?.custom_model].filter(Boolean).join(" ") || r.title;
+  const year = /^\d{4}$/.test(input.year) ? input.year : vu?.year ?? null;
+  const prompt = vehiclePrompt({ category: r.categories?.slug ?? "", vehicle, year, color: input.color.slice(0, 40), setting: input.setting });
+  try {
+    const img = await generateImage(prompt);
+    const ext = img.type.includes("png") ? "png" : img.type.includes("webp") ? "webp" : "jpg";
+    const path = `${listingId}/ai-${crypto.randomUUID()}.${ext}`;
+    const { error: up } = await serviceDb().storage.from("listings").upload(path, img.bytes, { contentType: img.type });
+    if (up) throw new Error(up.message);
+    await registerMedia(listingId, path, true);
+    return { ok: true };
+  } catch (e) {
+    console.error(e);
+    return { error: "Il servizio che crea le immagini è occupato in questo momento. Riprova tra un minuto." };
+  }
 }
