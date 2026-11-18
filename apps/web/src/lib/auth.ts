@@ -59,3 +59,11 @@ export async function requireStaff(roles: string[] = ["admin", "operations"]) {
 export function canEdit(m: Membership | null) {
   return m?.role === "owner" || m?.role === "manager";
 }
+
+export type AccountType = "provider" | "customer";
+
+/** Tipo di account: scelto in registrazione (metadati), oppure noleggiatore se fa già parte di un'attività. */
+export function accountType(user: { user_metadata?: Record<string, unknown> } | null, memberships: unknown[] = []): AccountType {
+  if (memberships.length > 0) return "provider";
+  return user?.user_metadata?.account_type === "provider" ? "provider" : "customer";
+}

@@ -1,6 +1,7 @@
+import { becomeProvider } from "../accedi/actions";
 import { Suspense } from "react";
 import Link from "next/link";
-import { requireProvider } from "@/lib/auth";
+import { accountType, requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { Badge, orgStatus, listingStatus } from "@/lib/status";
 import { OrgFields } from "@/components/OrgFields";
@@ -15,7 +16,20 @@ export default function Page({ searchParams }: PageProps<"/pro">) {
 
 async function Dashboard({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
-  const { membership, memberships } = await requireProvider("/pro");
+  const { user, membership, memberships } = await requireProvider("/pro");
+  if (!membership && accountType(user, memberships) === "customer") {
+    return (
+      <div className="card p-6">
+        <ProHeader title="Questo è un account cliente" subtitle={`Sei entrato come ${user.email}, registrato per noleggiare.`} />
+        <p className="text-sm text-mute">L&apos;area noleggiatore serve a chi pubblica i propri mezzi con un&apos;attività professionale (P.IVA).</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <form action="/esci" method="post"><input type="hidden" name="next" value="/accedi?tipo=noleggiatore" /><button className="btn-primary">Esci e accedi come noleggiatore</button></form>
+          <form action={becomeProvider}><button className="btn-ghost">Usa questo account anche come noleggiatore</button></form>
+          <Link href="/account" className="btn-ghost">Torna al mio account</Link>
+        </div>
+      </div>
+    );
+  }
   if (!membership) {
     return (
       <div className="card p-6">

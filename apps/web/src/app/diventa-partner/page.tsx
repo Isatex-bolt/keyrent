@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { InfoPage } from "@/components/InfoPage";
 export const metadata = { title: "Diventa partner" };
 export default function Page() {
@@ -10,7 +11,10 @@ export default function Page() {
         <li>Pagamento al noleggiatore 24 ore dopo il ritiro del mezzo</li>
         <li>Gestione di più sedi e di più collaboratori</li>
       </ul>
-      <p>L&apos;area partner apre a breve.</p>
+      <div className="flex flex-wrap gap-3 pt-2">
+        <Link href="/registrati?tipo=noleggiatore" className="btn-primary">Registra la tua attività</Link>
+        <Link href="/accedi?tipo=noleggiatore" className="btn-ghost">Hai già un account? Accedi</Link>
+      </div>
     </InfoPage>
   );
 }
