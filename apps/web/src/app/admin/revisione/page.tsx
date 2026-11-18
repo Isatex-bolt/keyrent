@@ -15,11 +15,13 @@ async function Queue({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   await requireStaff();
   const db = await userDb();
-  const { data: revs } = await db.from("listing_revisions")
-    .select("id, number, submitted_at, snapshot, listing:listings(id, title, status, organizations(legal_name, trade_name))")
+  const { data: revs, error: revErr } = await db.from("listing_revisions")
+    .select("id, number, submitted_at, snapshot, listing:listings!listing_revisions_listing_id_fkey(id, title, status, organizations(legal_name, trade_name))")
     .eq("status", "pending_review").order("submitted_at");
-  const { data: all } = await db.from("listings").select("id, title, status, updated_at, organizations(legal_name)")
+  if (revErr) throw new Error(`Coda revisione non caricata: ${revErr.message}`);
+  const { data: all, error: allErr } = await db.from("listings").select("id, title, status, updated_at, organizations(legal_name)")
     .in("status", ["draft", "published", "changes_required", "suspended", "unpublished", "rejected"]).order("updated_at", { ascending: false }).limit(30);
+  if (allErr) throw new Error(`Annunci non caricati: ${allErr.message}`);
   type R = { id: string; number: number; submitted_at: string; snapshot: { changes?: object };
     listing: { id: string; title: string; status: string; organizations: { legal_name: string; trade_name: string | null } } };
   return (
