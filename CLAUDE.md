@@ -25,8 +25,16 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 ## Stato
 - Fase 0 FATTA: `supabase/migrations` + `seed.sql` applicati al progetto Supabase reale (38 tabelle, 47 funzioni private).
   Test: `tests/db/run.sh` su PostgreSQL 16 locale (111 verifiche, incluse 20 prenotazioni concorrenti).
-- Prossimo: Fase 1 — app Next.js: ricerca server-side con filtri in URL, scheda mezzo, auth, area provider
-  (attività, sedi, mezzi con wizard, richieste, prenotazioni), revisione admin, prenotazione con Stripe test mode.
+- Fase 1a FATTA (online su https://keyrent.vercel.app, Vercel fra1, deploy automatico da main, root apps/web):
+  home, ricerca server-side con filtri in URL, scheda mezzo. 8 annunci demo (org DEMO, rimuovibili con supabase/demo/demo_remove.sql).
+- Fase 1b FATTA e provata dall'utente: auth Supabase, area noleggiatore (attività, sedi, wizard 7 passi, foto su Storage
+  bucket "listings", invio revisione), area admin (revisione, anagrafiche). Migrazioni 0006 e 0007 applicate.
+  L'utente è admin (staff_members) e ha una sua attività di prova.
+- Prossimo: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
+  richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).
+- Nota operativa: l'utente applica le migrazioni incollando SQL nell'editor di Supabase. Blocchi corti (< ~150 righe),
+  niente tabelle temporanee (l'editor non mantiene la sessione), sempre rieseguibili.
+- Nota: da questa sandbox *.supabase.co non è raggiungibile (rete limitata ai package manager): verifiche via test locali + utente.
 
 ## Regole tecniche da rispettare
 - Mai cambiare stati di prenotazioni/pagamenti/annunci dal client: solo funzioni `private.*` chiamate dal server
