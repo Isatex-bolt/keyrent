@@ -20,8 +20,8 @@ exception when others then
     raise exception 'FAIL: % (errore "%" [%], atteso "%")', p_msg, sqlerrm, sqlstate, p_expect;
   end if;
 end $$;
-grant usage on schema test to anon, authenticated;
-grant execute on all functions in schema test to anon, authenticated;
+grant usage on schema test to anon, authenticated, service_role;
+grant execute on all functions in schema test to anon, authenticated, service_role;
 
 insert into auth.users (id, email) values
   ('a0000000-0000-0000-0000-000000000001', 'owner@frattin.test'),

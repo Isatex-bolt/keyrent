@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Logo } from "./Logo";
+import { AccountButton } from "./AccountButton";
 
 export function SiteHeader() {
   return (
@@ -10,7 +12,7 @@ export function SiteHeader() {
           <Link href="/diventa-partner" className="hidden rounded-lg px-3 py-2 font-medium text-mute hover:text-navy-900 sm:block">
             Sei un noleggiatore?
           </Link>
-          <Link href="/accedi" className="btn-ghost">Accedi</Link>
+          <Suspense fallback={<span className="btn-ghost opacity-60">Accedi</span>}><AccountButton /></Suspense>
         </nav>
       </div>
     </header>

@@ -1,0 +1,21 @@
+export function AuthCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-md px-4 py-12 sm:py-16">
+      <div className="card p-6 sm:p-8">
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-mute">{subtitle}</p>}
+        <div className="mt-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export function FormError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{message}</p>;
+}
+
+export function FormNotice({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mb-4 rounded-xl bg-teal-50 px-4 py-3 text-sm text-navy-900">{message}</p>;
+}
