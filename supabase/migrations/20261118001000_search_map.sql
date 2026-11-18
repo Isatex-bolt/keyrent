@@ -30,7 +30,7 @@ create or replace function public.search_map(
   city text, province char(2), approx_latitude double precision, approx_longitude double precision,
   instant_book boolean, price_from_cents integer, total_cents integer, attributes jsonb,
   distance_km numeric, available_units bigint, total_count bigint
-) language sql stable security definer set search_path = public as $$
+) language sql stable security definer set search_path = public, extensions as $$
   with base as (
     select pl.*,
            case when p_lat is null then null

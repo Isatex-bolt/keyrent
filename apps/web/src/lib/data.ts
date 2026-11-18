@@ -107,3 +107,49 @@ export async function getBusyDays(id: string, from: string, to: string) {
   const { data } = await publicDb().rpc("listing_busy_days", { p_listing: id, p_from: from, p_to: to });
   return new Set(((data ?? []) as { day: string }[]).map((d) => d.day));
 }
+
+export type MapResult = SearchResult & {
+  approx_latitude: number | null; approx_longitude: number | null;
+  instant_book: boolean; total_cents: number | null;
+};
+
+export const MAP_LIMIT = 60;
+
+/**
+ * Ricerca per la mappa: area visibile (bbox) oppure centro+raggio, con totale per le date.
+ * Se la funzione search_map non è ancora installata nel database, ripiega su search_listings.
+ */
+export async function searchMap(args: {
+  bbox?: [number, number, number, number] | null; lat?: number; lng?: number; radiusKm?: number;
+  pickup?: string | null; ret?: string | null; category?: string; make?: string; model?: string;
+  filters?: Record<string, unknown>; priceMaxCents?: number; instantOnly?: boolean; sort?: string;
+}): Promise<MapResult[]> {
+  const db = publicDb();
+  const [w, s, e, n] = args.bbox ?? [null, null, null, null];
+  const { data, error } = await db.rpc("search_map", {
+    p_west: w, p_south: s, p_east: e, p_north: n,
+    p_lat: args.lat ?? null, p_lng: args.lng ?? null, p_radius_km: args.radiusKm ?? 40,
+    p_pickup: args.pickup ?? null, p_return: args.ret ?? null,
+    p_category: args.category ?? null, p_make: args.make ?? null, p_model: args.model ?? null,
+    p_filters: args.filters ?? {}, p_price_max_cents: args.priceMaxCents ?? null,
+    p_instant_only: args.instantOnly ?? false, p_sort: args.sort ?? "relevance", p_limit: MAP_LIMIT,
+  });
+  let rows: Omit<MapResult, "cover">[];
+  if (error) {
+    if (!/search_map|PGRST202|function/i.test(`${error.code} ${error.message}`)) throw new Error(`Ricerca non riuscita: ${error.message}`);
+    const old = await db.rpc("search_listings", {
+      p_lat: args.lat ?? null, p_lng: args.lng ?? null, p_radius_km: args.radiusKm ?? 40,
+      p_pickup: args.pickup ?? null, p_return: args.ret ?? null,
+      p_category: args.category ?? null, p_make: args.make ?? null, p_model: args.model ?? null,
+      p_filters: args.filters ?? {}, p_price_max_cents: args.priceMaxCents ?? null,
+      p_sort: args.sort ?? "relevance", p_limit: MAP_LIMIT, p_offset: 0,
+    });
+    if (old.error) throw new Error(`Ricerca non riuscita: ${old.error.message}`);
+    rows = ((old.data ?? []) as Omit<MapResult, "cover" | "instant_book" | "total_cents">[])
+      .map((r) => ({ ...r, instant_book: false, total_cents: null }));
+  } else {
+    rows = (data ?? []) as Omit<MapResult, "cover">[];
+  }
+  const covers = await coverImages(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null }));
+}

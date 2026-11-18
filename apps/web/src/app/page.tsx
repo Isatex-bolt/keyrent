@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { SearchForm } from "@/components/SearchForm";
+import { Suspense } from "react";
+import { HomeSearch } from "@/components/SearchForm";
+import { ListingCard } from "@/components/ListingCard";
+import { searchMap } from "@/lib/data";
+import { listingHref } from "@/lib/urls";
+import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES } from "@/lib/catalog";
 
@@ -22,11 +27,15 @@ export default function Home() {
           <p className="mt-4 max-w-xl text-base text-white/70 sm:text-lg">
             Auto, moto, bici, camper, barche e furgoni. Disponibilità reale, prezzo chiaro, pagamento protetto.
           </p>
-          <div className="card mt-8 p-4 shadow-xl shadow-navy-950/30 sm:p-5">
-            <SearchForm />
+          <div className="card mt-8 p-4 shadow-xl shadow-navy-950/30 sm:p-6">
+            <HomeSearch />
           </div>
         </div>
       </section>
+
+      <Suspense fallback={<RowSkeleton />}>
+        <Latest />
+      </Suspense>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <h2 className="text-2xl font-bold tracking-tight">Cosa vuoi noleggiare?</h2>
@@ -70,5 +79,34 @@ export default function Home() {
         </div>
       </section>
     </>
+  );
+}
+
+async function Latest() {
+  if (!isSupabaseConfigured()) return null;
+  const rows = (await searchMap({}).catch(() => [])).slice(0, 8);
+  if (rows.length === 0) return null;
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-2xl font-bold tracking-tight">Appena arrivati</h2>
+        <Link href="/cerca" className="text-sm font-semibold text-teal-600 hover:underline">Vedi tutti</Link>
+      </div>
+      <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6">
+        {rows.map((r) => (
+          <div key={r.id} className="w-[78%] flex-none snap-start sm:w-[45%] lg:w-[23.5%]">
+            <ListingCard r={r} href={listingHref(r)} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RowSkeleton() {
+  return (
+    <div className="mx-auto flex max-w-6xl gap-4 overflow-hidden px-4 pt-14 sm:px-6">
+      {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/3] w-[78%] flex-none animate-pulse rounded-2xl bg-white sm:w-[45%] lg:w-[23.5%]" />)}
+    </div>
   );
 }

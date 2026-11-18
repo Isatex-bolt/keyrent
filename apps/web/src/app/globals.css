@@ -36,3 +36,13 @@ body { background: var(--color-canvas); color: var(--color-ink); }
     font-medium text-ink transition hover:border-navy-700/30;
 }
 .card { @apply rounded-[var(--radius-card)] border border-line bg-white; }
+.chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-ink
+    transition hover:border-navy-700/40 active:scale-[0.97];
+}
+.chip-on { @apply border-navy-900 bg-navy-900 text-white hover:border-navy-900; }
+.pin {
+  @apply cursor-pointer whitespace-nowrap rounded-full border border-navy-900/10 bg-white px-2.5 py-1 text-[13px] font-bold
+    text-navy-900 shadow-md transition-transform duration-150 hover:scale-110;
+}
+.pin-on { @apply z-10 scale-110 border-navy-900 bg-navy-900 text-white; }
