@@ -29,7 +29,7 @@ end $$;
 -- quindi si può creare solo nella propria organizzazione e nelle proprie sedi.
 -- ---------------------------------------------------------------------------
 create or replace function public.create_listing_draft(p jsonb)
-returns uuid language plpgsql security invoker set search_path = public as $$
+returns uuid language plpgsql security invoker set search_path = public, extensions as $$
 declare
   v_org uuid := (p ->> 'organization_id')::uuid;
   v_loc uuid := (p ->> 'location_id')::uuid;
@@ -192,3 +192,6 @@ begin
   on conflict do nothing;
   return new;
 end $$;
+
+-- Su Supabase pgcrypto vive nello schema "extensions": il generatore del codice prenotazione deve trovarlo
+alter function private.gen_booking_code() set search_path = public, extensions;
