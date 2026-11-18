@@ -53,24 +53,29 @@ with spec(n, loc, cat, make, model, title, attrs, mode, units, day, week, hour, 
 )
 select count(*) as annunci_creati from ins_listing;
 
-drop table if exists demo_spec;
-create temporary table demo_spec (n int, loc int, cat text, units int, day int, week int, hour int, deposit int);
-insert into demo_spec values
-  (1, 1, 'camper', 1, 16000, 98000, null, 100000), (2, 1, 'bici', 5, 3500, null, 800, 5000),
-  (3, 2, 'auto', 1, 4500, 27000, null, 30000), (4, 3, 'barche', 1, 28000, null, 6000, 50000),
-  (5, 4, 'moto', 1, 14000, 85000, null, 150000), (6, 5, 'camper', 1, 19000, 120000, null, 150000),
-  (7, 2, 'furgoni', 1, 9000, 54000, 2500, 50000), (8, 6, 'auto', 1, 120000, null, null, 500000);
-
 insert into vehicle_units (id, organization_id, location_id, category_id, label)
 select ('de30000' || s.n || '-0000-0000-0000-' || lpad(g::text, 12, '0'))::uuid,
        'de000000-0000-0000-0000-000000000001', ('de100000-0000-0000-0000-00000000000' || s.loc)::uuid, c.id,
        case when s.units > 1 then 'Unità #' || g end
-from demo_spec s join categories c on c.slug = s.cat, generate_series(1, s.units) g
+from (values
+  (1, 1, 'camper', 1, 16000, 98000, null, 100000), (2, 1, 'bici', 5, 3500, null, 800, 5000),
+  (3, 2, 'auto', 1, 4500, 27000, null, 30000), (4, 3, 'barche', 1, 28000, null, 6000, 50000),
+  (5, 4, 'moto', 1, 14000, 85000, null, 150000), (6, 5, 'camper', 1, 19000, 120000, null, 150000),
+  (7, 2, 'furgoni', 1, 9000, 54000, 2500, 50000), (8, 6, 'auto', 1, 120000, null, null, 500000)
+) as s(n, loc, cat, units, day, week, hour, deposit)
+join categories c on c.slug = s.cat
+cross join lateral generate_series(1, s.units) g
 on conflict (id) do nothing;
 
 insert into listing_units (listing_id, vehicle_unit_id)
 select ('de200000-0000-0000-0000-00000000000' || s.n)::uuid, ('de30000' || s.n || '-0000-0000-0000-' || lpad(g::text, 12, '0'))::uuid
-from demo_spec s, generate_series(1, s.units) g
+from (values
+  (1, 1, 'camper', 1, 16000, 98000, null, 100000), (2, 1, 'bici', 5, 3500, null, 800, 5000),
+  (3, 2, 'auto', 1, 4500, 27000, null, 30000), (4, 3, 'barche', 1, 28000, null, 6000, 50000),
+  (5, 4, 'moto', 1, 14000, 85000, null, 150000), (6, 5, 'camper', 1, 19000, 120000, null, 150000),
+  (7, 2, 'furgoni', 1, 9000, 54000, 2500, 50000), (8, 6, 'auto', 1, 120000, null, null, 500000)
+) as s(n, loc, cat, units, day, week, hour, deposit)
+cross join lateral generate_series(1, s.units) g
 on conflict do nothing;
 
 insert into rental_terms (listing_id, deposit_cents, min_duration_minutes, buffer_minutes, min_driver_age, included_km_per_day)
@@ -79,16 +84,25 @@ select ('de200000-0000-0000-0000-00000000000' || s.n)::uuid, s.deposit,
        case when s.cat = 'camper' then 120 else 30 end,
        case s.cat when 'auto' then case when s.day > 50000 then 30 else 21 end when 'camper' then 25 when 'moto' then 24 when 'furgoni' then 21 else 14 end,
        case when s.cat in ('auto', 'camper', 'furgoni', 'moto') then 250 end
-from demo_spec s
+from (values
+  (1, 1, 'camper', 1, 16000, 98000, null, 100000), (2, 1, 'bici', 5, 3500, null, 800, 5000),
+  (3, 2, 'auto', 1, 4500, 27000, null, 30000), (4, 3, 'barche', 1, 28000, null, 6000, 50000),
+  (5, 4, 'moto', 1, 14000, 85000, null, 150000), (6, 5, 'camper', 1, 19000, 120000, null, 150000),
+  (7, 2, 'furgoni', 1, 9000, 54000, 2500, 50000), (8, 6, 'auto', 1, 120000, null, null, 500000)
+) as s(n, loc, cat, units, day, week, hour, deposit)
 on conflict (listing_id) do nothing;
 
 insert into pricing_rules (listing_id, unit, price_cents)
 select ('de200000-0000-0000-0000-00000000000' || s.n)::uuid, u.unit::price_unit, u.price
-from demo_spec s
+from (values
+  (1, 1, 'camper', 1, 16000, 98000, null, 100000), (2, 1, 'bici', 5, 3500, null, 800, 5000),
+  (3, 2, 'auto', 1, 4500, 27000, null, 30000), (4, 3, 'barche', 1, 28000, null, 6000, 50000),
+  (5, 4, 'moto', 1, 14000, 85000, null, 150000), (6, 5, 'camper', 1, 19000, 120000, null, 150000),
+  (7, 2, 'furgoni', 1, 9000, 54000, 2500, 50000), (8, 6, 'auto', 1, 120000, null, null, 500000)
+) as s(n, loc, cat, units, day, week, hour, deposit)
 cross join lateral (values ('day', s.day), ('week', s.week), ('hour', s.hour)) as u(unit, price)
 where u.price is not null
   and not exists (select 1 from pricing_rules p where p.listing_id = ('de200000-0000-0000-0000-00000000000' || s.n)::uuid);
-drop table demo_spec;
 
 update listings l set price_from_cents = (select min(price_cents) filter (where unit = 'day') from pricing_rules p where p.listing_id = l.id)
 where l.organization_id = 'de000000-0000-0000-0000-000000000001';
