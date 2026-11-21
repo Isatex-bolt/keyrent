@@ -188,3 +188,63 @@ export async function generateContentImage(kind: ContentKind, slug: string) {
     return { error: m.startsWith("Generazione") ? "Servizio immagini occupato, riprova tra un minuto." : `Errore: ${m}` };
   }
 }
+
+// ---------- Testi della home: esigenze e mete ----------
+const CATS = ["auto", "moto", "bici", "camper", "barche", "furgoni", "quad-motoslitte"];
+
+export async function saveCollection(f: FormData) {
+  await requireStaff();
+  const slug = str(f, "slug");
+  const title = str(f, "title").slice(0, 80), subtitle = str(f, "subtitle").slice(0, 160);
+  if (!title || !subtitle) redirect("/admin/home?errore=" + encodeURIComponent("Titolo e sottotitolo sono obbligatori."));
+  const cat = str(f, "cat"), sub = str(f, "sub");
+  const query = new URLSearchParams();
+  if (CATS.includes(cat)) query.set("cat", cat);
+  if (cat && /^[a-z0-9-]{2,40}$/.test(sub)) query.set("sub", sub);
+  const { error } = await serviceDb().from("home_collections")
+    .update({ title, subtitle, query: query.toString(), active: f.get("active") === "on" }).eq("slug", slug);
+  if (error) redirect("/admin/home?errore=" + encodeURIComponent(error.message));
+  revalidatePath("/", "layout");
+  redirect("/admin/home?ok=salvato#c-" + slug);
+}
+
+export async function saveDestination(f: FormData) {
+  await requireStaff();
+  const isNew = !str(f, "slug");
+  const name = str(f, "name").slice(0, 80);
+  const slug = isNew
+    ? name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    : str(f, "slug");
+  const lat = Number(str(f, "lat")), lng = Number(str(f, "lng"));
+  const row: Record<string, unknown> = {
+    name, region: str(f, "region").slice(0, 80), tagline: str(f, "tagline").slice(0, 120),
+    description: str(f, "description").slice(0, 1200),
+    radius_km: Math.min(Math.max(Number(str(f, "radius_km")) || 30, 5), 150),
+    categories: f.getAll("categories").map(String).filter((c) => CATS.includes(c)),
+    active: f.get("active") === "on",
+  };
+  if (Number.isFinite(lat) && Number.isFinite(lng) && lat > 35 && lat < 48 && lng > 6 && lng < 19) { row.latitude = lat; row.longitude = lng; }
+  const back = (m: string) => redirect(`/admin/home?errore=${encodeURIComponent(m)}`);
+  if (!name || !row.region || !row.tagline || !row.description) back("Compila nome, regione, frase breve e descrizione.");
+  const db = serviceDb();
+  if (isNew) {
+    if (row.latitude == null) back("Scegli il luogo della meta dai suggerimenti, così sappiamo dov'è sulla mappa.");
+    const { error } = await db.from("destinations").insert({ ...row, slug, sort: 1000 });
+    if (error) back(error.message.includes("duplicate") ? "Esiste già una meta con questo nome." : error.message);
+  } else {
+    const { error } = await db.from("destinations").update(row).eq("slug", slug);
+    if (error) back(error.message);
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin/home?ok=salvato#d-${slug}`);
+}
+
+export async function deleteDestination(f: FormData) {
+  await requireStaff();
+  const db = serviceDb();
+  const { data } = await db.from("destinations").select("image_path").eq("slug", str(f, "slug")).maybeSingle();
+  await db.from("destinations").delete().eq("slug", str(f, "slug"));
+  if (data?.image_path) await db.storage.from("listings").remove([data.image_path]);
+  revalidatePath("/", "layout");
+  redirect("/admin/home?ok=eliminata");
+}
