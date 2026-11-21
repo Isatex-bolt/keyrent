@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createCatalogUploadUrl, generateCatalogImage, saveCatalogImage } from "../actions";
+import { errorText, prepareImage } from "@/lib/prepareImage";
 
 export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId: string; modelId: string | null; hasImage: boolean }) {
   const input = useRef<HTMLInputElement>(null);
@@ -11,13 +12,12 @@ export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function upload(file?: File) {
-    if (!file) return;
+  async function upload(picked?: File) {
+    if (!picked) return;
     setError("");
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setError("Usa JPG, PNG o WEBP."); return; }
-    if (file.size > 10 * 1024 * 1024) { setError("Massimo 10 MB."); return; }
     setBusy(true);
     try {
+      const file = await prepareImage(picked);
       const storage = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!).storage;
       const { path, token } = await createCatalogUploadUrl(categoryId, modelId, file.name);
       const { error: e } = await storage.from("listings").uploadToSignedUrl(path, token, file, { contentType: file.type });
@@ -26,7 +26,7 @@ export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId:
       router.refresh();
     } catch (e) {
       console.error(e);
-      setError("Caricamento non riuscito. Riprova.");
+      setError(`Caricamento non riuscito: ${errorText(e)}`);
     }
     setBusy(false);
     if (input.current) input.current.value = "";
@@ -34,7 +34,7 @@ export function CatalogUploader({ categoryId, modelId, hasImage }: { categoryId:
 
   return (
     <div>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+      <input ref={input} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
       <button type="button" className="btn-ghost px-3 py-2 text-sm" disabled={busy} onClick={() => input.current?.click()}>
         {busy ? "Caricamento…" : hasImage ? "Sostituisci" : "Carica immagine"}
       </button>

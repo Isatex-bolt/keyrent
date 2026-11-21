@@ -112,7 +112,8 @@ export async function generateCatalogImage(categoryId: string, modelId: string |
     return { ok: true };
   } catch (e) {
     console.error(e);
-    return { error: "Servizio immagini occupato, riprova tra un minuto." };
+    const m = e instanceof Error ? e.message : String(e);
+    return { error: m.startsWith("Generazione") ? "Servizio immagini occupato, riprova tra un minuto." : `Errore: ${m}` };
   }
 }
 
@@ -138,26 +139,36 @@ async function contentPrompt(kind: ContentKind, slug: string) {
 async function setContentImage(kind: ContentKind, slug: string, path: string) {
   const db = serviceDb();
   const { data: old } = await db.from(contentTable(kind)).select("image_path").eq("slug", slug).maybeSingle();
-  const { error } = await db.from(contentTable(kind)).update({ image_path: path }).eq("slug", slug);
-  if (error) throw new Error(dbMessage(error.message));
+  const { error, count } = await db.from(contentTable(kind)).update({ image_path: path }, { count: "exact" }).eq("slug", slug);
+  if (error) throw new Error(error.message);
+  if (count === 0) throw new Error("riga non trovata");
   if (old?.image_path && old.image_path !== path) await db.storage.from("listings").remove([old.image_path]);
   revalidatePath("/admin/home");
 }
 
-export async function createContentUploadUrl(kind: ContentKind, slug: string, fileName: string) {
+export async function createContentUploadUrl(kind: ContentKind, slug: string, fileName: string): Promise<{ path: string; token: string } | { error: string }> {
   await requireStaff();
-  await ensureListingsBucket();
-  const ext = (fileName.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
-  const path = `home/${kind}/${slug.replace(/[^a-z0-9-]/g, "")}/${crypto.randomUUID()}.${ext}`;
-  const { data, error } = await serviceDb().storage.from("listings").createSignedUploadUrl(path);
-  if (error) throw new Error(error.message);
-  return { path, token: data.token };
+  try {
+    await ensureListingsBucket();
+    const ext = (fileName.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
+    const path = `home/${kind}/${slug.replace(/[^a-z0-9-]/g, "")}/${crypto.randomUUID()}.${ext}`;
+    const { data, error } = await serviceDb().storage.from("listings").createSignedUploadUrl(path);
+    if (error) return { error: `Storage: ${error.message}` };
+    return { path, token: data.token };
+  } catch (e) {
+    return { error: `Preparazione: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
-export async function saveContentImage(kind: ContentKind, slug: string, path: string) {
+export async function saveContentImage(kind: ContentKind, slug: string, path: string): Promise<{ ok: true } | { error: string }> {
   await requireStaff();
-  if (!path.startsWith(`home/${kind}/`)) throw new Error("Percorso non valido");
-  await setContentImage(kind, slug, path);
+  if (!path.startsWith(`home/${kind}/`)) return { error: "Percorso non valido" };
+  try {
+    await setContentImage(kind, slug, path);
+    return { ok: true };
+  } catch (e) {
+    return { error: `Salvataggio: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 export async function generateContentImage(kind: ContentKind, slug: string) {
@@ -173,6 +184,7 @@ export async function generateContentImage(kind: ContentKind, slug: string) {
     return { ok: true };
   } catch (e) {
     console.error(e);
-    return { error: "Servizio immagini occupato, riprova tra un minuto." };
+    const m = e instanceof Error ? e.message : String(e);
+    return { error: m.startsWith("Generazione") ? "Servizio immagini occupato, riprova tra un minuto." : `Errore: ${m}` };
   }
 }
