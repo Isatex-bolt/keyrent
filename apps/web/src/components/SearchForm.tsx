@@ -40,10 +40,11 @@ export function HomeSearch() {
 
   return (
     <div>
-      <div role="tablist" className="mb-4 inline-flex rounded-full bg-navy-50 p-1 text-sm font-semibold">
-        {([["breve", "Prenota"], ["lungo", "Lungo termine"]] as const).map(([k, l]) => (
+      <h2 className="text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">Noleggia ora</h2>
+      <div role="tablist" aria-label="Durata del noleggio" className="mb-5 mt-3 inline-flex rounded-full bg-navy-50 p-1 text-sm font-semibold">
+        {([["breve", "Breve termine"], ["lungo", "Lungo termine"]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
-            className={`rounded-full px-4 py-2 transition ${mode === k ? "bg-white text-navy-900 shadow-sm" : "text-mute hover:text-navy-900"}`}>
+            className={`rounded-full px-4 py-2 transition ${mode === k ? "bg-navy-900 text-white shadow-sm" : "text-mute hover:text-navy-900"}`}>
             {l}
           </button>
         ))}
