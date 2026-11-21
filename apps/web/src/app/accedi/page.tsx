@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { AuthCard, FormError } from "@/components/AuthCard";
+import { AuthCard, FormError, FormNotice } from "@/components/AuthCard";
 import { AuthTabs } from "@/components/AuthTabs";
 import { signIn, sendMagicLink } from "./actions";
 
@@ -22,6 +22,7 @@ async function LoginForm({ searchParams }: { searchParams: Promise<Record<string
     <AuthCard title={pro ? "Accesso noleggiatori" : "Accedi a KeyRent"}
       subtitle={pro ? "Gestisci mezzi, richieste, prenotazioni e messaggi della tua attività." : "Prenota mezzi, segui le tue prenotazioni e scrivi ai noleggiatori."}>
       <AuthTabs base="/accedi" tipo={tipo} />
+      <FormNotice message={typeof sp.ok === "string" ? sp.ok : undefined} />
       <FormError message={errore} />
       <form action={signIn} className="space-y-4">
         <input type="hidden" name="next" value={next} />
