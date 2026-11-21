@@ -5,6 +5,7 @@ const nav: NavItem[] = [
   { href: "/admin/revisione", label: "Revisione annunci", badge: "admin_reviews" },
   { href: "/admin/anagrafiche", label: "Anagrafiche", badge: "admin_orgs" },
   { href: "/admin/foto", label: "Foto catalogo" },
+  { href: "/admin/home", label: "Immagini home" },
 ];
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {

@@ -167,8 +167,8 @@ export const MAP_LIMIT = 60;
  */
 export async function searchMap(args: {
   bbox?: [number, number, number, number] | null; lat?: number; lng?: number; radiusKm?: number;
-  pickup?: string | null; ret?: string | null; category?: string; make?: string; model?: string;
-  filters?: Record<string, unknown>; priceMaxCents?: number; instantOnly?: boolean; sort?: string;
+  pickup?: string | null; ret?: string | null; category?: string; subcategory?: string; make?: string; model?: string;
+  filters?: Record<string, unknown>; priceMaxCents?: number; instantOnly?: boolean; sort?: string; limit?: number;
 }): Promise<MapResult[]> {
   const db = publicDb();
   const [w, s, e, n] = args.bbox ?? [null, null, null, null];
@@ -176,9 +176,9 @@ export async function searchMap(args: {
     p_west: w, p_south: s, p_east: e, p_north: n,
     p_lat: args.lat ?? null, p_lng: args.lng ?? null, p_radius_km: args.radiusKm ?? 40,
     p_pickup: args.pickup ?? null, p_return: args.ret ?? null,
-    p_category: args.category ?? null, p_make: args.make ?? null, p_model: args.model ?? null,
+    p_category: args.category ?? null, p_subcategory: args.subcategory ?? null, p_make: args.make ?? null, p_model: args.model ?? null,
     p_filters: args.filters ?? {}, p_price_max_cents: args.priceMaxCents ?? null,
-    p_instant_only: args.instantOnly ?? false, p_sort: args.sort ?? "relevance", p_limit: MAP_LIMIT,
+    p_instant_only: args.instantOnly ?? false, p_sort: args.sort ?? "relevance", p_limit: args.limit ?? MAP_LIMIT,
   });
   let rows: Omit<MapResult, "cover">[];
   if (error) {

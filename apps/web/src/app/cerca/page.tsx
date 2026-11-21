@@ -82,7 +82,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
 
   const results = await searchMap({
     bbox, lat: bbox ? undefined : lat, lng: bbox ? undefined : lng, radiusKm: 40, pickup, ret,
-    category: cat, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax, instantOnly,
+    category: cat, subcategory: cat && sp.sub && /^[a-z0-9-]{2,40}$/.test(sp.sub) ? sp.sub : undefined, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax, instantOnly,
     sort: sp.ordina,
   });
   const total = Number(results[0]?.total_count ?? 0);
@@ -94,7 +94,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
   const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), when, categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax)) + Number(instantOnly);
-  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat"];
+  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub"];
 
   const top = (
     <>

@@ -7,6 +7,9 @@ import { listingHref } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES } from "@/lib/catalog";
+import { getCollections, getDestinations } from "@/lib/content";
+import { CollectionTiles, DestinationCard } from "@/components/HomeTiles";
+import { NearMe } from "@/components/NearMe";
 
 const steps = [
   { t: "Cerca", d: "Indica dove e quando ti serve il mezzo: vedi solo ciò che è davvero disponibile in quelle date." },
@@ -30,11 +33,20 @@ export default function Home() {
           <div className="card mt-8 p-4 shadow-xl shadow-navy-950/30 sm:p-6">
             <HomeSearch />
           </div>
+          <NearMe className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20" />
         </div>
       </section>
 
       <Suspense fallback={<RowSkeleton />}>
+        <Ideas />
+      </Suspense>
+
+      <Suspense fallback={<RowSkeleton />}>
         <Latest />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <Destinations />
       </Suspense>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
@@ -108,5 +120,40 @@ function RowSkeleton() {
     <div className="mx-auto flex max-w-6xl gap-4 overflow-hidden px-4 pt-14 sm:px-6">
       {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/3] w-[78%] flex-none animate-pulse rounded-2xl bg-white sm:w-[45%] lg:w-[23.5%]" />)}
     </div>
+  );
+}
+
+async function Ideas() {
+  if (!isSupabaseConfigured()) return null;
+  const items = await getCollections();
+  if (items.length === 0) return null;
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-teal-600">Idee</p>
+      <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Cosa ti serve oggi?</h2>
+      <div className="mt-6"><CollectionTiles items={items} /></div>
+    </section>
+  );
+}
+
+async function Destinations() {
+  if (!isSupabaseConfigured()) return null;
+  const items = await getDestinations();
+  if (items.length === 0) return null;
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-teal-600">Ispirazione</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Dove andare</h2>
+        </div>
+        <Link href="/destinazioni" className="text-sm font-semibold text-teal-600 hover:underline">Tutte le mete</Link>
+      </div>
+      <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6">
+        {items.map((d) => (
+          <div key={d.slug} className="w-[62%] flex-none snap-start sm:w-[36%] lg:w-[23.5%]"><DestinationCard d={d} /></div>
+        ))}
+      </div>
+    </section>
   );
 }

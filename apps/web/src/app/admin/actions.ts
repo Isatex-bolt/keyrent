@@ -115,3 +115,64 @@ export async function generateCatalogImage(categoryId: string, modelId: string |
     return { error: "Servizio immagini occupato, riprova tra un minuto." };
   }
 }
+
+// ---------- Immagini della home (esigenze e destinazioni) ----------
+type ContentKind = "collection" | "destination";
+const contentTable = (k: ContentKind) => (k === "collection" ? "home_collections" : "destinations");
+
+const COLLECTION_PROMPTS: Record<string, string> = {
+  "escursione-in-bici": "a person riding an e-mountain bike on a scenic mountain road in the Italian Prealps near Monte Grappa, sunny summer morning, view over the valley",
+  "sei-in-viaggio": "a modern compact car parked near an elegant Italian railway station square at golden hour, a traveller with a suitcase walking towards it",
+  "weekend-in-camper": "a modern white motorhome parked by a lake in the Italian Dolomites at sunset, camping chairs and warm lights",
+  "giornata-in-barca": "a rigid inflatable boat anchored in a turquoise cove in Sardinia, crystal clear water, summer, aerial view",
+  "mezzo-per-azienda": "a clean white delivery van parked in front of a modern Italian business building, morning light",
+  avventura: "two quad bikes on a snowy mountain trail in the Italian Alps, blue sky, adventure",
+};
+
+async function contentPrompt(kind: ContentKind, slug: string) {
+  if (kind === "collection") return COLLECTION_PROMPTS[slug] ?? "scenic Italian landscape with a rental vehicle";
+  const { data } = await serviceDb().from("destinations").select("name, region").eq("slug", slug).maybeSingle();
+  return `breathtaking scenic view of ${data?.name ?? slug}, ${data?.region ?? ""}, Italy, golden hour, wide landscape, travel magazine style`;
+}
+
+async function setContentImage(kind: ContentKind, slug: string, path: string) {
+  const db = serviceDb();
+  const { data: old } = await db.from(contentTable(kind)).select("image_path").eq("slug", slug).maybeSingle();
+  const { error } = await db.from(contentTable(kind)).update({ image_path: path }).eq("slug", slug);
+  if (error) throw new Error(dbMessage(error.message));
+  if (old?.image_path && old.image_path !== path) await db.storage.from("listings").remove([old.image_path]);
+  revalidatePath("/admin/home");
+}
+
+export async function createContentUploadUrl(kind: ContentKind, slug: string, fileName: string) {
+  await requireStaff();
+  await ensureListingsBucket();
+  const ext = (fileName.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
+  const path = `home/${kind}/${slug.replace(/[^a-z0-9-]/g, "")}/${crypto.randomUUID()}.${ext}`;
+  const { data, error } = await serviceDb().storage.from("listings").createSignedUploadUrl(path);
+  if (error) throw new Error(error.message);
+  return { path, token: data.token };
+}
+
+export async function saveContentImage(kind: ContentKind, slug: string, path: string) {
+  await requireStaff();
+  if (!path.startsWith(`home/${kind}/`)) throw new Error("Percorso non valido");
+  await setContentImage(kind, slug, path);
+}
+
+export async function generateContentImage(kind: ContentKind, slug: string) {
+  await requireStaff();
+  await ensureListingsBucket();
+  try {
+    const prompt = `Professional realistic photograph, ${await contentPrompt(kind, slug)}. High detail, natural colours, no text, no watermark, no logos.`;
+    const img = await generateImage(prompt);
+    const path = `home/${kind}/${slug.replace(/[^a-z0-9-]/g, "")}/${crypto.randomUUID()}.${img.type.includes("png") ? "png" : "jpg"}`;
+    const { error } = await serviceDb().storage.from("listings").upload(path, img.bytes, { contentType: img.type });
+    if (error) throw new Error(error.message);
+    await setContentImage(kind, slug, path);
+    return { ok: true };
+  } catch (e) {
+    console.error(e);
+    return { error: "Servizio immagini occupato, riprova tra un minuto." };
+  }
+}
