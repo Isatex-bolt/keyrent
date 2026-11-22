@@ -4,7 +4,7 @@ const nav: NavItem[] = [
   { href: "/pro", label: "Dashboard" },
   { href: "/pro/richieste", label: "Richieste", badge: "requests" },
   { href: "/pro/prenotazioni", label: "Prenotazioni", badge: "provider_bookings" },
-  { href: "/messaggi", label: "Messaggi", badge: "messages" },
+  { href: "/pro/messaggi", label: "Messaggi", badge: "messages" },
   { href: "/pro/mezzi", label: "I miei mezzi", badge: "listings_to_fix" },
   { href: "/pro/sedi", label: "Le mie sedi" },
   { href: "/pro/attivita", label: "La mia attività" },

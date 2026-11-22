@@ -20,13 +20,14 @@ export async function startConversation(f: FormData) {
 
 export async function sendMessage(f: FormData) {
   const conv = str(f, "conversation_id");
-  await requireUser(`/messaggi/${conv}`);
+  const base = str(f, "base") === "/pro/messaggi" ? "/pro/messaggi" : "/messaggi";
+  await requireUser(`${base}/${conv}`);
   const body = str(f, "body");
   if (body) {
     const db = await userDb();
     const { error } = await db.rpc("send_message", { p_conversation: conv, p_body: body.slice(0, 4000) });
-    if (error) redirect(`/messaggi/${conv}?errore=${encodeURIComponent("Messaggio non inviato. Riprova.")}`);
+    if (error) redirect(`${base}/${conv}?errore=${encodeURIComponent("Messaggio non inviato. Riprova.")}`);
   }
-  revalidatePath(`/messaggi/${conv}`);
-  redirect(`/messaggi/${conv}#fondo`);
+  revalidatePath(`${base}/${conv}`);
+  redirect(`${base}/${conv}#fondo`);
 }

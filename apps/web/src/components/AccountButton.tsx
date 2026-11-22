@@ -17,7 +17,7 @@ export async function AccountButton() {
   return (
     <div className="flex items-center gap-1">
       {staff && <Link href="/admin" className={linkCls}>Admin<Count n={adminTotal(b)} /></Link>}
-      <Link href="/messaggi" className={linkCls}>Messaggi<Count n={b.messages} /></Link>
+      <Link href={pro ? "/pro/messaggi" : "/messaggi"} className={linkCls}>Messaggi<Count n={b.messages} /></Link>
       {pro && <Link href="/account" className={linkCls}>Le mie prenotazioni<Count n={b.customer_bookings} /></Link>}
       <Link href={pro ? "/pro" : "/account"} className="btn-ghost gap-2 py-2">
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pro ? "bg-navy-900 text-white" : "bg-teal-50 text-teal-600"}`}>
