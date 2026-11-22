@@ -28,7 +28,7 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
   const dal = typeof sp.dal === "string" ? sp.dal : "";
   const al = typeof sp.al === "string" ? sp.al : "";
   const oraR = typeof sp.ora_ritiro === "string" ? sp.ora_ritiro : "10:00";
-  const oraC = typeof sp.ora_riconsegna === "string" ? sp.ora_riconsegna : "10:00";
+  const oraC = typeof sp.ora_riconsegna === "string" ? sp.ora_riconsegna : dal && dal === al ? "18:00" : "10:00";
   const user = await requireUser(`/prenota/${id}?dal=${dal}&al=${al}`);
   const data = await getListing(id);
   if (!data) notFound();

@@ -143,10 +143,21 @@ export async function getCancellationRules(policyId: string | null) {
   return (data?.rules ?? null) as null | { before_confirmation_fee_pct?: number; tiers?: { min_hours_before: number; fee_pct: number }[]; provider_cancel_refund_pct?: number };
 }
 
-export async function getQuote(id: string, pickup: string, ret: string) {
+export type Quote = { total_cents: number; base_cents: number; unit: string; qty: number; days: number };
+
+export async function getQuote(id: string, pickup: string, ret: string): Promise<Quote | null> {
+  const r = await quoteOrError(id, pickup, ret);
+  return "error" in r ? null : r;
+}
+
+/** Preventivo con il motivo, in italiano, quando non si può calcolare. */
+export async function quoteOrError(id: string, pickup: string, ret: string): Promise<Quote | { error: string }> {
+  if (ret <= pickup) return { error: "La riconsegna deve essere dopo il ritiro: scegli un orario o un giorno successivo." };
   const { data, error } = await publicDb().rpc("quote", { p_listing: id, p_pickup: pickup, p_return: ret, p_extras: [] });
-  if (error) return null;
-  return data as { total_cents: number; base_cents: number; unit: string; qty: number; days: number };
+  if (!error) return data as Quote;
+  if (/NO_PRICE/.test(error.message)) return { error: "Il noleggiatore non ha una tariffa per questa durata: prova un periodo più lungo o più corto." };
+  if (/INVALID_RANGE/.test(error.message)) return { error: "La riconsegna deve essere dopo il ritiro." };
+  return { error: "Non riusciamo a calcolare il prezzo per queste date: riprova." };
 }
 
 export async function getBusyDays(id: string, from: string, to: string) {

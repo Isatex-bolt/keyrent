@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getBadges, type Badges } from "@/lib/badges";
-import { Count } from "./Count";
+import { LiveCount } from "./LiveCount";
 
 export type NavItem = { href: string; label: string; badge?: keyof Badges };
 
@@ -25,7 +25,7 @@ async function WithBadges({ items }: { items: NavItem[] }) {
   const b = await getBadges();
   return items.map((i) => (
     <Link key={i.href} href={i.href} className={cls}>
-      <span>{i.label}</span>{i.badge && <Count n={b[i.badge]} />}
+      <span>{i.label}</span>{i.badge && <LiveCount keys={[i.badge]} initial={b[i.badge]} />}
     </Link>
   ));
 }

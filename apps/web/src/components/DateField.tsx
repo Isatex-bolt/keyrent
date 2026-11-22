@@ -12,9 +12,9 @@ export function DateField({ id, name, value, defaultValue, onChange, min, requir
     <div className="relative">
       <input id={id} name={name} type="date" min={min} value={v} required={required}
         onChange={(e) => { setInner(e.target.value); onChange?.(e.target.value); }}
-        className={`field ${v ? "" : "date-empty"}`} />
+        className={`peer field ${v ? "" : "date-empty"}`} />
       {!v && (
-        <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center gap-2 text-[15px] text-mute/80">
+        <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center gap-2 text-[15px] text-mute/80 peer-focus:hidden">
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
           {placeholder}
         </span>
