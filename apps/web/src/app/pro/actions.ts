@@ -10,6 +10,7 @@ import { requireProvider, canEdit, ORG_COOKIE } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
+import { PROVINCE } from "@/lib/province";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import type { PreviewRow } from "@/lib/importSheet";
@@ -60,18 +61,41 @@ export async function updateOrganization(f: FormData) {
 }
 
 // ---------- Sedi ----------
+/** Dati della sede dal modulo, con la posizione sulla mappa. */
+async function locationFields(f: FormData, back: string) {
+  const city = str(f, "city"), province = str(f, "province").toUpperCase(), address = str(f, "address_line"), cap = str(f, "postal_code");
+  if (!city || !address || !cap || !PROVINCE[province]) fail(back, "Completa indirizzo, CAP, città e provincia.");
+  // posizione: dal suggerimento scelto, altrimenti cerchiamo l'indirizzo, altrimenti il centro della città
+  let lat = Number(str(f, "lat")), lng = Number(str(f, "lng"));
+  if (!lat || !lng) {
+    const g = await geocode(`${address}, ${cap} ${city} ${province}, Italia`) ?? await geocode(`${city} ${province}, Italia`);
+    const p = g ? null : findPlace(city);
+    lat = g?.lat ?? p?.lat ?? 0; lng = g?.lng ?? p?.lng ?? 0;
+  }
+  if (!lat || !lng) fail(back, "Non troviamo l'indirizzo sulla mappa: sceglilo dai suggerimenti mentre scrivi.");
+  return {
+    name: str(f, "name") || `Sede ${city}`, address_line: address, postal_code: cap, city, province,
+    latitude: lat, longitude: lng, phone: str(f, "phone") || null, pickup_instructions: str(f, "pickup_instructions") || null,
+  };
+}
+
 export async function createLocation(f: FormData) {
   const { membership } = await editor();
-  const place = findPlace(str(f, "city"));
-  if (!place) fail("/pro/sedi", "Scegli la città dall'elenco.");
+  const fields = await locationFields(f, "/pro/sedi");
   const db = await userDb();
-  const { error } = await db.from("locations").insert({
-    organization_id: membership.organization_id, name: str(f, "name") || `Sede ${place!.name}`,
-    address_line: str(f, "address_line"), postal_code: str(f, "postal_code"), city: place!.name, province: place!.province,
-    latitude: place!.lat, longitude: place!.lng, phone: str(f, "phone") || null,
-    pickup_instructions: str(f, "pickup_instructions") || null,
-  });
+  const { error } = await db.from("locations").insert({ organization_id: membership.organization_id, ...fields });
   if (error) fail("/pro/sedi", dbMessage(error.message));
+  revalidatePath("/pro/sedi");
+  redirect("/pro/sedi?ok=1");
+}
+
+export async function updateLocation(f: FormData) {
+  const { membership } = await editor();
+  const id = str(f, "id");
+  const fields = await locationFields(f, `/pro/sedi/${id}`);
+  const db = await userDb();
+  const { error } = await db.from("locations").update(fields).eq("id", id).eq("organization_id", membership.organization_id);
+  if (error) fail(`/pro/sedi/${id}`, dbMessage(error.message));
   revalidatePath("/pro/sedi");
   redirect("/pro/sedi?ok=1");
 }
@@ -82,6 +106,19 @@ export async function toggleLocation(f: FormData) {
   await db.from("locations").update({ active: str(f, "active") === "true" }).eq("id", str(f, "id"));
   revalidatePath("/pro/sedi");
   redirect("/pro/sedi");
+}
+
+/** Posizione di un indirizzo italiano (Mapbox, lato server). */
+async function geocode(q: string): Promise<{ lat: number; lng: number } | null> {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (!token) return null;
+  try {
+    const res = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(q)}&country=IT&limit=1&language=it&access_token=${token}`);
+    if (!res.ok) return null;
+    const d = (await res.json()) as { features?: { geometry: { coordinates: [number, number] } }[] };
+    const c = d.features?.[0]?.geometry.coordinates;
+    return c ? { lat: c[1], lng: c[0] } : null;
+  } catch { return null; }
 }
 
 // ---------- Mezzi ----------
