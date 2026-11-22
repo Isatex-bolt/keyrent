@@ -32,6 +32,7 @@ async function LoginForm({ searchParams }: { searchParams: Promise<Record<string
         <div><label className="label" htmlFor="password">Password</label>
           <input id="password" name="password" type="password" required autoComplete="current-password" className="field" /></div>
         <button className="btn-primary w-full">Accedi</button>
+        <p className="text-right text-sm"><Link href="/password-dimenticata" className="text-teal-600 hover:underline">Password dimenticata?</Link></p>
       </form>
       <details className="mt-4 text-sm">
         <summary className="cursor-pointer text-teal-600">Preferisci un link via email?</summary>

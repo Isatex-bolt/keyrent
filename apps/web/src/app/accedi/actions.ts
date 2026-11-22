@@ -78,3 +78,29 @@ export async function becomeProvider() {
   await db.auth.updateUser({ data: { account_type: "provider" } });
   redirect("/pro");
 }
+
+/** Password dimenticata: email con il link per impostarne una nuova (risposta uguale anche se l'email non esiste). */
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+  if (email) {
+    const origin = (await headers()).get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const db = await userDb();
+    await db.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/callback?next=/account/password` });
+  }
+  redirect(`/password-dimenticata?inviata=1`);
+}
+
+/** Nuova password per l'utente collegato (anche arrivando dal link "password dimenticata"). */
+export async function changePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  const back = (m: string) => redirect(`/account/password?errore=${encodeURIComponent(m)}`);
+  if (password.length < 8) back("La password deve avere almeno 8 caratteri.");
+  if (password !== confirm) back("Le due password non coincidono.");
+  const db = await userDb();
+  const { data } = await db.auth.getUser();
+  if (!data.user) redirect("/accedi?next=/account/password");
+  const { error } = await db.auth.updateUser({ password });
+  if (error) back(error.message.includes("different from the old") ? "La nuova password deve essere diversa da quella attuale." : it(error.message));
+  redirect("/account/password?ok=1");
+}

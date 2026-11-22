@@ -35,7 +35,10 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           <h1 className="text-2xl font-bold tracking-tight">Ciao{profile?.first_name ? `, ${profile.first_name}` : ""}</h1>
           <p className="text-sm text-mute">{user.email}</p>
         </div>
-        <form action="/esci" method="post"><button className="btn-ghost">Esci</button></form>
+        <div className="flex gap-2">
+          <Link href="/account/password" className="btn-ghost">Cambia password</Link>
+          <form action="/esci" method="post"><button className="btn-ghost">Esci</button></form>
+        </div>
       </div>
       {sp.errore === "non-autorizzato" ? <FormError message="Non hai accesso a quella sezione." /> : <FormError message={typeof sp.errore === "string" ? sp.errore : undefined} />}
       {sp.ok && <FormNotice message="Profilo aggiornato." />}

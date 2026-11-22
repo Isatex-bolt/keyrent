@@ -36,6 +36,7 @@ export async function AccountButton() {
           <MenuLink href={pro ? "/pro/messaggi" : "/messaggi"} label="Messaggi" keys={["messages"]} n={b.messages} />
           <MenuLink href="/account" label={pro ? "Le mie prenotazioni" : "Il mio account"} keys={["customer_bookings"]} n={b.customer_bookings} />
           {staff && <MenuLink href="/admin" label="Admin" keys={["admin"]} n={adminTotal(b)} />}
+          <Link href="/account/password" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Cambia password</Link>
           <form action="/esci" method="post" className="mt-1 border-t border-line pt-1">
             <button className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Esci</button>
           </form>

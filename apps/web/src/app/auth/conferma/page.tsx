@@ -37,15 +37,16 @@ async function Confirm({ searchParams }: { searchParams: Promise<Record<string, 
   const tokenHash = one("token_hash");
   const type = one("type") || "email";
   const isLogin = type === "magiclink";
+  const isReset = type === "recovery";
   return (
-    <AuthCard title={isLogin ? "Accedi a KeyRent" : "Conferma il tuo account"}
-      subtitle={isLogin ? "Premi il pulsante per entrare." : "Ultimo passo: premi il pulsante per attivare l'account."}>
+    <AuthCard title={isReset ? "Nuova password" : isLogin ? "Accedi a KeyRent" : "Conferma il tuo account"}
+      subtitle={isReset ? "Premi il pulsante per scegliere la nuova password." : isLogin ? "Premi il pulsante per entrare." : "Ultimo passo: premi il pulsante per attivare l'account."}>
       {!tokenHash ? <FormError message="Link incompleto. Apri di nuovo il link dall'email." /> : (
         <form action={confirm}>
           <input type="hidden" name="token_hash" value={tokenHash} />
           <input type="hidden" name="type" value={type} />
-          <input type="hidden" name="next" value={one("next") ? safe(one("next")) : ""} />
-          <button className="btn-primary w-full">{isLogin ? "Entra" : "Conferma e entra"}</button>
+          <input type="hidden" name="next" value={one("next") ? safe(one("next")) : isReset ? "/account/password" : ""} />
+          <button className="btn-primary w-full">{isReset ? "Continua" : isLogin ? "Entra" : "Conferma e entra"}</button>
         </form>
       )}
     </AuthCard>
