@@ -25,7 +25,12 @@ async function Mezzi({ searchParams }: { searchParams: SP }) {
     categories: { name_it: string } | null; locations: { city: string } | null };
   return (
     <div>
-      <ProHeader title="I miei mezzi" action={canEdit(membership) && <Link href="/pro/mezzi/nuovo" className="btn-primary">+ Aggiungi mezzo</Link>} />
+      <ProHeader title="I miei mezzi" action={canEdit(membership) && (
+        <div className="flex flex-wrap gap-2">
+          <Link href="/pro/mezzi/importa" className="btn-ghost">Importa da Excel</Link>
+          <Link href="/pro/mezzi/nuovo" className="btn-primary">+ Aggiungi mezzo</Link>
+        </div>
+      )} />
       <Flash sp={sp} />
       <ul className="space-y-2">
         {((rows ?? []) as unknown as Row[]).map((r) => (

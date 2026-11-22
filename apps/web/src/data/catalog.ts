@@ -243,6 +243,7 @@ export function searchCatalog(q: string, category?: string, limit = 8): CatalogE
     else if (words.every((w) => e.search.includes(w))) score = 50 - (make.startsWith(words[0]) ? 0 : 5);
     if (score > 0) scored.push({ e, score });
   }
+  if (scored.length === 0 && words.length > 1) return searchCatalog(words.slice(0, -1).join(" "), category, limit);
   return scored.sort((a, b) => b.score - a.score || a.e.make.localeCompare(b.e.make) || a.e.model.localeCompare(b.e.model))
     .slice(0, limit).map((x) => x.e);
 }

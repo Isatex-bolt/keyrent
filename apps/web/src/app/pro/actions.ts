@@ -10,6 +10,7 @@ import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
+import type { PreviewRow } from "@/lib/importSheet";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const cents = (f: FormData, k: string) => {
@@ -267,4 +268,64 @@ export async function generateListingPhoto(listingId: string, input: { color: st
     console.error(e);
     return { error: "Il servizio che crea le immagini è occupato in questo momento. Riprova tra un minuto." };
   }
+}
+
+// ---------- Importazione da Excel ----------
+async function importContext() {
+  const { membership } = await editor();
+  const db = await userDb();
+  const { data: locations } = await db.from("locations").select("id, name, city")
+    .eq("organization_id", membership.organization_id).eq("active", true).order("created_at");
+  const { importCats } = await import("./mezzi/importa/cats");
+  return { membership, locations: locations ?? [], cats: await importCats() };
+}
+
+export async function previewImport(f: FormData): Promise<{ rows?: PreviewRow[]; error?: string }> {
+  const { locations, cats } = await importContext();
+  const file = f.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "Scegli il file Excel." };
+  if (file.size > 4 * 1024 * 1024) return { error: "Il file è troppo grande (massimo 4 MB)." };
+  if (!/\.xlsx$/i.test(file.name)) return { error: "Serve un file .xlsx (Excel). Da Numbers o Google Fogli: File → Esporta → Excel." };
+  if (!locations.length) return { error: "Prima aggiungi almeno una sede." };
+  try {
+    const { parseWorkbook } = await import("@/lib/importSheet");
+    const rows = await parseWorkbook(await file.arrayBuffer(), locations, cats);
+    if (!rows.length) return { error: "Il file non contiene mezzi: compila almeno una riga sotto le intestazioni." };
+    return { rows };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "File non leggibile." };
+  }
+}
+
+export async function confirmImport(input: PreviewRow[]): Promise<{ created: number; failed: { line: number; error: string }[] }> {
+  const { membership, locations } = await importContext();
+  const db = await userDb();
+  const failed: { line: number; error: string }[] = [];
+  let created = 0;
+  for (const r of input.slice(0, 200)) {
+    if (r.errors.length) continue;
+    // ricontrollo lato server: sede dell'attività, prezzi positivi
+    if (!locations.some((l) => l.id === r.locationId)) { failed.push({ line: r.line, error: "Sede non valida" }); continue; }
+    const p = (n: number) => (Number.isFinite(n) && n > 0 ? Math.round(n) : 0);
+    if (r.makeSlug && r.modelSlug) await ensureCatalogEntry(r.category, r.makeSlug, r.modelSlug).catch(() => undefined);
+    else if (r.sub) await ensureCatalogEntry(r.category, "", "").catch(() => undefined);
+    const payload = {
+      organization_id: membership.organization_id, location_id: r.locationId,
+      category: r.category, subcategory: r.sub || null,
+      make: r.makeSlug, model: r.modelSlug,
+      custom_make: r.makeSlug ? null : String(r.make).slice(0, 60), custom_model: r.modelSlug ? null : String(r.model).slice(0, 80),
+      title: String(r.title).slice(0, 120), description: String(r.description).slice(0, 4000), attributes: {},
+      quantity: Math.min(Math.max(Math.round(Number(r.quantity) || 1), 1), 200), plate: String(r.plate ?? "").slice(0, 20), year: String(r.year ?? ""),
+      terms: {
+        deposit_cents: p(r.deposit), min_driver_age: String(r.minAge ?? ""), min_license_years: "", required_license: "",
+        included_km_per_day: String(r.km ?? ""), extra_km_cents: "", insurance_excess_cents: "", fuel_policy: "",
+        buffer_minutes: "60", min_duration_minutes: "1440", notes: "",
+      },
+      prices: (["hour", "half_day", "day", "week"] as const).map((unit) => ({ unit, price_cents: p(r.prices?.[unit]) })),
+    };
+    const { error } = await db.rpc("create_listing_draft", { p: payload });
+    if (error) failed.push({ line: r.line, error: dbMessage(error.message) }); else created++;
+  }
+  revalidatePath("/pro/mezzi");
+  return { created, failed };
 }
