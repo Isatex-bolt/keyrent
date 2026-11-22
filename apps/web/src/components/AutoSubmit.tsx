@@ -13,7 +13,7 @@ export function AutoSubmit({ children }: { children: React.ReactNode }) {
           const model = form.querySelector<HTMLSelectElement>('select[name="modello"]');
           if (model) model.value = "";
         }
-        form.requestSubmit();
+        if (form.checkValidity()) form.requestSubmit();
       }}
     >
       {children}

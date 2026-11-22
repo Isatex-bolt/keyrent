@@ -45,3 +45,10 @@ export function formatDateIt(date: string) {
 export function slugify(s: string) {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
+
+/** Durata del noleggio a parole: "Prenotazione per 31 giorni" (anche con tariffa settimanale). */
+export function durationLabel(qty: number, unit: string) {
+  if (unit === "hour") return `Prenotazione per ${qty} ${qty === 1 ? "ora" : "ore"}`;
+  if (unit === "half_day") return qty === 1 ? "Prenotazione per mezza giornata" : `Prenotazione per ${qty} mezze giornate`;
+  return `Prenotazione per ${qty} ${qty === 1 ? "giorno" : "giorni"}`;
+}

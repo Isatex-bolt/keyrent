@@ -1,11 +1,12 @@
 import { DateField } from "@/components/DateField";
 import { Suspense } from "react";
 import Link from "next/link";
+import { AutoSubmit } from "@/components/AutoSubmit";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { getListing, getQuote, getCancellationRules } from "@/lib/data";
-import { euro, priceUnitLabel, romeToIso, todayRome } from "@/lib/format";
+import { euro, romeToIso, todayRome, durationLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { requestBooking } from "@/app/account/bookingActions";
@@ -51,14 +52,15 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
       </div>
       <Flash sp={sp} />
 
-      <form method="get" className="card grid gap-3 p-5 sm:grid-cols-[1fr_auto_1fr_auto_auto]">
+      <form method="get" className="card p-5"><AutoSubmit><div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto]">
         <div><label className="label" htmlFor="dal">Ritiro</label><DateField id="dal" name="dal" required min={todayRome()} defaultValue={dal} /></div>
         <div><label className="label" htmlFor="ora_ritiro">Ora</label>
           <select id="ora_ritiro" name="ora_ritiro" defaultValue={oraR} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select></div>
         <div><label className="label" htmlFor="al">Riconsegna</label><DateField id="al" name="al" required min={todayRome()} defaultValue={al} /></div>
         <div><label className="label" htmlFor="ora_riconsegna">Ora</label>
           <select id="ora_riconsegna" name="ora_riconsegna" defaultValue={oraC} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select></div>
-        <div className="flex items-end"><button className="btn-ghost w-full">Aggiorna prezzo</button></div>
+      </div></AutoSubmit>
+        <p className="mt-2 text-xs text-mute">Il totale si aggiorna da solo quando cambi date o orari.</p>
       </form>
 
       {!quote ? (
@@ -87,7 +89,7 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
           </div>
           <aside className="card h-fit space-y-4 p-5">
             <p className="font-semibold">{l.title}</p>
-            <div className="flex justify-between text-sm"><span className="text-mute">{quote.qty} × {priceUnitLabel[quote.unit]}</span><span>{euro(quote.base_cents)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-mute">{durationLabel(quote.qty, quote.unit)}</span><span>{euro(quote.base_cents)}</span></div>
             <div className="flex items-baseline justify-between border-t border-line pt-3"><span className="text-sm text-mute">Totale noleggio</span><span className="text-2xl font-bold">{euro(quote.total_cents)}</span></div>
             {l.deposit_cents > 0 && <p className="text-xs text-mute">Cauzione {euro(l.deposit_cents)} gestita direttamente dal noleggiatore al ritiro.</p>}
             <button className="btn-primary w-full">Invia richiesta</button>

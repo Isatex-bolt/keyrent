@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DateField } from "./DateField";
-import { euro, priceUnitLabel } from "@/lib/format";
+import { durationLabel, euro } from "@/lib/format";
 
 type Quote = { total_cents: number; qty: number; unit: string } | { error: string } | null;
 const HOURS = Array.from({ length: 31 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
@@ -60,7 +60,7 @@ export function BookingBox({ id, from, initial, initialQuote }: {
             <span className="text-sm text-mute">Totale noleggio</span>
             <span className="text-2xl font-bold">{euro(quote.total_cents)}</span>
           </div>
-          <p className="mt-1 text-xs text-mute">{quote.qty} × {priceUnitLabel[quote.unit]} · cauzione esclusa</p>
+          <p className="mt-1 text-xs text-mute">{durationLabel(quote.qty, quote.unit)} · cauzione esclusa</p>
         </div>
       ) : quote && "error" in quote ? (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{quote.error}</p>
