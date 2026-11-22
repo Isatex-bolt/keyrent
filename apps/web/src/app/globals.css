@@ -42,7 +42,20 @@ body { background: var(--color-canvas); color: var(--color-ink); }
 }
 .chip-on { @apply border-navy-900 bg-navy-900 text-white hover:border-navy-900; }
 .pin {
-  @apply cursor-pointer whitespace-nowrap rounded-full border border-navy-900/10 bg-white px-2.5 py-1 text-[13px] font-bold
-    text-navy-900 shadow-md transition-transform duration-150 hover:scale-110;
+  @apply relative cursor-pointer whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold tracking-tight
+    text-navy-900 transition duration-200 ease-out hover:scale-110 active:scale-95;
+  box-shadow: 0 1px 2px rgba(1, 25, 56, 0.12), 0 6px 16px rgba(1, 25, 56, 0.18);
+  transform-origin: 50% 100%;
 }
-.pin-on { @apply z-10 scale-110 border-navy-900 bg-navy-900 text-white; }
+.pin-tail {
+  @apply absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-white;
+}
+.pin-on { @apply z-10 scale-110 bg-navy-900 text-white; }
+.pin-on .pin-tail { @apply bg-navy-900; }
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 1px 2px rgba(1, 25, 56, 0.08), 0 8px 24px rgba(1, 25, 56, 0.16);
+}
+.mapboxgl-ctrl-attrib.mapboxgl-compact { @apply rounded-full !bg-white/70; }
