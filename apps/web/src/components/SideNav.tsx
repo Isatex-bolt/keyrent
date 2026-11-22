@@ -14,6 +14,9 @@ export function SideNav({ items, footer }: { items: NavItem[]; footer?: string }
     <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:px-0">
       <Suspense fallback={plain}><WithBadges items={items} /></Suspense>
       {footer && <span className="hidden px-3.5 pt-3 text-xs text-mute lg:block">{footer}</span>}
+      <form action="/esci" method="post" className="hidden lg:block lg:pt-4">
+        <button className={`${cls} w-full text-red-700 hover:text-red-800`}>Esci</button>
+      </form>
     </nav>
   );
 }

@@ -3,6 +3,7 @@ import { accountType, getUser, getMemberships, getStaffRole } from "@/lib/auth";
 import { getBadges, providerTotal, adminTotal } from "@/lib/badges";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { Count } from "./Count";
+import { MenuCloser } from "./MenuCloser";
 
 const linkCls = "hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-mute hover:text-navy-900 sm:inline-flex";
 
@@ -19,14 +20,36 @@ export async function AccountButton() {
       {staff && <Link href="/admin" className={linkCls}>Admin<Count n={adminTotal(b)} /></Link>}
       <Link href={pro ? "/pro/messaggi" : "/messaggi"} className={linkCls}>Messaggi<Count n={b.messages} /></Link>
       {pro && <Link href="/account" className={linkCls}>Le mie prenotazioni<Count n={b.customer_bookings} /></Link>}
-      <Link href={pro ? "/pro" : "/account"} className="btn-ghost gap-2 py-2">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pro ? "bg-navy-900 text-white" : "bg-teal-50 text-teal-600"}`}>
-          {pro ? "Noleggiatore" : "Cliente"}
-        </span>
-        <span className="max-w-[9rem] truncate">{who}</span>
-        <Count n={pro ? providerTotal(b) : b.customer_bookings} className="hidden sm:inline-flex" />
-        <Count n={total} className="sm:hidden" />
-      </Link>
+      <details data-menu className="group relative">
+        <summary className="btn-ghost cursor-pointer list-none gap-2 py-2 [&::-webkit-details-marker]:hidden">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pro ? "bg-navy-900 text-white" : "bg-teal-50 text-teal-600"}`}>
+            {pro ? "Noleggiatore" : "Cliente"}
+          </span>
+          <span className="max-w-[9rem] truncate">{who}</span>
+          <Count n={pro ? providerTotal(b) : b.customer_bookings} className="hidden sm:inline-flex" />
+          <Count n={total} className="sm:hidden" />
+          <svg viewBox="0 0 20 20" className="h-4 w-4 text-mute transition group-open:rotate-180" fill="currentColor"><path d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" /></svg>
+        </summary>
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-xl">
+          <p className="truncate px-3 py-2 text-xs text-mute">{user.email}</p>
+          {pro && <MenuLink href="/pro" label="Area noleggiatore" n={providerTotal(b)} />}
+          <MenuLink href={pro ? "/pro/messaggi" : "/messaggi"} label="Messaggi" n={b.messages} />
+          <MenuLink href="/account" label={pro ? "Le mie prenotazioni" : "Il mio account"} n={b.customer_bookings} />
+          {staff && <MenuLink href="/admin" label="Admin" n={adminTotal(b)} />}
+          <form action="/esci" method="post" className="mt-1 border-t border-line pt-1">
+            <button className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Esci</button>
+          </form>
+        </div>
+      </details>
+      <MenuCloser />
     </div>
+  );
+}
+
+function MenuLink({ href, label, n }: { href: string; label: string; n: number }) {
+  return (
+    <Link href={href} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">
+      {label}<Count n={n} />
+    </Link>
   );
 }
