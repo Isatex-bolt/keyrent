@@ -24,7 +24,15 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 py-5 text-center text-xs">© KeyRent.it</div>
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p>
+            © 2026 KeyRent.it è un servizio di <span className="text-white/90">ISATEX SRL</span> · P.IVA 00038630281 ·
+            Via Vittorio Veneto, 95 · 35019 Tombolo (PD)
+          </p>
+          <Link href="/admin" className="text-white/40 hover:text-white">Area staff</Link>
+        </div>
+      </div>
     </footer>
   );
 }

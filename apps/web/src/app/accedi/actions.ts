@@ -27,6 +27,9 @@ export async function signIn(formData: FormData) {
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   if (error) redirect(`/accedi?${q(tipo)}next=${encodeURIComponent(next)}&errore=${encodeURIComponent(it(error.message))}`);
   if (next) redirect(next);
+  // staff KeyRent: direttamente nell'area admin
+  const { data: staff } = await db.from("staff_members").select("active").eq("user_id", data.user!.id).maybeSingle();
+  if (staff?.active) redirect("/admin");
   // senza destinazione: noleggiatori nella loro area, clienti nel loro account
   const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
   const isProvider = (count ?? 0) > 0 || data.user?.user_metadata?.account_type === "provider";
