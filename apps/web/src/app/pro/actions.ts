@@ -175,6 +175,10 @@ export async function createListing(f: FormData) {
     await ensureCatalogEntry(payload.category, "", "").catch(() => undefined);
   }
   const db = await userDb();
+  // doppio invio dello stesso modulo: riapri la bozza appena creata invece di farne un'altra
+  const { data: same } = await db.from("listings").select("id").eq("organization_id", membership.organization_id)
+    .eq("title", payload.title).eq("status", "draft").gte("created_at", new Date(Date.now() - 2 * 60_000).toISOString()).limit(1);
+  if (same?.length) redirect(`/pro/mezzi/${same[0].id}?nuovo=1`);
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail("/pro/mezzi/nuovo", dbMessage(error.message));
   redirect(`/pro/mezzi/${data}?nuovo=1`);

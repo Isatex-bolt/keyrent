@@ -1,5 +1,7 @@
 "use client";
 
+import { useFormStatus } from "react-dom";
+
 import { useRef, useState } from "react";
 import { createListing } from "../../actions";
 import { searchCatalog, type CatalogEntry } from "@/data/catalog";
@@ -283,8 +285,18 @@ export function Wizard({ cats, attrs, locations }: { cats: Cat[]; attrs: Attr[];
         <button type="button" className="btn-ghost" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>← Indietro</button>
         {step < STEPS.length - 1
           ? <button type="button" className="btn-primary" onClick={next}>Avanti →</button>
-          : <button type="submit" className="btn-primary">Crea bozza</button>}
+          : <CreateButton />}
       </div>
     </form>
+  );
+}
+
+/** Un solo invio: il pulsante si blocca subito, così un doppio clic non crea due annunci. */
+function CreateButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className="btn-primary disabled:opacity-60">
+      {pending ? "Creazione in corso…" : "Crea bozza"}
+    </button>
   );
 }
