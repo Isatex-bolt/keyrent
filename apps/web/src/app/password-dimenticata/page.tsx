@@ -26,7 +26,7 @@ async function Form({ searchParams }: { searchParams: Promise<Record<string, str
   return (
     <form action={requestPasswordReset} className="space-y-4">
       <div><label className="label" htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required autoComplete="email" className="field" /></div>
+        <input id="email" name="email" type="email" required autoComplete="email" defaultValue={typeof sp.email === "string" ? sp.email : ""} className="field" /></div>
       <button className="btn-primary w-full">Inviami il link</button>
       <p className="text-center text-sm"><Link href="/accedi" className="text-teal-600">Torna all&apos;accesso</Link></p>
     </form>

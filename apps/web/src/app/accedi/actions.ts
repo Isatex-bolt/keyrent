@@ -56,6 +56,9 @@ export async function signUp(formData: FormData) {
       data: { first_name: firstName, last_name: lastName, account_type: tipo === "noleggiatore" ? "provider" : "customer" },
     },
   });
+  // email già registrata: Supabase risponde con errore oppure con un utente senza identità
+  const exists = error?.message === "User already registered" || (!error && data.user && (data.user.identities?.length ?? 0) === 0);
+  if (exists) redirect(`/accedi?${q(tipo)}${next ? `next=${encodeURIComponent(next)}&` : ""}esistente=1&email=${encodeURIComponent(email)}`);
   if (error) back(it(error.message));
   if (data.session) redirect(next); // conferma email disattivata
   redirect(`/registrati/controlla-email?email=${encodeURIComponent(email)}`);
