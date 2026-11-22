@@ -20,7 +20,7 @@ export async function AccountButton() {
   const pro = accountType(user, memberships) === "provider";
   const who = (user.user_metadata?.first_name as string | undefined) || user.email?.split("@")[0] || "";
   // account del team KeyRent (senza attività): solo area admin e messaggi al team
-  if (staff && !pro) {
+  if (staff && memberships.length === 0) {
     return (
       <div className="flex items-center gap-1">
         <Link href="/admin" className={linkCls}>Area admin<LiveCount keys={["admin_reviews", "admin_orgs"]} initial={b.admin_reviews + b.admin_orgs} /></Link>
