@@ -4,6 +4,7 @@ const nav: NavItem[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/revisione", label: "Revisione annunci", badge: "admin_reviews" },
   { href: "/admin/anagrafiche", label: "Anagrafiche", badge: "admin_orgs" },
+  { href: "/admin/catalogo", label: "Catalogo" },
   { href: "/admin/foto", label: "Foto catalogo" },
   { href: "/admin/home", label: "Contenuti home" },
 ];

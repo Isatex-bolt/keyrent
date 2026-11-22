@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
+import { ensureCatalogEntry } from "@/lib/catalogSync";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const cents = (f: FormData, k: string) => {
@@ -109,6 +110,11 @@ export async function createListing(f: FormData) {
     },
     prices: ["hour", "half_day", "day", "week"].map((unit) => ({ unit, price_cents: cents(f, `price_${unit}`) })),
   };
+  if (payload.make && payload.model) {
+    await ensureCatalogEntry(payload.category, payload.make, payload.model).catch((e) => console.error("catalogo", e));
+  } else if (payload.subcategory) {
+    await ensureCatalogEntry(payload.category, "", "").catch(() => undefined);
+  }
   const db = await userDb();
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail("/pro/mezzi/nuovo", dbMessage(error.message));

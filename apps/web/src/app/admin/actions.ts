@@ -248,3 +248,17 @@ export async function deleteDestination(f: FormData) {
   revalidatePath("/", "layout");
   redirect("/admin/home?ok=eliminata");
 }
+
+// ---------- Catalogo marche e modelli ----------
+export async function syncCatalogAction() {
+  await requireStaff();
+  const { syncCatalog } = await import("@/lib/catalogSync");
+  try {
+    const r = await syncCatalog();
+    revalidatePath("/admin/catalogo");
+    redirect(`/admin/catalogo?ok=${encodeURIComponent(`${r.makes}|${r.models}`)}`);
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // redirect
+    redirect(`/admin/catalogo?errore=${encodeURIComponent(e instanceof Error ? e.message : String(e))}`);
+  }
+}
