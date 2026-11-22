@@ -14,12 +14,12 @@ export async function getBadges(): Promise<Badges> {
   const db = await userDb();
   const [{ data }, notices, support] = await Promise.all([
     db.rpc("my_badges"),
-    db.rpc("my_support_badges"),
     db.from("listing_notices").select("kind").is("seen_at", null),
+    db.rpc("my_support_badges"),
   ]);
-  const b: Badges = { ...ZERO, ...(data ?? {}), ...(support.error ? {} : support.data ?? {}) };
+  const b: Badges = { ...ZERO, ...(data ?? {}), ...(support.error || typeof support.data !== "object" ? {} : support.data ?? {}) };
   // esiti delle revisioni non ancora visti (le richieste di modifica sono già contate tra gli annunci da sistemare)
-  const unseen = notices.error ? [] : (notices.data ?? []);
+  const unseen = notices.error || !Array.isArray(notices.data) ? [] : notices.data;
   b.listings_to_fix += unseen.filter((n: { kind: string }) => n.kind !== "changes_required").length;
   return b;
 }
