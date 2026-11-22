@@ -40,10 +40,7 @@ export function Wizard({ cats, attrs, locations }: { cats: Cat[]; attrs: Attr[];
   const shownTitle = titleTouched ? title : `${autoTitle}${year && autoTitle ? ` ${year}` : ""}`.trim();
   const city = locations.find((l) => l.id === loc)?.city ?? "";
   const subName = catObj?.subs.find((s) => s.slug === sub)?.name;
-  const autoDesc = shownTitle
-    ? `${shownTitle}${subName ? ` (${subName.toLowerCase()})` : ""} disponibile a noleggio${city ? ` a ${city}` : ""}. `
-      + "Mezzo curato e controllato prima di ogni consegna. Scrivi qui cosa è incluso (accessori, assicurazione, chilometri) e i consigli per il cliente."
-    : "";
+  const autoDesc = shownTitle ? `${shownTitle} disponibile per il noleggio. Contatta ora e realizza la tua offerta dedicata.` : "";
   const shownDesc = descTouched ? desc : autoDesc;
 
   function choose(e: CatalogEntry) {

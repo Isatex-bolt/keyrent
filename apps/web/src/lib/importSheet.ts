@@ -170,8 +170,7 @@ export async function parseWorkbook(buf: ArrayBuffer, locations: Loc[], cats: Ca
     const city = location?.city ?? "";
     let description = get("descrizione");
     if (description.length < 40) {
-      description = `${title}${sub ? ` (${sub.name.toLowerCase()})` : ""} disponibile a noleggio${city ? ` a ${city}` : ""}. `
-        + "Mezzo curato e controllato prima di ogni consegna." + (description ? ` ${description}` : "");
+      description = `${title} disponibile per il noleggio. Contatta ora e realizza la tua offerta dedicata.` + (description ? ` ${description}` : "");
     }
 
     rows.push({
