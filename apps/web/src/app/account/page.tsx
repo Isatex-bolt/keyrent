@@ -48,10 +48,12 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           <p className="font-semibold">Messaggi<Count n={badges.messages} /></p>
           <p className="mt-1 text-sm text-mute">Le conversazioni con i noleggiatori e con i tuoi clienti</p>
         </Link>
-        <Link href="/pro" className="card p-5 transition hover:border-teal-500/60">
-          <p className="font-semibold">{memberships.length ? "Area noleggiatore" : "Sei un noleggiatore?"}</p>
-          <p className="mt-1 text-sm text-mute">{memberships.length ? `${memberships[0].org.trade_name ?? memberships[0].org.legal_name}: mezzi, sedi, richieste` : "Registra la tua attività e pubblica i tuoi mezzi."}</p>
-        </Link>
+        {(memberships.length > 0 || !staff) && (
+          <Link href="/pro" className="card p-5 transition hover:border-teal-500/60">
+            <p className="font-semibold">{memberships.length ? "Area noleggiatore" : "Sei un noleggiatore?"}</p>
+            <p className="mt-1 text-sm text-mute">{memberships.length ? `${memberships[0].org.trade_name ?? memberships[0].org.legal_name}: mezzi, sedi, richieste` : "Registra la tua attività e pubblica i tuoi mezzi."}</p>
+          </Link>
+        )}
         {staff && (
           <Link href="/admin" className="card p-5 transition hover:border-teal-500/60">
             <p className="font-semibold">Area KeyRent</p>
