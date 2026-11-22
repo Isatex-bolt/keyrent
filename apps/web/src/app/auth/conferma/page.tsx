@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { AuthCard, FormError } from "@/components/AuthCard";
 import { userDb } from "@/lib/supabase/server";
+import { completePendingOrg } from "@/lib/pendingOrg";
 
 export const metadata = { title: "Conferma email" };
 
@@ -17,6 +18,7 @@ async function confirm(f: FormData) {
   const db = await userDb();
   const { data, error } = await db.auth.verifyOtp({ token_hash, type: TYPES.includes(type) ? type : "email" });
   const next = wanted ? safe(wanted) : data.user?.user_metadata?.account_type === "provider" ? "/pro" : "/account";
+  if (!error) await completePendingOrg();
   if (error) {
     redirect(`/accedi?errore=${encodeURIComponent("Il link è scaduto o è già stato usato. Se avevi già confermato, accedi con email e password.")}&next=${encodeURIComponent(next)}`);
   }

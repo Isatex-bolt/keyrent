@@ -41,6 +41,7 @@ export async function createOrganization(f: FormData) {
     pec: str(f, "pec") || null, sdi_code: str(f, "sdi_code") || null,
     legal_address: { street: str(f, "street"), city: str(f, "city"), postal_code: str(f, "postal_code"), province: str(f, "province").toUpperCase() },
   }).eq("id", orgId as string);
+  await db.auth.updateUser({ data: { pending_org: null } });
   revalidatePath("/", "layout");
   redirect("/pro/sedi?benvenuto=1");
 }

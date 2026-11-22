@@ -3,13 +3,13 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
+import { completePendingOrg } from "@/lib/pendingOrg";
 
 function safeNext(v: FormDataEntryValue | null) {
   const s = typeof v === "string" ? v : "";
   return s.startsWith("/") && !s.startsWith("//") ? s : "";
 }
 const tipoOf = (f: FormData) => (f.get("tipo") === "noleggiatore" ? "noleggiatore" : "cliente");
-const q = (tipo: string) => (tipo === "noleggiatore" ? "tipo=noleggiatore&" : "");
 
 const authErrors: Record<string, string> = {
   "Invalid login credentials": "Email o password non corretti.",
@@ -20,12 +20,13 @@ const it = (m: string) => authErrors[m] ?? (m.includes("rate limit") ? "Troppi t
 
 export async function signIn(formData: FormData) {
   const next = safeNext(formData.get("next"));
-  const tipo = tipoOf(formData);
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const db = await userDb();
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-  if (error) redirect(`/accedi?${q(tipo)}next=${encodeURIComponent(next)}&errore=${encodeURIComponent(it(error.message))}`);
+  if (error) redirect(`/accedi?${next ? `next=${encodeURIComponent(next)}&` : ""}email=${encodeURIComponent(email)}&errore=${encodeURIComponent(it(error.message))}`);
+  // noleggiatore appena confermato: crea l'attività con i dati della registrazione
+  await completePendingOrg();
   if (next) redirect(next);
   // staff KeyRent: direttamente nell'area admin
   const { data: staff } = await db.from("staff_members").select("active").eq("user_id", data.user!.id).maybeSingle();
@@ -36,31 +37,55 @@ export async function signIn(formData: FormData) {
   redirect(isProvider ? "/pro" : "/account");
 }
 
+const field = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
+
 export async function signUp(formData: FormData) {
   const tipo = tipoOf(formData);
+  const come = field(formData, "come") === "azienda" ? "azienda" : "privato";
   const next = safeNext(formData.get("next")) || (tipo === "noleggiatore" ? "/pro" : "/account");
-  const email = String(formData.get("email") ?? "").trim();
+  const email = field(formData, "email");
   const password = String(formData.get("password") ?? "");
-  const firstName = String(formData.get("first_name") ?? "").trim();
-  const lastName = String(formData.get("last_name") ?? "").trim();
-  const back = (msg: string) => redirect(`/registrati?${q(tipo)}next=${encodeURIComponent(next)}&errore=${encodeURIComponent(msg)}`);
+  const firstName = field(formData, "first_name");
+  const lastName = field(formData, "last_name");
+  const phone = field(formData, "phone");
+  const step = tipo === "noleggiatore" ? "tipo=noleggiatore" : `tipo=cliente&come=${come}`;
+  const back = (msg: string) => redirect(`/registrati?${step}&next=${encodeURIComponent(next)}&errore=${encodeURIComponent(msg)}`);
   if (!formData.get("terms")) back("Per registrarti devi accettare termini e privacy.");
   if (password.length < 8) back("La password deve avere almeno 8 caratteri.");
+
+  const meta: Record<string, unknown> = {
+    first_name: firstName, last_name: lastName, phone: phone || null,
+    account_type: tipo === "noleggiatore" ? "provider" : "customer",
+  };
+  const vat = field(formData, "vat_number").toUpperCase().replace(/\s+/g, "");
+  if (tipo === "noleggiatore") {
+    if (!field(formData, "legal_name") || !vat) back("Inserisci ragione sociale e partita IVA della tua attività.");
+    meta.pending_org = {
+      legal_name: field(formData, "legal_name"), vat_number: vat, trade_name: field(formData, "trade_name"),
+      street: field(formData, "street"), city: field(formData, "city"), postal_code: field(formData, "postal_code"),
+      province: field(formData, "province").toUpperCase(), business_email: field(formData, "business_email"),
+      business_phone: field(formData, "business_phone"), pec: field(formData, "pec"), sdi_code: field(formData, "sdi_code"),
+    };
+  } else {
+    meta.customer_kind = come;
+    if (come === "azienda") {
+      if (!field(formData, "company_name") || !vat) back("Inserisci ragione sociale e partita IVA dell'azienda.");
+      meta.company_name = field(formData, "company_name");
+      meta.vat_number = vat;
+    }
+  }
 
   const origin = (await headers()).get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const db = await userDb();
   const { data, error } = await db.auth.signUp({
     email, password,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      data: { first_name: firstName, last_name: lastName, account_type: tipo === "noleggiatore" ? "provider" : "customer" },
-    },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`, data: meta },
   });
   // email già registrata: Supabase risponde con errore oppure con un utente senza identità
   const exists = error?.message === "User already registered" || (!error && data.user && (data.user.identities?.length ?? 0) === 0);
-  if (exists) redirect(`/accedi?${q(tipo)}${next ? `next=${encodeURIComponent(next)}&` : ""}esistente=1&email=${encodeURIComponent(email)}`);
+  if (exists) redirect(`/accedi?${next ? `next=${encodeURIComponent(next)}&` : ""}esistente=1&email=${encodeURIComponent(email)}`);
   if (error) back(it(error.message));
-  if (data.session) redirect(next); // conferma email disattivata
+  if (data.session) { await completePendingOrg(); redirect(next); } // conferma email disattivata
   redirect(`/registrati/controlla-email?email=${encodeURIComponent(email)}`);
 }
 

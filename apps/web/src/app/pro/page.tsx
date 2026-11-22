@@ -5,6 +5,7 @@ import { accountType, requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { Badge, orgStatus, listingStatus } from "@/lib/status";
 import { OrgFields } from "@/components/OrgFields";
+import { pendingOrgOf } from "@/lib/pendingOrg";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
 import { createOrganization, switchOrganization } from "./actions";
 
@@ -31,12 +32,15 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
     );
   }
   if (!membership) {
+    const p = pendingOrgOf(user);
+    const org = p ? { ...p, legal_address: { street: p.street ?? "", city: p.city ?? "", postal_code: p.postal_code ?? "", province: p.province ?? "" } } : undefined;
     return (
       <div className="card p-6">
-        <ProHeader title="Registra la tua attività" subtitle="KeyRent è riservato a operatori professionali. Dopo la verifica potrai pubblicare i tuoi mezzi." />
+        <ProHeader title={p ? "Conferma i dati della tua attività" : "Registra la tua attività"}
+          subtitle={p ? "Abbiamo compilato i dati inseriti in registrazione: controllali e conferma." : "KeyRent è riservato a operatori professionali. Dopo la verifica potrai pubblicare i tuoi mezzi."} />
         <Flash sp={sp} />
         <form action={createOrganization} className="space-y-6">
-          <OrgFields />
+          <OrgFields org={org} />
           <button className="btn-primary">Registra attività</button>
         </form>
       </div>
