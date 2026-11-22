@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/catalog";
 import { CategoryIcon } from "./CategoryIcon";
 import { PlaceInput } from "./PlaceInput";
+import { DateField } from "./DateField";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
@@ -51,8 +52,8 @@ export function HomeSearch() {
       </div>
 
       <form action="/cerca" method="get" className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1.3fr_1fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
             <label htmlFor="h-luogo" className="label">Dove</label>
             <PlaceInput id="h-luogo" />
           </div>
@@ -60,13 +61,13 @@ export function HomeSearch() {
             <>
               <div>
                 <label htmlFor="h-dal" className="label">Ritiro</label>
-                <input id="h-dal" name="dal" type="date" min={today} className="field" value={dates.dal}
-                  onChange={(e) => { setQuick(null); setDates((d) => ({ ...d, dal: e.target.value, al: d.al && d.al > e.target.value ? d.al : "" })); }} />
+                <DateField id="h-dal" name="dal" min={today} value={dates.dal} placeholder="Data"
+                  onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, dal: v, al: d.al && d.al > v ? d.al : "" })); }} />
               </div>
               <div>
                 <label htmlFor="h-al" className="label">Riconsegna</label>
-                <input id="h-al" name="al" type="date" min={dates.dal || today} className="field" value={dates.al}
-                  onChange={(e) => { setQuick(null); setDates((d) => ({ ...d, al: e.target.value })); }} />
+                <DateField id="h-al" name="al" min={dates.dal || today} value={dates.al} placeholder="Data"
+                  onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, al: v })); }} />
               </div>
               <input type="hidden" name="ora_ritiro" value={dates.ora_ritiro} />
               <input type="hidden" name="ora_riconsegna" value={dates.ora_riconsegna} />
@@ -75,7 +76,7 @@ export function HomeSearch() {
             <>
               <div>
                 <label htmlFor="h-da" className="label">Da quando</label>
-                <input id="h-da" name="dal" type="date" min={today} className="field" value={longFrom} onChange={(e) => setLongFrom(e.target.value)} />
+                <DateField id="h-da" name="dal" min={today} value={longFrom} onChange={setLongFrom} placeholder="Data" />
               </div>
               <div>
                 <label htmlFor="h-mesi" className="label">Per quanto</label>
@@ -101,11 +102,11 @@ export function HomeSearch() {
 
         <fieldset>
           <legend className="label">Cosa</legend>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+          <div className="flex flex-wrap gap-2">
             <input type="hidden" name="cat" value={cat} />
             {[{ slug: "", name: "Tutto" }, ...CATEGORIES].map((c) => (
               <button key={c.slug || "all"} type="button" aria-pressed={cat === c.slug} onClick={() => setCat(c.slug)}
-                className={`chip flex-none ${cat === c.slug ? "chip-on" : ""}`}>
+                className={`chip ${cat === c.slug ? "chip-on" : ""}`}>
                 {c.slug && <CategoryIcon slug={c.slug} className="h-4 w-4" />}
                 {c.name}
               </button>
@@ -133,11 +134,11 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
       </div>
       <div>
         <label htmlFor="s-dal" className="label">Ritiro</label>
-        <input id="s-dal" name="dal" type="date" className="field" defaultValue={values.dal ?? ""} />
+        <DateField id="s-dal" name="dal" defaultValue={values.dal ?? ""} />
       </div>
       <div>
         <label htmlFor="s-al" className="label">Riconsegna</label>
-        <input id="s-al" name="al" type="date" className="field" defaultValue={values.al ?? ""} />
+        <DateField id="s-al" name="al" defaultValue={values.al ?? ""} />
       </div>
       {values.ora_ritiro && <input type="hidden" name="ora_ritiro" value={values.ora_ritiro} />}
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}

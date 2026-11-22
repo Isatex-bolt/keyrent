@@ -1,3 +1,4 @@
+import { DateField } from "@/components/DateField";
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -151,11 +152,11 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
             <form method="get" className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label" htmlFor="q-dal">Ritiro</label>
-                <input id="q-dal" name="dal" type="date" className="field" defaultValue={dal} min={from} />
+                <DateField id="q-dal" name="dal" defaultValue={dal} min={from} />
               </div>
               <div>
                 <label className="label" htmlFor="q-al">Riconsegna</label>
-                <input id="q-al" name="al" type="date" className="field" defaultValue={al} min={from} />
+                <DateField id="q-al" name="al" defaultValue={al} min={from} />
               </div>
               <button className="btn-ghost col-span-2" type="submit">Calcola prezzo</button>
             </form>

@@ -1,3 +1,4 @@
+import { DateField } from "@/components/DateField";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -51,10 +52,10 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
       <Flash sp={sp} />
 
       <form method="get" className="card grid gap-3 p-5 sm:grid-cols-[1fr_auto_1fr_auto_auto]">
-        <div><label className="label" htmlFor="dal">Ritiro</label><input id="dal" name="dal" type="date" required min={todayRome()} defaultValue={dal} className="field" /></div>
+        <div><label className="label" htmlFor="dal">Ritiro</label><DateField id="dal" name="dal" required min={todayRome()} defaultValue={dal} /></div>
         <div><label className="label" htmlFor="ora_ritiro">Ora</label>
           <select id="ora_ritiro" name="ora_ritiro" defaultValue={oraR} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select></div>
-        <div><label className="label" htmlFor="al">Riconsegna</label><input id="al" name="al" type="date" required min={todayRome()} defaultValue={al} className="field" /></div>
+        <div><label className="label" htmlFor="al">Riconsegna</label><DateField id="al" name="al" required min={todayRome()} defaultValue={al} /></div>
         <div><label className="label" htmlFor="ora_riconsegna">Ora</label>
           <select id="ora_riconsegna" name="ora_riconsegna" defaultValue={oraC} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select></div>
         <div className="flex items-end"><button className="btn-ghost w-full">Aggiorna prezzo</button></div>

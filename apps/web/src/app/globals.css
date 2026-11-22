@@ -59,3 +59,17 @@ body { background: var(--color-canvas); color: var(--color-ink); }
   box-shadow: 0 1px 2px rgba(1, 25, 56, 0.08), 0 8px 24px rgba(1, 25, 56, 0.16);
 }
 .mapboxgl-ctrl-attrib.mapboxgl-compact { @apply rounded-full !bg-white/70; }
+
+/* iPhone: i campi data hanno una larghezza minima propria e uscivano dal riquadro */
+input[type="date"], input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+  min-height: 3.1rem;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; }
+.date-empty { color: transparent; }
+.date-empty:focus { color: inherit; }
