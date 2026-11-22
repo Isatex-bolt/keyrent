@@ -12,7 +12,7 @@ import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
 import { AiPhotoHelper } from "./AiPhotoHelper";
 import { settingsFor } from "@/lib/aiImage";
-import { deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../actions";
+import { deleteDraftListing, deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../actions";
 
 export const maxDuration = 90;
 export const metadata = { title: "Scheda annuncio" };
@@ -74,6 +74,12 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
       {edit && (
         <div className="card flex flex-wrap items-center gap-3 p-4">
           {draftLike && <StateButton id={id} to="pending_review" label="Invia per approvazione" primary />}
+          {l.status === "draft" && (
+            <form action={deleteDraftListing} className="ml-auto">
+              <input type="hidden" name="id" value={id} />
+              <button className="rounded-xl px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">Elimina bozza</button>
+            </form>
+          )}
           {l.status === "published" && <>
             <Link href={listingHref({ id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>
             <StateButton id={id} to="unpublished" label="Togli dalla ricerca" />

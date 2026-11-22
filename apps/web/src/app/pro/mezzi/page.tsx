@@ -36,7 +36,7 @@ async function Mezzi({ searchParams }: { searchParams: SP }) {
           <Link href="/pro/mezzi/nuovo" className="btn-primary">+ Aggiungi mezzo</Link>
         </div>
       )} />
-      <Flash sp={sp} />
+      <Flash sp={sp} ok={{ eliminato: "Bozza eliminata." }} />
       {(notices?.length ?? 0) > 0 && (
         <div className="mb-4 space-y-2">
           {((notices ?? []) as unknown as Notice[]).map((n) => <NoticeRow key={n.id} n={n} />)}

@@ -20,7 +20,7 @@ async function Queue({ searchParams }: { searchParams: SP }) {
     .eq("status", "pending_review").order("submitted_at");
   if (revErr) throw new Error(`Coda revisione non caricata: ${revErr.message}`);
   const { data: all, error: allErr } = await db.from("listings").select("id, title, status, updated_at, organizations(legal_name)")
-    .in("status", ["draft", "published", "changes_required", "suspended", "unpublished", "rejected"]).order("updated_at", { ascending: false }).limit(30);
+    .in("status", ["published", "changes_required", "suspended", "unpublished", "rejected"]).order("updated_at", { ascending: false }).limit(30);
   if (allErr) throw new Error(`Annunci non caricati: ${allErr.message}`);
   type R = { id: string; number: number; submitted_at: string; snapshot: { changes?: object };
     listing: { id: string; title: string; status: string; organizations: { legal_name: string; trade_name: string | null } } };
@@ -44,6 +44,7 @@ async function Queue({ searchParams }: { searchParams: SP }) {
       </ul>
       <section>
         <h2 className="mb-2 font-semibold">Altri annunci</h2>
+        <p className="mb-2 text-xs text-mute">Le bozze dei noleggiatori non compaiono: arrivano qui solo quando le inviano per l&apos;approvazione.</p>
         <ul className="card divide-y divide-line">
           {((all ?? []) as unknown as { id: string; title: string; status: string; organizations: { legal_name: string } }[]).map((l) => (
             <li key={l.id}><Link href={`/admin/revisione/${l.id}`} className="flex items-center justify-between gap-3 p-3 text-sm hover:bg-canvas">

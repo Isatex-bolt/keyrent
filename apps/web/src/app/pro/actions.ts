@@ -108,6 +108,24 @@ export async function toggleLocation(f: FormData) {
   redirect("/pro/sedi");
 }
 
+/** Elimina un annuncio mai inviato (bozza), con le sue foto. */
+export async function deleteDraftListing(f: FormData) {
+  const { membership } = await editor();
+  const id = str(f, "id");
+  const admin = serviceDb();
+  const { data: l } = await admin.from("listings").select("id, status, organization_id").eq("id", id).maybeSingle();
+  if (!l || l.organization_id !== membership.organization_id || l.status !== "draft") fail(`/pro/mezzi/${id}`, "Si possono eliminare solo le bozze.");
+  const { count } = await admin.from("bookings").select("id", { count: "exact", head: true }).eq("listing_id", id);
+  if ((count ?? 0) > 0) fail(`/pro/mezzi/${id}`, "Questo annuncio ha prenotazioni: non si può eliminare.");
+  const { data: media } = await admin.from("listing_media").select("storage_path").eq("listing_id", id);
+  const paths = (media ?? []).map((m) => m.storage_path).filter(Boolean);
+  if (paths.length) await admin.storage.from("listings").remove(paths);
+  const { error } = await admin.from("listings").delete().eq("id", id);
+  if (error) fail(`/pro/mezzi/${id}`, dbMessage(error.message));
+  revalidatePath("/pro/mezzi");
+  redirect("/pro/mezzi?ok=eliminato");
+}
+
 /** Posizione di un indirizzo italiano (Mapbox, lato server). */
 async function geocode(q: string): Promise<{ lat: number; lng: number } | null> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
