@@ -33,6 +33,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
   const { membership } = await requireProvider(`/pro/mezzi/${id}`);
   if (!membership) redirect("/pro");
   const db = await userDb();
+  await db.rpc("mark_listing_notices_seen", { p_listing: id });
   const [{ data: l }, { data: media }, { data: prices }, { data: terms }, { data: revs }, { data: units }] = await Promise.all([
     db.from("listings").select("*, categories(name_it, slug), makes(name), models(name), locations(name, city)").eq("id", id).maybeSingle(),
     db.from("listing_media").select("id, storage_path, moderation_status, sort, is_indicative").eq("listing_id", id).order("sort"),
