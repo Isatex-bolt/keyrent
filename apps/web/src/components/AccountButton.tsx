@@ -48,7 +48,6 @@ export async function AccountButton() {
   }
   return (
     <div className="flex items-center gap-1">
-      {!pro && !staff && partner}
       {staff && <Link href="/admin" className={linkCls}>Admin<LiveCount keys={["admin"]} initial={adminTotal(b)} /></Link>}
       <Link href={pro ? "/pro/messaggi" : "/messaggi"} className={linkCls}>Messaggi<LiveCount keys={["messages"]} initial={b.messages} /></Link>
       {pro && <Link href="/account" className={linkCls}>Le mie prenotazioni<LiveCount keys={["customer_bookings"]} initial={b.customer_bookings} /></Link>}
