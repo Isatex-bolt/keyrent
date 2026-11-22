@@ -1,4 +1,4 @@
-import { DateField } from "@/components/DateField";
+import { BookingBox } from "@/components/BookingBox";
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,7 +12,6 @@ import { attributesForCategory, getBusyDays, getCancellationRules, getListing, q
 type Raw = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
 
-const HOURS = Array.from({ length: 31 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
 export default function ListingPage({ params, searchParams }: PageProps<"/mezzo/[ref]">) {
   return (
@@ -56,7 +55,6 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     .filter(Boolean) as { label: string; value: string }[];
 
   const sortedPrices = [...prices].sort((a, b) => ["hour", "half_day", "day", "week"].indexOf(a.unit) - ["hour", "half_day", "day", "week"].indexOf(b.unit));
-  const requestHref = `/prenota/${id}?${new URLSearchParams({ ...(dal ? { dal, ora_ritiro: oraR } : {}), ...(al ? { al, ora_riconsegna: oraC } : {}) })}`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
@@ -153,31 +151,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
                 ))}
               </ul>
             </div>
-            <form method="get" className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label" htmlFor="q-dal">Ritiro</label>
-                <DateField id="q-dal" name="dal" defaultValue={dal} min={from} placeholder="Data" />
-                <select aria-label="Ora di ritiro" name="ora_ritiro" defaultValue={oraR} className="field mt-2">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
-              </div>
-              <div>
-                <label className="label" htmlFor="q-al">Riconsegna</label>
-                <DateField id="q-al" name="al" defaultValue={al} min={from} placeholder="Data" />
-                <select aria-label="Ora di riconsegna" name="ora_riconsegna" defaultValue={oraC} className="field mt-2">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
-              </div>
-              <button className="btn-ghost col-span-2" type="submit">Calcola prezzo</button>
-            </form>
-            {quote && !("error" in quote) ? (
-              <div className="rounded-xl bg-navy-50 p-4">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-mute">Totale noleggio</span>
-                  <span className="text-2xl font-bold">{euro(quote.total_cents)}</span>
-                </div>
-                <p className="mt-1 text-xs text-mute">{quote.qty} × {priceUnitLabel[quote.unit]} · cauzione esclusa</p>
-              </div>
-            ) : quote && "error" in quote ? (
-              <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{quote.error}</p>
-            ) : null}
-            <Link href={requestHref} className="btn-primary w-full">Richiedi prenotazione</Link>
+            <BookingBox id={id} from={from} initial={{ dal, al, oraR, oraC }}
+              initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
             <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
             <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost w-full">Fai una domanda</Link>
           </div>
