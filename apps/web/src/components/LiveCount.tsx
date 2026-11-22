@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { Count } from "./Count";
 
 type Badges = Record<string, number>;
-const PROVIDER = ["requests", "provider_bookings", "listings_to_fix"];
-const ADMIN = ["admin_reviews", "admin_orgs"];
+const PROVIDER = ["requests", "provider_bookings", "listings_to_fix", "support"];
+const ADMIN = ["admin_reviews", "admin_orgs", "admin_support"];
 
 // archivio condiviso: un solo aggiornamento per tutti i pallini della pagina
 let state: Badges | null = null;

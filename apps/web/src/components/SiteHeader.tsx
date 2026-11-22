@@ -9,9 +9,6 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" aria-label="KeyRent, home"><Logo /></Link>
         <nav className="flex items-center gap-2 text-sm">
-          <Link href="/diventa-partner" className="hidden rounded-lg px-3 py-2 font-medium text-mute hover:text-navy-900 sm:block">
-            Sei un noleggiatore?
-          </Link>
           <Suspense fallback={<span className="btn-ghost opacity-60">Accedi</span>}><AccountButton /></Suspense>
         </nav>
       </div>

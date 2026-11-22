@@ -36,6 +36,8 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Email: dominio keyrent.it verificato su Resend (record DNS su Register.it, li gestisce l'utente). Supabase Auth usa SMTP Resend.
   Le notifiche partono da `lib/email.ts` (flushEmails) subito dopo le azioni (`sendEmailsSoon`, after()) e con il cron giornaliero
   /api/email/flush (CRON_SECRET). Senza RESEND_API_KEY restano pending.
+- Assistenza (0016 `support_threads`/`support_messages`): /assistenza (clienti), /pro/assistenza, /admin/messaggi; email support_to_staff/support_reply.
+  Account solo staff (info@keyrent.it): header con pill ADMIN, niente area cliente.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

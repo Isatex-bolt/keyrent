@@ -2,6 +2,7 @@ import { SideNav, type NavItem } from "@/components/SideNav";
 
 const nav: NavItem[] = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/messaggi", label: "Messaggi", badge: "admin_support" },
   { href: "/admin/revisione", label: "Revisione annunci", badge: "admin_reviews" },
   { href: "/admin/anagrafiche", label: "Anagrafiche", badge: "admin_orgs" },
   { href: "/admin/catalogo", label: "Catalogo" },

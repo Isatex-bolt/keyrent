@@ -71,6 +71,20 @@ function compose(type: string, p: Payload, side: "provider" | "customer"): Mail 
         intro: side === "provider" ? "Un cliente ti ha scritto. Rispondere in fretta aumenta le prenotazioni." : "Il noleggiatore ti ha risposto.",
         cta: { label: "Leggi e rispondi", href: `${SITE}/${side === "provider" ? "pro/messaggi" : "messaggi"}/${p.conversation_id}` },
       };
+    case "support_to_staff":
+      return {
+        subject: `Nuovo messaggio al team: ${p.subject ?? ""}`.trim(),
+        title: "Un utente ha scritto al team KeyRent",
+        intro: `Argomento: “${p.subject ?? ""}”. Rispondi dall'area admin: la risposta gli arriva nel sito e per email.`,
+        cta: { label: "Leggi e rispondi", href: `${SITE}/admin/messaggi/${p.thread_id}` },
+      };
+    case "support_reply":
+      return {
+        subject: "Il team KeyRent ti ha risposto",
+        title: "Il team KeyRent ti ha risposto",
+        intro: `Hai una risposta alla tua richiesta “${p.subject ?? ""}”.`,
+        cta: { label: "Leggi la risposta", href: `${SITE}${p.path ?? "/assistenza"}` },
+      };
     default:
       if (LISTING_TEXT[type]) {
         const [subject, text] = LISTING_TEXT[type];
@@ -134,19 +148,20 @@ export async function flushEmails(limit = 25) {
     if (!r.user_id) { await finish("skipped", { error: "utente non trovato" }); skipped++; continue; }
 
     // messaggi: al massimo un'email ogni 15 minuti per conversazione e destinatario
-    if (r.template === "new_message") {
+    const threadKey = r.template === "new_message" ? "conversation_id" : r.template.startsWith("support_") ? "thread_id" : null;
+    if (threadKey) {
       const since = new Date(Date.now() - 15 * 60_000).toISOString();
       const { data: recent } = await db.from("email_deliveries")
-        .select("id, notifications!inner(payload)").eq("user_id", r.user_id).eq("template", "new_message")
+        .select("id, notifications!inner(payload)").eq("user_id", r.user_id).eq("template", r.template)
         .eq("status", "sent").gte("updated_at", since)
-        .eq("notifications.payload->>conversation_id", String(payload.conversation_id ?? ""));
+        .eq(`notifications.payload->>${threadKey}`, String(payload[threadKey] ?? ""));
       if (recent?.length) { await finish("skipped", { error: "già avvisato da poco" }); skipped++; continue; }
     }
 
     const { data: u } = await db.auth.admin.getUserById(r.user_id);
     const email = u?.user?.email;
     if (!email) { await finish("skipped", { error: "email mancante" }); skipped++; continue; }
-    const providerOnly = r.template.startsWith("listing_") || r.template === "payout_paid" || r.template === "booking_requested";
+    const providerOnly = r.template.startsWith("support_") || r.template.startsWith("listing_") || r.template === "payout_paid" || r.template === "booking_requested";
     const isProvider = providerOnly || await providerSide(db, payload, r.user_id);
     const mail = compose(r.template, payload, isProvider ? "provider" : "customer");
     if (!mail) { await finish("skipped", { error: "tipo senza email" }); skipped++; continue; }
