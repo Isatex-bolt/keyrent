@@ -1,5 +1,7 @@
 "use server";
 
+import { sendEmailsSoon } from "@/lib/email";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { serviceDb } from "@/lib/supabase/admin";
@@ -10,6 +12,7 @@ import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function reviewListing(f: FormData) {
+  sendEmailsSoon();
   const { user } = await requireStaff();
   const id = str(f, "id");
   const to = str(f, "to");
@@ -24,6 +27,7 @@ export async function reviewListing(f: FormData) {
 }
 
 export async function reviewChanges(f: FormData) {
+  sendEmailsSoon();
   const { user } = await requireStaff();
   const id = str(f, "listing_id");
   const approve = str(f, "approve") === "true";

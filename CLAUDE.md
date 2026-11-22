@@ -33,6 +33,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Fase 2a FATTA (18/11): badge (0009), selettore attività in /pro, ricerca mappa `public.search_map` (0010, bbox + totale per date + ⚡),
   nuova home (Prenota/Lungo termine), campo Dove con Mapbox Search Box (token pubblico NEXT_PUBLIC_MAPBOX_TOKEN su Vercel), /cerca con mappa,
   cluster, "Cerca in questa zona", pannello mobile a 3 altezze. api.mapbox.com non raggiungibile dalla sandbox: la mappa la prova l'utente.
+- Email: dominio keyrent.it verificato su Resend (record DNS su Register.it, li gestisce l'utente). Supabase Auth usa SMTP Resend.
+  Le notifiche partono da `lib/email.ts` (flushEmails) subito dopo le azioni (`sendEmailsSoon`, after()) e con il cron giornaliero
+  /api/email/flush (CRON_SECRET). Senza RESEND_API_KEY restano pending.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

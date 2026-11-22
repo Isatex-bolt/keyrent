@@ -1,5 +1,7 @@
 "use server";
 
+import { sendEmailsSoon } from "@/lib/email";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
@@ -8,6 +10,7 @@ import { userDb } from "@/lib/supabase/server";
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function startConversation(f: FormData) {
+  sendEmailsSoon();
   const listing = str(f, "listing_id");
   await requireUser(`/messaggi/nuovo?annuncio=${listing}`);
   const body = str(f, "body");
@@ -19,6 +22,7 @@ export async function startConversation(f: FormData) {
 }
 
 export async function sendMessage(f: FormData) {
+  sendEmailsSoon();
   const conv = str(f, "conversation_id");
   const base = str(f, "base") === "/pro/messaggi" ? "/pro/messaggi" : "/messaggi";
   await requireUser(`${base}/${conv}`);

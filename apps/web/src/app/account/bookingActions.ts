@@ -1,5 +1,7 @@
 "use server";
 
+import { sendEmailsSoon } from "@/lib/email";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
@@ -11,6 +13,7 @@ import { bookingError } from "@/lib/bookings";
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function requestBooking(f: FormData) {
+  sendEmailsSoon();
   const listing = str(f, "listing_id");
   const dal = str(f, "dal"), al = str(f, "al");
   const back = `/prenota/${listing}?dal=${dal}&al=${al}`;
@@ -35,6 +38,7 @@ export async function requestBooking(f: FormData) {
 }
 
 export async function cancelMyBooking(f: FormData) {
+  sendEmailsSoon();
   const id = str(f, "id");
   const user = await requireUser(`/account/prenotazioni/${id}`);
   const { error } = await serviceDb().rpc("svc_cancel_booking", { p_booking: id, p_actor: user.id, p_side: "customer", p_reason: str(f, "reason") || null });

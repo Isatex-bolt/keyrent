@@ -1,5 +1,7 @@
 "use server";
 
+import { sendEmailsSoon } from "@/lib/email";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { userDb } from "@/lib/supabase/server";
@@ -214,6 +216,7 @@ export async function deleteMedia(f: FormData) {
 
 // ---------- Richieste di prenotazione ----------
 export async function respondBooking(f: FormData) {
+  sendEmailsSoon();
   const ctx = await requireProvider("/pro/richieste");
   if (!ctx.membership) redirect("/pro");
   const id = str(f, "id");
