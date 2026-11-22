@@ -1,7 +1,6 @@
-import { becomeProvider } from "../accedi/actions";
 import { Suspense } from "react";
 import Link from "next/link";
-import { accountType, requireProvider } from "@/lib/auth";
+import { requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { Badge, orgStatus, listingStatus } from "@/lib/status";
 import { OrgFields } from "@/components/OrgFields";
@@ -18,19 +17,6 @@ export default function Page({ searchParams }: PageProps<"/pro">) {
 async function Dashboard({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const { user, membership, memberships } = await requireProvider("/pro");
-  if (!membership && accountType(user, memberships) === "customer") {
-    return (
-      <div className="card p-6">
-        <ProHeader title="Questo è un account cliente" subtitle={`Sei entrato come ${user.email}, registrato per noleggiare.`} />
-        <p className="text-sm text-mute">L&apos;area noleggiatore serve a chi pubblica i propri mezzi con un&apos;attività professionale (P.IVA).</p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <form action="/esci" method="post"><input type="hidden" name="next" value="/accedi?tipo=noleggiatore" /><button className="btn-primary">Esci e accedi come noleggiatore</button></form>
-          <form action={becomeProvider}><button className="btn-ghost">Usa questo account anche come noleggiatore</button></form>
-          <Link href="/account" className="btn-ghost">Torna al mio account</Link>
-        </div>
-      </div>
-    );
-  }
   if (!membership) {
     const p = pendingOrgOf(user);
     const org = p ? { ...p, legal_address: { street: p.street ?? "", city: p.city ?? "", postal_code: p.postal_code ?? "", province: p.province ?? "" } } : undefined;
@@ -41,7 +27,11 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
         <Flash sp={sp} />
         <form action={createOrganization} className="space-y-6">
           <OrgFields org={org} />
-          <button className="btn-primary">Registra attività</button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="btn-primary">Registra attività</button>
+            {!p && <Link href="/account" className="btn-ghost">Annulla, resto cliente</Link>}
+          </div>
+          {!p && <p className="text-xs text-mute">Finché non registri l&apos;attività il tuo account resta un account cliente.</p>}
         </form>
       </div>
     );

@@ -33,7 +33,7 @@ export async function signIn(formData: FormData) {
   if (staff?.active) redirect("/admin");
   // senza destinazione: noleggiatori nella loro area, clienti nel loro account
   const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
-  const isProvider = (count ?? 0) > 0 || data.user?.user_metadata?.account_type === "provider";
+  const isProvider = (count ?? 0) > 0 || !!data.user?.user_metadata?.pending_org;
   redirect(isProvider ? "/pro" : "/account");
 }
 
@@ -99,15 +99,6 @@ export async function sendMagicLink(formData: FormData) {
   });
   if (error) redirect(`/accedi?next=${encodeURIComponent(next)}&errore=${encodeURIComponent(it(error.message))}`);
   redirect(`/registrati/controlla-email?email=${encodeURIComponent(email)}&tipo=link`);
-}
-
-/** Un cliente che vuole anche pubblicare mezzi: diventa account noleggiatore. */
-export async function becomeProvider() {
-  const db = await userDb();
-  const { data } = await db.auth.getUser();
-  if (!data.user) redirect("/accedi?tipo=noleggiatore&next=/pro");
-  await db.auth.updateUser({ data: { account_type: "provider" } });
-  redirect("/pro");
 }
 
 /** Password dimenticata: email con il link per impostarne una nuova (risposta uguale anche se l'email non esiste). */

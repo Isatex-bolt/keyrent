@@ -65,5 +65,6 @@ export type AccountType = "provider" | "customer";
 /** Tipo di account: scelto in registrazione (metadati), oppure noleggiatore se fa già parte di un'attività. */
 export function accountType(user: { user_metadata?: Record<string, unknown> } | null, memberships: unknown[] = []): AccountType {
   if (memberships.length > 0) return "provider";
-  return user?.user_metadata?.account_type === "provider" ? "provider" : "customer";
+  // noleggiatore appena registrato, con l'attività in attesa di essere creata
+  return user?.user_metadata?.pending_org ? "provider" : "customer";
 }
