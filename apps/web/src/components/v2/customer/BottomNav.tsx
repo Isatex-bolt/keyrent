@@ -19,7 +19,7 @@ const ITEMS: { k: keyof typeof I; label: string; href: string; match: string[] }
   { k: "messaggi", label: "Messaggi", href: "/messaggi", match: ["/messaggi"] },
   { k: "profilo", label: "Profilo", href: "/account/profilo", match: ["/account/profilo", "/account/dati", "/account/azienda", "/account/password", "/assistenza"] },
 ];
-const HIDDEN = ["/pro", "/admin", "/accedi", "/registrati", "/auth", "/password-dimenticata", "/esci"];
+const HIDDEN = ["/pro", "/admin", "/accedi", "/registrati", "/auth", "/password-dimenticata", "/esci", "/preview"];
 
 export function BottomNav() {
   const path = usePathname();
