@@ -40,6 +40,13 @@ async function Billing({ searchParams }: { searchParams: Promise<Record<string, 
       <p className="text-sm text-mute">{org ? `Usati quando prenoti come ${org.legal_name}.` : "Noleggi mezzi per la tua azienda e ricevi fatture e documenti intestati. È diverso dall'attività di noleggio: per pubblicare mezzi c'è un percorso a parte."}</p>
       <FormNotice message={sp.ok ? "Dati salvati." : undefined} />
       <FormError message={typeof sp.errore === "string" ? sp.errore : undefined} />
+      {sp.esistente && (
+        <div role="alert" className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-950">Azienda già esistente</p>
+          <p className="text-sm text-amber-950/80">Questa partita IVA è già registrata su KeyRent. Contatta il team KeyRent per recuperare gli accessi aziendali.</p>
+          <Link href="/assistenza" className="btn-primary inline-flex min-h-11">Contatta il team KeyRent</Link>
+        </div>
+      )}
       <form action={org ? updateBilling : createRenterOrg} className="grid grid-cols-2 gap-3 rounded-2xl border border-line bg-white p-4">
         {org && <input type="hidden" name="id" value={org.id} />}
         {org ? <F n="legal_name" l="Ragione sociale" d={org.legal_name} ro /> : <F n="legal_name" l="Ragione sociale" />}

@@ -1,5 +1,7 @@
 "use client";
 
+import { DeliveryFields } from "@/components/DeliveryFields";
+
 import { useFormStatus } from "react-dom";
 
 import { useRef, useState } from "react";
@@ -13,7 +15,11 @@ type Loc = { id: string; name: string; city: string };
 
 const STEPS = ["Il mezzo", "Caratteristiche", "Prezzi e condizioni", "Sede e descrizione", "Riepilogo"];
 
-export function Wizard({ cats, attrs, locations }: { cats: Cat[]; attrs: Attr[]; locations: Loc[] }) {
+export function Wizard({ cats, attrs, locations, action = createListing, orgId }: {
+  cats: Cat[]; attrs: Attr[]; locations: Loc[];
+  /** il team KeyRent prepara l'annuncio per un noleggiatore: azione e attività diverse */
+  action?: (f: FormData) => Promise<void>; orgId?: string;
+}) {
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<CatalogEntry | null>(null);
   const [manual, setManual] = useState(false);
@@ -68,7 +74,8 @@ export function Wizard({ cats, attrs, locations }: { cats: Cat[]; attrs: Attr[];
   const cv = kw && Number(kw) > 0 ? Math.round(Number(kw) / 0.73549875) : "";
 
   return (
-    <form ref={formRef} action={createListing} className="card overflow-visible p-5 sm:p-6">
+    <form ref={formRef} action={action} className="card overflow-visible p-5 sm:p-6">
+      {orgId && <input type="hidden" name="org_id" value={orgId} />}
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs font-semibold text-mute">
           <span>Passo {step + 1} di {STEPS.length}</span><span>{STEPS[step]}</span>
@@ -229,6 +236,10 @@ export function Wizard({ cats, attrs, locations }: { cats: Cat[]; attrs: Attr[];
             <div><label className="label" htmlFor="min_driver_age">Età minima</label><input id="min_driver_age" name="min_driver_age" type="number" min={14} max={99} className="field" placeholder="Es. 21" /></div>
             <div><label className="label" htmlFor="included_km_per_day">Km inclusi al giorno</label><input id="included_km_per_day" name="included_km_per_day" type="number" min={0} className="field" placeholder="Vuoto = illimitati" /></div>
           </div>
+        </div>
+        <div>
+          <h3 className="mb-3 font-semibold">Consegna a domicilio</h3>
+          <DeliveryFields />
         </div>
         <details className="rounded-2xl border border-line p-4">
           <summary className="cursor-pointer text-sm font-semibold text-teal-600">Altre condizioni (facoltative)</summary>

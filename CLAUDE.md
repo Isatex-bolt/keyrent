@@ -56,6 +56,11 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   kind 'provider' = ATTIVITÀ DI NOLEGGIO. Nessuna capacità automatica (lib/auth getCapabilities). P.IVA unica per tipo
   (organizations_kind_vat_key). Profilo /account/profilo: card Privato / Azienda / Attività di noleggio; /account/privato
   aggiunge il profilo privato (enable_personal_renting). Prenota come: solo profili cliente; noleggiatore puro non prenota.
+- Consegna (0020, 23/11): rental_terms.delivery_* (spunta, raggio km, fisso, al km); su annuncio online passa da revisione
+  (trigger guard + applicata all'approvazione); public.listing_delivery per la scheda. Calcolo nel checkout: da fare (tappa 1 checkout V2).
+- Staff (0021): lo staff può inviare in revisione bozze preparate per un noleggiatore. Admin: menu stile noleggiatore,
+  /admin/profilo (ISATEX), /admin/anagrafiche/[id] (+ nuovo, annunci/[lid]) con app/admin/listingActions.ts. Foto catalogo rimossa.
+  Header: account staff sempre ADMIN, mai area noleggiatore.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

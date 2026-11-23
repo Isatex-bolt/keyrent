@@ -20,8 +20,8 @@ export async function AccountButton() {
   const pro = accountType(user, memberships) === "provider";
   const who = (user.user_metadata?.first_name as string | undefined) || user.email?.split("@")[0] || "";
   const initials = [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).map((s) => String(s)[0]).join("").toUpperCase() || who.slice(0, 1).toUpperCase();
-  // account del team KeyRent (senza attività): solo area admin e messaggi al team
-  if (staff && memberships.length === 0) {
+  // account del team KeyRent: sempre e solo admin (anche se in passato ha creato un'attività di prova)
+  if (staff) {
     return (
       <div className="flex items-center gap-1">
         <Link href="/admin" className={linkCls}>Area admin<LiveCount keys={["admin_reviews", "admin_orgs"]} initial={b.admin_reviews + b.admin_orgs} /></Link>
@@ -35,9 +35,9 @@ export async function AccountButton() {
           </summary>
           <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-xl">
             <p className="truncate px-3 py-2 text-xs text-mute">{user.email} · team KeyRent</p>
+            <Link href="/admin/profilo" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Il mio profilo</Link>
             <MenuLink href="/admin" label="Area admin" keys={["admin_reviews", "admin_orgs"]} n={b.admin_reviews + b.admin_orgs} />
             <MenuLink href="/admin/messaggi" label="Messaggi al team" keys={["admin_support"]} n={b.admin_support} />
-            <Link href="/account/password" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Cambia password</Link>
             <form action="/esci" method="post" className="mt-1 border-t border-line pt-1">
               <button className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Esci</button>
             </form>
@@ -49,7 +49,6 @@ export async function AccountButton() {
   }
   return (
     <div className="flex items-center gap-1">
-      {staff && <Link href="/admin" className={linkCls}>Admin<LiveCount keys={["admin"]} initial={adminTotal(b)} /></Link>}
       <Link href={pro ? "/pro/messaggi" : "/messaggi"} className={linkCls}>Messaggi<LiveCount keys={["messages"]} initial={b.messages} /></Link>
       {pro && <Link href="/pro" className={linkCls}>Area noleggiatore<LiveCount keys={["provider"]} initial={providerTotal(b)} /></Link>}
       <details data-menu className="group relative">
@@ -69,13 +68,12 @@ export async function AccountButton() {
         </summary>
         <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-xl">
           <p className="truncate px-3 py-2 text-xs text-mute">{user.email}</p>
+          {/* ordine: Profilo, (Area noleggiatore), Messaggi, I miei noleggi, Assistenza. La password si cambia da Profilo. */}
+          <Link href={pro ? "/pro/profilo" : "/account/profilo"} className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Profilo</Link>
           {pro && <MenuLink href="/pro" label="Area noleggiatore" keys={["provider"]} n={providerTotal(b)} />}
           <MenuLink href={pro ? "/pro/messaggi" : "/messaggi"} label="Messaggi" keys={["messages"]} n={b.messages} />
           {!pro && <MenuLink href="/account/noleggi" label="I miei noleggi" keys={["customer_bookings"]} n={b.customer_bookings} />}
-          {!pro && <Link href="/account/profilo" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Profilo</Link>}
           <MenuLink href={pro ? "/pro/assistenza" : "/assistenza"} label="Assistenza KeyRent" keys={["support"]} n={b.support} />
-          {staff && <MenuLink href="/admin" label="Admin" keys={["admin"]} n={adminTotal(b)} />}
-          <Link href="/account/password" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Cambia password</Link>
           <form action="/esci" method="post" className="mt-1 border-t border-line pt-1">
             <button className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Esci</button>
           </form>

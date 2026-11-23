@@ -1,23 +1,36 @@
-import { SideNav, type NavItem } from "@/components/SideNav";
+import { Suspense } from "react";
+import { getBadges } from "@/lib/badges";
+import { ProNav, type NavSection } from "@/components/ProNav";
 
-const nav: NavItem[] = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/messaggi", label: "Messaggi", badge: "admin_support" },
-  { href: "/admin/revisione", label: "Revisione annunci", badge: "admin_reviews" },
-  { href: "/admin/anagrafiche", label: "Anagrafiche", badge: "admin_orgs" },
-  { href: "/admin/catalogo", label: "Catalogo" },
-  { href: "/admin/foto", label: "Foto catalogo" },
-  { href: "/admin/home", label: "Contenuti home" },
+/* Menu admin con lo stesso stile dell'area noleggiatore: sezioni a sinistra, pagine a destra. */
+const ADMIN: NavSection[] = [
+  { section: "Account", items: [{ label: "Il mio profilo", href: "/admin/profilo" }] },
+  { section: "Operatività", items: [
+    { label: "Dashboard", href: "/admin", exact: true },
+    { label: "Messaggi", href: "/admin/messaggi", badge: "admin_support" },
+    { label: "Revisione annunci", href: "/admin/revisione", badge: "admin_reviews" },
+  ] },
+  { section: "Clienti", items: [
+    { label: "Anagrafiche", href: "/admin/anagrafiche", badge: "admin_orgs" },
+  ] },
+  { section: "Sito", items: [
+    { label: "Catalogo", href: "/admin/catalogo" },
+    { label: "Contenuti home", href: "/admin/home" },
+    { label: "Prenotazioni" }, { label: "Utenti interni" },
+  ] },
 ];
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-      <p className="mb-6 text-xs font-semibold uppercase tracking-[0.14em] text-navy-700">Area KeyRent · staff</p>
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <SideNav items={nav} footer="In arrivo: prenotazioni, catalogo, sorgenti dati, utenti interni." />
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
+      <div className="grid gap-6 lg:grid-cols-[230px_1fr]">
+        <Suspense fallback={<div className="hidden lg:block" />}><Nav /></Suspense>
         <div className="min-w-0">{children}</div>
       </div>
     </div>
   );
+}
+
+async function Nav() {
+  return <ProNav sections={ADMIN} title="Area admin" badges={await getBadges()} />;
 }

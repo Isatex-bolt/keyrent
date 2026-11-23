@@ -19,7 +19,7 @@
   --radius-card: 16px;
 }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { background: var(--color-canvas); color: var(--color-ink); }
 
 .field {
@@ -88,4 +88,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) {
   [class*="animate-[kr-"] { animation-duration: 1ms !important; animation-delay: 0ms !important; }
   .snap-x { scroll-behavior: auto !important; }
+}
+
+/* Risultati con mappa su telefono: la pagina finisce con l'ultimo annuncio (niente footer sotto l'elenco) */
+@media (max-width: 1023px) {
+  body:has([data-results-map]) .site-footer { display: none; }
 }

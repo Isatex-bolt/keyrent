@@ -29,16 +29,17 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
   if (v.status === "draft") redirect(`/pro/mezzi/${id}/modifica`);
   // dettagli dell'annuncio vero (sola lettura); per i dati di esempio valori di prova
   let detail = { description: "Mezzo di esempio: descrizione dell'annuncio.", attributes: {} as Record<string, unknown>, prices: [] as { unit: string; price_cents: number }[],
-    deposit: 30000, minHours: 24, instant: false };
+    deposit: 30000, minHours: 24, instant: false, delivery: null as null | { radius: number } };
   {
     const db = await userDb();
     const [{ data: l }, { data: pr }, { data: rt }] = await Promise.all([
       db.from("listings").select("description, attributes, instant_book").eq("id", id).maybeSingle(),
       db.from("pricing_rules").select("unit, price_cents").eq("listing_id", id).order("price_cents"),
-      db.from("rental_terms").select("deposit_cents, min_duration_minutes").eq("listing_id", id).maybeSingle(),
+      db.from("rental_terms").select("*").eq("listing_id", id).maybeSingle(),
     ]);
     detail = { description: l?.description ?? "", attributes: (l?.attributes ?? {}) as Record<string, unknown>, prices: pr ?? [],
-      deposit: rt?.deposit_cents ?? 0, minHours: Math.round((rt?.min_duration_minutes ?? 60) / 60), instant: !!l?.instant_book };
+      deposit: rt?.deposit_cents ?? 0, minHours: Math.round((rt?.min_duration_minutes ?? 60) / 60), instant: !!l?.instant_book,
+      delivery: rt?.delivery_enabled ? { radius: rt.delivery_radius_km as number } : null };
   }
   const bookings = [...all.bookings, ...all.requests].filter((b) => b.listingId === v.id);
   const future = bookings.filter((b) => b.returnAt >= new Date().toISOString()).sort((a, b) => a.pickupAt.localeCompare(b.pickupAt));
@@ -90,6 +91,7 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
               <ul className="space-y-1">
                 <li className="flex justify-between"><span className="text-mute">Cauzione</span><b>{euroShort(detail.deposit)}</b></li>
                 <li className="flex justify-between"><span className="text-mute">Durata minima</span><b>{detail.minHours} ore</b></li>
+                <li className="flex justify-between"><span className="text-mute">Consegna a domicilio</span><b>{detail.delivery ? `Entro ${detail.delivery.radius} km` : "No"}</b></li>
               </ul>
             </div>
             {Object.keys(detail.attributes).length > 0 && (

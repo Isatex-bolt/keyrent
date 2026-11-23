@@ -6,8 +6,10 @@ import { usePathname } from "next/navigation";
 import type { Badges } from "@/lib/badges";
 import { LiveCount } from "./LiveCount";
 
-type Item = { label: string; href?: string; badge?: keyof Badges; exact?: boolean };
-const NAV: { section: string; items: Item[] }[] = [
+export type NavItem2 = { label: string; href?: string; badge?: keyof Badges; exact?: boolean };
+type Item = NavItem2;
+export type NavSection = { section: string; items: Item[] };
+const NAV: NavSection[] = [
   { section: "Account", items: [
     { label: "Il mio profilo", href: "/pro/profilo" },
   ] },
@@ -31,13 +33,13 @@ const NAV: { section: string; items: Item[] }[] = [
 ];
 
 /** Menu dell'area noleggiatore: a sezioni, laterale su computer, a cassetto su telefono. */
-export function ProNav({ badges }: { badges?: Partial<Badges> }) {
+export function ProNav({ badges, sections = NAV, title = "Area noleggiatore" }: { badges?: Partial<Badges>; sections?: NavSection[]; title?: string }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   const nav = (
     <nav className="space-y-6">
-      <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-600">Area noleggiatore</p>
-      {NAV.map((g) => (
+      <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-600">{title}</p>
+      {sections.map((g) => (
         <div key={g.section} className="space-y-0.5">
           <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-mute/80">{g.section}</p>
           {g.items.map((n) => {
@@ -63,7 +65,7 @@ export function ProNav({ badges }: { badges?: Partial<Badges> }) {
   return (
     <>
       <div className="lg:hidden">
-        <button onClick={() => setOpen(true)} className="btn-ghost px-3" aria-label="Apri menu">Menu area noleggiatore</button>
+        <button onClick={() => setOpen(true)} className="btn-ghost px-3" aria-label="Apri menu">Menu {title.toLowerCase()}</button>
         {open && (
           <div className="fixed inset-0 z-50">
             <button aria-label="Chiudi" onClick={() => setOpen(false)} className="absolute inset-0 bg-navy-950/30 animate-[fadeIn_.15s]" />
@@ -71,7 +73,7 @@ export function ProNav({ badges }: { badges?: Partial<Badges> }) {
           </div>
         )}
       </div>
-      <aside className="hidden lg:block"><div className="sticky top-24">{nav}</div></aside>
+      <aside className="hidden lg:block"><div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain pb-6 pr-1">{nav}</div></aside>
     </>
   );
 }

@@ -7,7 +7,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { euro, priceUnitLabel, romeToIso, todayRome, formatDateIt } from "@/lib/format";
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
-import { attributesForCategory, getBusyDays, getCancellationRules, getListing, quoteOrError } from "@/lib/data";
+import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, quoteOrError } from "@/lib/data";
 
 type Raw = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -36,11 +36,12 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);
-  const [attrs, rules, quote, busy] = await Promise.all([
+  const [attrs, rules, quote, busy, delivery] = await Promise.all([
     attributesForCategory(l.category_slug),
     getCancellationRules(l.cancellation_policy_id),
     pickup && ret ? quoteOrError(id, pickup, ret) : Promise.resolve(null),
     getBusyDays(id, from, to),
+    getDelivery(id),
   ]);
 
   const specs = attrs
@@ -65,6 +66,20 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
       </nav>
 
       <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
+
+      {/* telefono: "Prenota ora" subito sotto le foto. Con date già scelte va alla prenotazione, altrimenti scende al riquadro date */}
+      <div className="mt-4 lg:hidden">
+        {quote && !("error" in quote) && dal && al ? (
+          <Link href={`/prenota/${id}?${new URLSearchParams({ dal, al, ora_ritiro: oraR, ora_riconsegna: oraC })}`}
+            className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-teal-500 px-5 font-semibold text-navy-950">
+            <span>Prenota ora</span><span>{euro(quote.total_cents)} totale →</span>
+          </Link>
+        ) : (
+          <a href="#prenota" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-teal-500 px-5 text-base font-semibold text-navy-950">
+            Prenota ora <span aria-hidden>↓</span>
+          </a>
+        )}
+      </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
@@ -112,6 +127,9 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
               {l.included_km_per_day && <Row k="Km inclusi" v={`${l.included_km_per_day} km al giorno${l.extra_km_cents ? `, poi ${euro(l.extra_km_cents, true)}/km` : ""}`} />}
               {l.insurance_excess_cents && <Row k="Franchigia assicurativa" v={euro(l.insurance_excess_cents)} />}
               {l.fuel_policy && <Row k="Carburante" v={l.fuel_policy} />}
+              <Row k="Consegna a domicilio" v={delivery
+                ? `Sì, entro ${delivery.radius_km} km dalla sede · ${[delivery.fee_cents ? euro(delivery.fee_cents) : "", delivery.per_km_cents ? `${euro(delivery.per_km_cents, true)}/km` : ""].filter(Boolean).join(" + ") || "gratuita"}`
+                : "No, ritiro presso la sede"} />
             </ul>
           </section>
 
@@ -138,7 +156,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
           </section>
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside id="prenota" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start">
           <div className="card space-y-5 p-5 shadow-sm">
             <div>
               <p className="text-sm text-mute">Tariffe</p>

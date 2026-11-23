@@ -15,6 +15,7 @@ import { captureIntent } from "@/lib/stripe";
 import { releaseHold } from "@/lib/payments";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
+import { deliveryOf, listingPayload } from "@/lib/listingForm";
 import type { PreviewRow } from "@/lib/importSheet";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -144,38 +145,7 @@ async function geocode(q: string): Promise<{ lat: number; lng: number } | null> 
 // ---------- Mezzi ----------
 export async function createListing(f: FormData) {
   const { membership } = await editor();
-  const attributes: Record<string, unknown> = {};
-  for (const [k, v] of f.entries()) {
-    if (!k.startsWith("attr_") || typeof v !== "string" || v === "") continue;
-    const key = k.slice(5);
-    attributes[key] = v === "true" ? true : v === "false" ? false : /^\d+([.,]\d+)?$/.test(v) ? Number(v.replace(",", ".")) : v;
-  }
-  if (typeof attributes.power_cv === "number" && attributes.power_kw === undefined) {
-    attributes.power_kw = Math.round((attributes.power_cv as number) * 0.73549875);
-  }
-  delete attributes.power_cv;
-  const payload = {
-    organization_id: membership.organization_id,
-    location_id: str(f, "location_id"),
-    category: str(f, "category"), subcategory: str(f, "subcategory") || null,
-    make: str(f, "make") && str(f, "make") !== "__altra" ? str(f, "make") : null, model: str(f, "model") || null,
-    custom_make: str(f, "custom_make") || null, custom_model: str(f, "custom_model") || null,
-    title: str(f, "title"), description: str(f, "description"),
-    attributes, quantity: Math.max(1, Number(str(f, "quantity")) || 1), plate: str(f, "plate"), year: str(f, "year"),
-    terms: {
-      deposit_cents: cents(f, "deposit"), min_driver_age: str(f, "min_driver_age"), min_license_years: str(f, "min_license_years"),
-      required_license: str(f, "required_license"), included_km_per_day: str(f, "included_km_per_day"),
-      extra_km_cents: cents(f, "extra_km") || "", insurance_excess_cents: cents(f, "insurance_excess") || "",
-      fuel_policy: str(f, "fuel_policy"), buffer_minutes: str(f, "buffer_minutes"),
-      min_duration_minutes: str(f, "min_duration_minutes"), notes: str(f, "terms_notes"),
-    },
-    prices: ["hour", "half_day", "day", "week"].map((unit) => ({ unit, price_cents: cents(f, `price_${unit}`) })),
-  };
-  if (payload.make && payload.model) {
-    await ensureCatalogEntry(payload.category, payload.make, payload.model).catch((e) => console.error("catalogo", e));
-  } else if (payload.subcategory) {
-    await ensureCatalogEntry(payload.category, "", "").catch(() => undefined);
-  }
+  const payload = await listingPayload(f, membership.organization_id);
   const db = await userDb();
   // doppio invio dello stesso modulo: riapri la bozza appena creata invece di farne un'altra
   const { data: same } = await db.from("listings").select("id").eq("organization_id", membership.organization_id)
@@ -183,7 +153,36 @@ export async function createListing(f: FormData) {
   if (same?.length) redirect(`/pro/mezzi/${same[0].id}/modifica?nuovo=1`);
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail("/pro/mezzi/nuovo", dbMessage(error.message));
+  // consegna a domicilio: sulla bozza si salva direttamente
+  const delivery = deliveryOf(f);
+  if (delivery.delivery_enabled) await db.from("rental_terms").update(delivery).eq("listing_id", String(data));
   redirect(`/pro/mezzi/${data}/modifica?nuovo=1`);
+}
+
+/** Consegna a domicilio: bozza → salvata subito; annuncio online → passa dalla revisione del team. */
+export async function updateDelivery(f: FormData) {
+  const { user } = await editor();
+  const id = str(f, "id");
+  const back = `/pro/mezzi/${id}/modifica`;
+  const d = deliveryOf(f);
+  if (d.delivery_enabled && !str(f, "delivery_radius_km")) fail(back, "Indica il raggio massimo di consegna in km.");
+  const db = await userDb();
+  const [{ data: l }, { data: t }] = await Promise.all([
+    db.from("listings").select("status").eq("id", id).maybeSingle(),
+    db.from("rental_terms").select("delivery_enabled, delivery_radius_km, delivery_fee_cents, delivery_per_km_cents").eq("listing_id", id).maybeSingle(),
+  ]);
+  if (!l) fail("/pro/mezzi", "Annuncio non trovato.");
+  const same = t && t.delivery_enabled === d.delivery_enabled && (t.delivery_radius_km ?? null) === d.delivery_radius_km
+    && t.delivery_fee_cents === d.delivery_fee_cents && t.delivery_per_km_cents === d.delivery_per_km_cents;
+  if (same) redirect(back);
+  if (["draft", "changes_required"].includes(l!.status)) {
+    const { error } = await db.from("rental_terms").update(d).eq("listing_id", id);
+    if (error) fail(back, dbMessage(error.message));
+    redirect(`${back}?ok=salvato`);
+  }
+  const { error } = await serviceDb().rpc("svc_propose_listing_changes", { p_listing: id, p_actor: user.id, p_changes: { terms: d } });
+  if (error) fail(back, error.message.includes("REVISION_ALREADY_PENDING") ? "C'è già una modifica in verifica: attendi la risposta del team prima di inviarne un'altra." : dbMessage(error.message));
+  redirect(`${back}?ok=revisione`);
 }
 
 export async function updateListingDetails(f: FormData) {

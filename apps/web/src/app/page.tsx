@@ -6,8 +6,6 @@ import { ListingCard } from "@/components/ListingCard";
 import { searchMap } from "@/lib/data";
 import { listingHref } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
-import { CategoryIcon } from "@/components/CategoryIcon";
-import { CATEGORIES } from "@/lib/catalog";
 import { getCollections, getDestinations } from "@/lib/content";
 import { CollectionTiles, DestinationCard } from "@/components/HomeTiles";
 import { NearMe } from "@/components/NearMe";
@@ -32,7 +30,7 @@ export default function Home() {
           <p className="mt-4 max-w-xl text-base text-white/70 sm:text-lg">
             Auto, moto, bici, camper, barche e furgoni. Disponibilità reale, prezzo chiaro, pagamento protetto.
           </p>
-          <div className="card mt-8 p-4 shadow-xl shadow-navy-950/30 sm:p-6">
+          <div id="cerca" className="card mt-8 scroll-mt-24 p-4 shadow-xl shadow-navy-950/30 sm:p-6">
             <HomeSearch />
           </div>
           <NearMe className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20" />
@@ -52,17 +50,18 @@ export default function Home() {
       </Suspense>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <h2 className="text-2xl font-bold tracking-tight">Cosa vuoi noleggiare?</h2>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {CATEGORIES.map((c) => (
-            <Link key={c.slug} href={`/cerca?cat=${c.slug}`}
-              className="card group flex flex-col items-start gap-3 p-4 transition hover:-translate-y-0.5 hover:border-teal-500/60 hover:shadow-md">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-600 group-hover:bg-teal-500 group-hover:text-navy-950">
-                <CategoryIcon slug={c.slug} />
-              </span>
-              <span className="text-sm font-semibold">{c.name}</span>
-            </Link>
-          ))}
+        <div className="relative overflow-hidden rounded-3xl bg-navy-900 px-6 py-10 sm:px-10 sm:py-14">
+          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(2,168,169,0.3),transparent_60%)]" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-teal-400">Un solo posto, tutti i mezzi</p>
+              <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">Noleggia qualsiasi cosa. Da chi lo fa di mestiere.</h2>
+              <p className="mt-3 max-w-lg text-white/70">Dall&apos;e-bike per il weekend al furgone per il trasloco: scegli date e luogo, al resto pensa KeyRent.</p>
+            </div>
+            <a href="#cerca" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-teal-500 px-7 text-base font-semibold text-navy-950 transition hover:bg-teal-400">
+              Inizia subito <span aria-hidden>↑</span>
+            </a>
+          </div>
         </div>
       </section>
 

@@ -67,7 +67,7 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
           <h2 className="font-semibold">Modifica proposta (l&apos;annuncio resta online)</h2>
           <dl className="space-y-2 text-sm">
             {Object.entries(pendingChange.snapshot.changes as Record<string, unknown>).map(([k, v]) => (
-              <div key={k}><dt className="text-mute">{k}</dt><dd className="whitespace-pre-line rounded-lg bg-canvas p-2">{typeof v === "string" ? v : JSON.stringify(v)}</dd>
+              <div key={k}><dt className="text-mute">{k}</dt><dd className="whitespace-pre-line rounded-lg bg-canvas p-2">{typeof v === "string" ? v : deliveryText(v) ?? JSON.stringify(v)}</dd>
                 <dd className="mt-1 text-xs text-mute">Attuale: {String((l as Record<string, unknown>)[k] ?? "—").slice(0, 300)}</dd></div>
             ))}
           </dl>
@@ -132,4 +132,13 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
       </section>
     </div>
   );
+}
+
+/** Consegna proposta in una revisione, in parole semplici. */
+function deliveryText(v: unknown): string | null {
+  const t = v as { delivery_enabled?: boolean; delivery_radius_km?: number; delivery_fee_cents?: number; delivery_per_km_cents?: number } | null;
+  if (!t || typeof t !== "object" || !("delivery_enabled" in t)) return null;
+  if (!t.delivery_enabled) return "Consegna a domicilio: disattivata";
+  const e = (c = 0) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(c / 100);
+  return `Consegna a domicilio: entro ${t.delivery_radius_km} km · ${e(t.delivery_fee_cents)} fisso + ${e(t.delivery_per_km_cents)}/km`;
 }

@@ -96,7 +96,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
   if (!hasMap) return <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{list}</div>;
 
   return (
-    <div ref={boxRef} style={{ "--top": `${top0}px` } as React.CSSProperties}
+    <div ref={boxRef} data-results-map style={{ "--top": `${top0}px` } as React.CSSProperties}
       className="relative [--maph:calc(100dvh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
       {/* mappa: ferma dietro l'elenco su telefono, colonna fissa a destra su computer */}
       <div className="sticky top-[var(--top)] z-0 mb-[calc(var(--maph)*-1)] h-[var(--maph)] lg:top-16 lg:order-2 lg:mb-0 lg:h-[calc(100dvh-4rem)]">
@@ -111,7 +111,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
       </div>
 
       {/* elenco: su telefono parte sotto la mappa e sale scorrendo la pagina */}
-      <div className="relative z-10 mt-[calc(var(--maph)*0.55)] min-h-[var(--maph)] rounded-t-3xl bg-canvas shadow-[0_-8px_30px_rgba(1,25,56,0.15)]
+      <div className="relative z-10 mt-[calc(var(--maph)*0.55)] rounded-t-3xl bg-canvas shadow-[0_-8px_30px_rgba(1,25,56,0.15)]
         lg:order-1 lg:mt-0 lg:min-h-0 lg:rounded-none lg:shadow-none">
         <button type="button" aria-label="Scorri l'elenco" onClick={() => window.scrollTo({ top: (window.innerHeight - top0 - 64) * PEEK, behavior: "smooth" })}
           className="flex w-full justify-center py-3 lg:hidden">

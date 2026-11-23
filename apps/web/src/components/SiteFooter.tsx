@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto bg-navy-950 text-white/70">
+    <footer className="site-footer mt-auto bg-navy-950 text-white/70">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <div className="space-y-3">
           <Logo light />

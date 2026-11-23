@@ -12,7 +12,8 @@ import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
 import { AiPhotoHelper } from "./AiPhotoHelper";
 import { settingsFor } from "@/lib/aiImage";
-import { deleteDraftListing, deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../../actions";
+import { deleteDraftListing, deleteMedia, transitionListing, updateDelivery, updateListingDetails, updatePrices } from "../../../actions";
+import { DeliveryFields } from "@/components/DeliveryFields";
 
 export const maxDuration = 90;
 export const metadata = { title: "Scheda annuncio" };
@@ -166,6 +167,27 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
             ))}
           </ul>
         )}
+      </section>
+
+      {/* Consegna a domicilio: bozza → subito; annuncio online → torna in verifica (resta online la versione attuale) */}
+      <section className="card space-y-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">Consegna a domicilio</h2>
+          {terms?.delivery_enabled
+            ? <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-600">Attiva · entro {terms.delivery_radius_km} km</span>
+            : <span className="rounded-full bg-navy-50 px-2.5 py-1 text-xs font-semibold text-mute">Non attiva</span>}
+        </div>
+        {edit ? (
+          <form action={updateDelivery} className="space-y-3">
+            <input type="hidden" name="id" value={id} />
+            <DeliveryFields initial={{ enabled: !!terms?.delivery_enabled, radius: terms?.delivery_radius_km ?? null, fee: terms?.delivery_fee_cents ?? 0, perKm: terms?.delivery_per_km_cents ?? 0 }} />
+            {!draftLike && <p className="text-xs text-mute">L&apos;annuncio è online: la modifica torna in verifica dal team KeyRent. Fino all&apos;approvazione resta online la versione attuale.</p>}
+            <button className="btn-primary" disabled={!!pendingChange && !draftLike}>{draftLike ? "Salva consegna" : "Invia in verifica"}</button>
+            {!!pendingChange && !draftLike && <p className="text-xs text-amber-900">C&apos;è già una modifica in verifica: potrai inviarne un&apos;altra dopo la risposta del team.</p>}
+          </form>
+        ) : terms?.delivery_enabled ? (
+          <p className="text-sm text-mute">Entro {terms.delivery_radius_km} km dalla sede · {euro(terms.delivery_fee_cents)} + {euro(terms.delivery_per_km_cents, true)}/km</p>
+        ) : null}
       </section>
 
       {/* Caratteristiche e condizioni (sola lettura per ora) */}

@@ -210,3 +210,10 @@ export async function searchMap(args: {
   const cov = await covers(rows.map((r) => r.id));
   return rows.map((r) => ({ ...r, cover: cov.get(r.id)?.url ?? null, cover_indicative: cov.get(r.id)?.indicative ?? false }));
 }
+
+/** Consegna a domicilio di un annuncio pubblicato (null se non attiva o database non aggiornato). */
+export async function getDelivery(id: string): Promise<{ radius_km: number; fee_cents: number; per_km_cents: number } | null> {
+  const { data, error } = await publicDb().rpc("listing_delivery", { p_listing: id });
+  const row = !error && Array.isArray(data) ? (data[0] as { enabled: boolean; radius_km: number; fee_cents: number; per_km_cents: number } | undefined) : undefined;
+  return row?.enabled ? { radius_km: row.radius_km, fee_cents: row.fee_cents, per_km_cents: row.per_km_cents } : null;
+}
