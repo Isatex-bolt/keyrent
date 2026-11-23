@@ -78,7 +78,7 @@ function demoCustomer(ctx: "personale" | "azienda", notLogged: boolean): Custome
       street: "Via Vittorio Veneto, 95", city: "Tombolo", province: "PD", cap: "35019" },
     context: ctx,
     rentals: [
-      r("a1", "picked_up", "Fiat 500 Hybrid", "Auto", "Padova", "PD", at(-d, 9), at(0, 18), 9000),
+      r("a1", "picked_up", "Fiat 500 Hybrid", "Auto", "Padova", "PD", at(-d, 9), at(3 * h), 9000),
       r("p1", "requested", "Audi A4 Avant", "Auto", "Vicenza", "VI", at(4 * d, 10), at(7 * d, 10), 26700, false, at(20 * h)),
       r("f1", "confirmed", "E-Bike Trekking", "Bici", "Garda", "VR", at(9 * d, 9), at(10 * d, 18), 7000),
       r("f2", "confirmed", "Ducato Furgone L2H2", "Furgoni", "Padova", "PD", at(3 * d, 8), at(5 * d, 18), 23700, true),
