@@ -49,7 +49,7 @@ async function Profile() {
       <Group title="Azienda" items={c.orgs.filter((o) => o.kind === "renter").length
         ? [["Riepilogo spese azienda", "/account/azienda"], ["Dati azienda e fatturazione", "/account/azienda/dati"]]
         : [["Aggiungi un profilo azienda", "/account/azienda/dati", "fatture intestate"]]} />
-      <Group title="KeyRent" items={[["Assistenza", "/assistenza"], ["Come funziona", "/come-funziona"], ["Cancellazioni e pagamenti", "/termini"], ["Privacy", "/privacy"],
+      <Group title="KeyRent" items={[["Assistenza", "/assistenza"], ["Guida KeyRent", "/guida/noleggiare"], ["Come funziona", "/come-funziona"], ["Cancellazioni e pagamenti", "/termini"], ["Privacy", "/privacy"],
         ...(!c.isProvider ? [["Metti a noleggio i tuoi mezzi", "/diventa-partner"] as [string, string]] : [])]} />
       <form action="/esci" method="post"><button className="w-full rounded-2xl border border-line bg-white py-3.5 font-semibold text-red-700">Esci</button></form>
     </div>

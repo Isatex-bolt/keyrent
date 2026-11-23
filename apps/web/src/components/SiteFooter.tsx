@@ -4,25 +4,14 @@ import { Logo } from "./Logo";
 export function SiteFooter() {
   return (
     <footer className="mt-auto bg-navy-950 text-white/70">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3 sm:px-6">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <div className="space-y-3">
           <Logo light />
           <p className="text-sm">Noleggio di auto, moto, bici, camper, barche e furgoni da operatori professionali verificati.</p>
         </div>
-        <div className="text-sm">
-          <p className="mb-2 font-semibold text-white">KeyRent</p>
-          <ul className="space-y-1.5">
-            <li><Link href="/come-funziona" className="hover:text-white">Come funziona</Link></li>
-            <li><Link href="/diventa-partner" className="hover:text-white">Diventa partner</Link></li>
-          </ul>
-        </div>
-        <div className="text-sm">
-          <p className="mb-2 font-semibold text-white">Informazioni</p>
-          <ul className="space-y-1.5">
-            <li><Link href="/termini" className="hover:text-white">Termini e condizioni</Link></li>
-            <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
-          </ul>
-        </div>
+        <Col title="Per chi noleggia" links={[["Guida KeyRent", "/guida"], ["Come funziona", "/come-funziona"], ["I miei noleggi", "/account/noleggi"], ["Assistenza", "/assistenza"]]} />
+        <Col title="Per chi mette a noleggio" links={[["Diventa partner", "/diventa-partner"], ["Guida noleggiatori", "/guida/noleggiatori"], ["Gestisci la tua flotta", "/pro"]]} />
+        <Col title="Informazioni" links={[["Termini e condizioni", "/termini"], ["Privacy", "/privacy"]]} />
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -34,5 +23,16 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function Col({ title, links }: { title: string; links: [string, string][] }) {
+  return (
+    <div className="text-sm">
+      <p className="mb-2 font-semibold text-white">{title}</p>
+      <ul className="space-y-1.5">
+        {links.map(([l, h]) => <li key={h}><Link href={h} className="hover:text-white">{l}</Link></li>)}
+      </ul>
+    </div>
   );
 }

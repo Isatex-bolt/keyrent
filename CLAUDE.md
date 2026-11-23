@@ -46,6 +46,12 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   0018: organizations.kind 'provider'|'renter' (azienda cliente: prenota, non pubblica), bookings.billing_organization_id,
   contesto Personale/Azienda nel cookie kr_ctx; prenota: "Prenotazione per" e patente/età solo per mezzi a motore.
 - Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Manca: payout Connect, webhook.
+- Guida KeyRent (23/11): /guida (scelta), /guida/noleggiare (6 slide), /guida/noleggiatori (10 slide), components/guide/*,
+  checklist "Inizia con KeyRent" in /pro (ProChecklist, localStorage), Hint su /account/noleggi, footer a colonne, eventi lib/analytics.ts.
+  Slide da aggiornare quando saranno live: ⚡ immediata, Apple/Google Pay, versamenti automatici al noleggiatore.
+- Home (23/11): Cosa = menu a tendina, solo giorni (stesso giorno = 1 giorno, nessun orario imposto).
+- Checkout V2: preview sul ramo preview-checkout (/preview/booking-v2, tutto simulato). Utente ok a pubblicarlo a tappe;
+  consegna solo se il noleggiatore la attiva (raggio km + prezzo al km + eventuale fisso), prezzo calcolato dalla distanza.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

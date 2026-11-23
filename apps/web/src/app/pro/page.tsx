@@ -10,6 +10,7 @@ import { OrgFields } from "@/components/OrgFields";
 import { pendingOrgOf } from "@/lib/pendingOrg";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
 import { createOrganization, switchOrganization } from "./actions";
+import { ProChecklist, type CheckItem } from "@/components/guide/ProChecklist";
 
 export const metadata = { title: "Area noleggiatore" };
 
@@ -44,7 +45,27 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
   const all = await loadFleet(membership.organization_id, org.trade_name ?? org.legal_name, monthStart, to);
   const sede = typeof sp.sede === "string" ? sp.sede : "tutte";
   const db = await userDb();
-  const { count: sedi } = await db.from("locations").select("id", { count: "exact", head: true }).eq("organization_id", membership.organization_id);
+  const [{ count: sedi }, { data: o }] = await Promise.all([
+    db.from("locations").select("id", { count: "exact", head: true }).eq("organization_id", membership.organization_id),
+    db.from("organizations").select("vat_number, business_phone, business_email, legal_address").eq("id", membership.organization_id).maybeSingle(),
+  ]);
+  const addr = (o?.legal_address ?? {}) as Record<string, string>;
+  const orgDone = !!(o?.vat_number && (o.business_phone || o.business_email) && addr.city);
+  const published = all.vehicles.some((v) => v.status === "published");
+  const checklist: CheckItem[] = published
+    ? [
+      { key: "org", label: "Attività configurata", done: orgDone, href: "/pro/attivita", cta: "Completa" },
+      { key: "sede", label: "Prima sede", done: !!sedi, href: "/pro/sedi", cta: "Aggiungi" },
+      { key: "mezzo", label: "Primo mezzo pubblicato", done: true, href: "/pro/mezzi", cta: "Vedi" },
+      { key: "cal", label: "Controlla la disponibilità nel calendario", done: false, href: "/pro/calendario", cta: "Apri", doneOnClick: true },
+      { key: "guida", label: "Scopri come gestire una prenotazione", done: false, href: "/guida/noleggiatori", cta: "Guarda", doneOnClick: true },
+    ]
+    : [
+      { key: "account", label: "Account creato", done: true, href: "/pro/profilo", cta: "" },
+      { key: "org", label: "Completa la tua attività", done: orgDone, href: "/pro/attivita", cta: "Completa" },
+      { key: "sede", label: "Inserisci una sede", done: !!sedi, href: "/pro/sedi", cta: "Aggiungi" },
+      { key: "mezzo", label: "Pubblica il primo mezzo", done: false, href: "/pro/mezzi/nuovo", cta: "Inserisci" },
+    ];
   const header = (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,16 +82,11 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
         </form>
       )}
       <Flash sp={sp} />
+      <ProChecklist orgId={membership.organization_id} items={checklist} />
       {org.verification_status === "pending" && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           KeyRent sta verificando la tua attività. Intanto puoi aggiungere sedi e mezzi: potrai inviarli in revisione dopo la verifica.
         </p>
-      )}
-      {!sedi && (
-        <Link href="/pro/sedi" className="card block p-5 transition hover:border-teal-500/60">
-          <p className="font-semibold">Aggiungi la prima sede</p>
-          <p className="mt-1 text-sm text-mute">Ogni mezzo va associato a una sede di ritiro. Poi aggiungi i tuoi mezzi.</p>
-        </Link>
       )}
     </>
   );

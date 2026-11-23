@@ -23,6 +23,7 @@ const NAV: { section: string; items: Item[] }[] = [
     { label: "La mia attività", href: "/pro/attivita" },
     { label: "Il mio profilo", href: "/pro/profilo" },
     { label: "Assistenza KeyRent", href: "/pro/assistenza", badge: "support" },
+    { label: "Guida KeyRent", href: "/guida/noleggiatori" },
     { label: "Pagamenti e incassi" }, { label: "Statistiche" }, { label: "Team" },
   ] },
 ];

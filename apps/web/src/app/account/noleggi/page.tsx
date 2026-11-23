@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { inContext, loadCustomer, type Bucket } from "@/lib/v2/customer";
 import { ContextSwitch, RentalRow } from "@/components/v2/customer/ui";
+import { Hint } from "@/components/guide/Hint";
 
 export const metadata = { title: "I miei noleggi" };
 const TABS: [Bucket, string][] = [["attivi", "Attivi"], ["attesa", "In attesa"], ["futuri", "Futuri"], ["completati", "Completati"], ["cancellati", "Cancellati"]];
@@ -29,6 +30,7 @@ async function Rentals({ searchParams }: { searchParams: Promise<Record<string, 
         <h1 className="text-[28px] font-bold tracking-tight">I miei noleggi</h1>
         <Link href="/account" className="text-sm font-semibold text-teal-600">Riepilogo</Link>
       </div>
+      <Hint id="noleggi" text="Qui trovi tutti i tuoi noleggi: in corso, in attesa di conferma, futuri e passati." link={{ href: "/guida/noleggiare", label: "Come funziona" }} />
       <ContextSwitch c={c} back={`/account/noleggi?tab=${tab}`} />
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {TABS.map(([b, l]) => {
