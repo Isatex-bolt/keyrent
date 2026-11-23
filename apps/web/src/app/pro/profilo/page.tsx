@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { ProfileView } from "@/components/ProfileView";
+import { Skeleton } from "@/components/ProPage";
 
-/* "Il mio profilo" del noleggiatore ora è la pagina unica /account/profilo (account + attività di noleggio). */
+export const metadata = { title: "Il mio profilo" };
+
+/* Stessa pagina del profilo, dentro l'area noleggiatore (menu a sinistra). */
 export default function Page() {
-  redirect("/account/profilo");
+  return <div className="max-w-2xl"><Suspense fallback={<Skeleton />}><ProfileView base="/pro" /></Suspense></div>;
 }

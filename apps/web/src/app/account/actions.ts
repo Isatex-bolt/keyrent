@@ -13,7 +13,7 @@ export async function updateProfile(formData: FormData) {
   // data di nascita e patente: solo se il modulo le contiene (il profilo del noleggiatore non le ha)
   for (const k of ["birth_date", "driving_license_since"]) if (formData.has(k)) patch[k] = get(k);
   const { error } = await db.from("profiles").update(patch).eq("id", user.id);
-  const back = ["/pro/profilo", "/account/dati"].includes(String(formData.get("back"))) ? String(formData.get("back")) : "/account/dati";
+  const back = ["/pro/profilo", "/pro/profilo/dati", "/account/dati"].includes(String(formData.get("back"))) ? String(formData.get("back")) : "/account/dati";
   revalidatePath(back);
   redirect(error ? `${back}?errore=${encodeURIComponent("Salvataggio non riuscito")}` : `${back}?ok=1`);
 }

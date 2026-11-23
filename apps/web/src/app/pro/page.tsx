@@ -61,7 +61,7 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
       { key: "guida", label: "Scopri come gestire una prenotazione", done: false, href: "/guida/noleggiatori", cta: "Guarda", doneOnClick: true },
     ]
     : [
-      { key: "account", label: "Account creato", done: true, href: "/account/profilo", cta: "" },
+      { key: "account", label: "Account creato", done: true, href: "/pro/profilo", cta: "" },
       { key: "org", label: "Completa la tua attività", done: orgDone, href: "/pro/attivita", cta: "Completa" },
       { key: "sede", label: "Inserisci una sede", done: !!sedi, href: "/pro/sedi", cta: "Aggiungi" },
       { key: "mezzo", label: "Pubblica il primo mezzo", done: false, href: "/pro/mezzi/nuovo", cta: "Inserisci" },

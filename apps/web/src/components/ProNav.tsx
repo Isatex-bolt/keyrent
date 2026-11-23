@@ -9,7 +9,7 @@ import { LiveCount } from "./LiveCount";
 type Item = { label: string; href?: string; badge?: keyof Badges; exact?: boolean };
 const NAV: { section: string; items: Item[] }[] = [
   { section: "Account", items: [
-    { label: "Il mio profilo", href: "/account/profilo" },
+    { label: "Il mio profilo", href: "/pro/profilo" },
   ] },
   { section: "Operatività", items: [
     { label: "Dashboard", href: "/pro", exact: true },
