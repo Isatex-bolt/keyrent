@@ -104,7 +104,7 @@ async function Latest() {
         <h2 className="text-2xl font-bold tracking-tight">Appena arrivati</h2>
         <Link href="/cerca" className="text-sm font-semibold text-teal-600 hover:underline">Vedi tutti</Link>
       </div>
-      <div className="-mx-4 mt-6 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
+      <div className="-mx-4 mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-6 pt-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
         {rows.map((r) => (
           <div key={r.id} className="w-[78%] flex-none snap-start sm:w-[45%] lg:w-[23.5%]">
             <ListingCard r={r} href={listingHref(r)} />
@@ -149,7 +149,7 @@ async function Destinations() {
         </div>
         <Link href="/destinazioni" className="text-sm font-semibold text-teal-600 hover:underline">Tutte le mete</Link>
       </div>
-      <div className="-mx-4 mt-6 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
+      <div className="-mx-4 mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-6 pt-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
         {items.map((d) => (
           <div key={d.slug} className="w-[62%] flex-none snap-start sm:w-[36%] lg:w-[23.5%]"><DestinationCard d={d} /></div>
         ))}

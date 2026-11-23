@@ -65,7 +65,7 @@ async function Destination({ params }: { params: Promise<{ slug: string }> }) {
               <h2 className="text-xl font-bold tracking-tight">{categoryName(r.cat)} vicino a {d.name}</h2>
               <Link href={destinationSearchHref(d, r.cat)} className="text-sm font-semibold text-teal-600 hover:underline">Vedi tutti</Link>
             </div>
-            <div className="-mx-4 mt-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
+            <div className="-mx-4 mt-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-6 pt-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:scroll-px-6">
               {r.items.map((x) => (
                 <div key={x.id} className="w-[78%] flex-none snap-start sm:w-[45%] lg:w-[23.5%]"><ListingCard r={x} href={listingHref(x)} /></div>
               ))}
