@@ -8,6 +8,9 @@ import { LiveCount } from "./LiveCount";
 
 type Item = { label: string; href?: string; badge?: keyof Badges; exact?: boolean };
 const NAV: { section: string; items: Item[] }[] = [
+  { section: "Account", items: [
+    { label: "Il mio profilo", href: "/account/profilo" },
+  ] },
   { section: "Operatività", items: [
     { label: "Dashboard", href: "/pro", exact: true },
     { label: "Calendario", href: "/pro/calendario" },
@@ -21,7 +24,6 @@ const NAV: { section: string; items: Item[] }[] = [
   ] },
   { section: "Attività", items: [
     { label: "La mia attività", href: "/pro/attivita" },
-    { label: "Il mio profilo", href: "/pro/profilo" },
     { label: "Assistenza KeyRent", href: "/pro/assistenza", badge: "support" },
     { label: "Guida KeyRent", href: "/guida/noleggiatori" },
     { label: "Pagamenti e incassi" }, { label: "Statistiche" }, { label: "Team" },

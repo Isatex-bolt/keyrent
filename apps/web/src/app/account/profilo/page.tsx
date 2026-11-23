@@ -67,7 +67,7 @@ async function Profile() {
 
       {pureProvider ? (
         <Card title="Account" status="ok" rows={[["Nome", name || "—"], ["Email di accesso", user.email ?? "—"], ["Telefono", p?.phone || "—"]]}
-          actions={[["Modifica dati", "/pro/profilo"]]} />
+          actions={[["Modifica dati", "/account/dati"]]} />
       ) : (
         <section className="space-y-3">
           <h2 className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-mute">I tuoi profili per noleggiare</h2>
