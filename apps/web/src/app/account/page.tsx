@@ -44,7 +44,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       {sp.ok && <FormNotice message="Profilo aggiornato." />}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Link href="/messaggi" className="card p-5 transition hover:border-teal-500/60">
+        <Link href={memberships.length ? "/pro/messaggi" : "/messaggi"} className="card p-5 transition hover:border-teal-500/60">
           <p className="font-semibold">Messaggi<Count n={badges.messages} /></p>
           <p className="mt-1 text-sm text-mute">Le conversazioni con i noleggiatori e con i tuoi clienti</p>
         </Link>
@@ -62,6 +62,8 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
         )}
       </div>
 
+      {/* il noleggiatore non è un cliente finale: le sue prenotazioni da cliente compaiono solo se ne ha */}
+      {(!memberships.length || (bookings?.length ?? 0) > 0) && (
       <section className="card p-5">
         <h2 className="font-semibold">Le mie prenotazioni<Count n={badges.customer_bookings} /></h2>
         {bookings?.length ? (
@@ -71,6 +73,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
             </Link></li>))}</ul>
         ) : <p className="mt-2 text-sm text-mute">Nessuna prenotazione per ora.</p>}
       </section>
+      )}
 
       <section className="card p-5">
         <h2 className="mb-4 font-semibold">Profilo personale</h2>

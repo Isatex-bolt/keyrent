@@ -41,30 +41,44 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
       && (!sede || v.locationId === sede) && (!stato || v.status === stato) && (!cat || v.categorySlug === cat)
       && freeIn(v) && (!disp || (disp === "libero" ? t === "free" || t === "partial" : disp === "occupato" ? t === "booked" || t === "pending" : t === "off"));
   });
-  const sel = "rounded-xl border border-line bg-white px-3 py-2 text-sm";
+  const sel = "h-11 w-full min-w-0 rounded-xl border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15";
+  const active = !!(q || sede || stato || disp || cat || dal);
+  const reset = () => { setQ(""); setSede(""); setStato(""); setDisp(""); setCat(""); setDal(""); setAl(""); };
+  const fmt = (d: string) => d.split("-").reverse().join("/");
+  const dateCls = "min-w-0 flex-1 bg-transparent text-sm outline-none [&::-webkit-calendar-picker-indicator]:opacity-50";
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca mezzo, marca, modello…" className={`${sel} w-full sm:w-64`} />
-        <select value={sede} onChange={(e) => setSede(e.target.value)} className={sel}><option value="">Tutte le sedi</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
-        <select value={stato} onChange={(e) => setStato(e.target.value)} className={sel}><option value="">Ogni stato</option>{Object.entries(LISTING).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
-        <select value={disp} onChange={(e) => setDisp(e.target.value)} className={sel}><option value="">Disponibilità oggi</option><option value="libero">Libero oggi</option><option value="occupato">Occupato oggi</option><option value="fermo">Non disponibile</option></select>
-        <label className={`${sel} flex items-center gap-2`}><span className="text-mute">Dal</span>
-          <input type="date" value={dal} min={today} onChange={(e) => { setDal(e.target.value); if (!al || al < e.target.value) setAl(e.target.value); }} className="min-h-0 border-0 bg-transparent p-0 text-sm outline-none" /></label>
-        <label className={`${sel} flex items-center gap-2`}><span className="text-mute">Al</span>
-          <input type="date" value={al} min={dal || today} onChange={(e) => setAl(e.target.value)} className="min-h-0 border-0 bg-transparent p-0 text-sm outline-none" /></label>
-        {dal && <button onClick={() => { setDal(""); setAl(""); }} className="text-sm text-teal-600 hover:underline">Tutte le date</button>}
-        <select value={cat} onChange={(e) => setCat(e.target.value)} className={sel}><option value="">Tutte le categorie</option>{cats.map(([s, n]) => <option key={s} value={s}>{n}</option>)}</select>
-        <div className="ml-auto flex rounded-xl border border-line bg-white p-1">
-          {(["card", "tabella", "calendario"] as View[]).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition ${view === v ? "bg-navy-900 text-white" : "text-mute hover:text-navy-900"}`}>
-              {v === "card" ? "Schede" : v === "tabella" ? "Lista" : "Calendario"}
-            </button>
-          ))}
+      <div className="space-y-3 rounded-2xl border border-line bg-white p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca per nome, marca o modello" className={`${sel} sm:flex-1`} />
+          <div className="flex shrink-0 rounded-xl bg-navy-50 p-1">
+            {(["card", "tabella", "calendario"] as View[]).map((v) => (
+              <button key={v} onClick={() => setView(v)} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${view === v ? "bg-white text-navy-900 shadow-sm" : "text-mute hover:text-navy-900"}`}>
+                {v === "card" ? "Schede" : v === "tabella" ? "Lista" : "Calendario"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.6fr)]">
+          <select value={sede} onChange={(e) => setSede(e.target.value)} className={sel} aria-label="Sede"><option value="">Tutte le sedi</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
+          <select value={cat} onChange={(e) => setCat(e.target.value)} className={sel} aria-label="Categoria"><option value="">Tutte le categorie</option>{cats.map(([s, n]) => <option key={s} value={s}>{n}</option>)}</select>
+          <select value={stato} onChange={(e) => setStato(e.target.value)} className={sel} aria-label="Stato annuncio"><option value="">Tutti gli stati</option>{Object.entries(LISTING).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
+          <select value={disp} onChange={(e) => setDisp(e.target.value)} className={sel} aria-label="Disponibilità oggi"><option value="">Disponibilità oggi</option><option value="libero">Libero oggi</option><option value="occupato">Occupato oggi</option><option value="fermo">Non disponibile</option></select>
+          <div className={`${sel} flex items-center gap-2`}>
+            <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-mute">Libero dal</span>
+            <input type="date" aria-label="Dal" value={dal} min={today} style={{ minHeight: 0 }} className={dateCls}
+              onChange={(e) => { setDal(e.target.value); if (!al || al < e.target.value) setAl(e.target.value); }} />
+            <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-mute">al</span>
+            <input type="date" aria-label="Al" value={al} min={dal || today} style={{ minHeight: 0 }} className={dateCls} onChange={(e) => setAl(e.target.value)} />
+          </div>
         </div>
       </div>
-      <div className="flex items-center justify-between text-sm text-mute">
-        <span>{list.length} {list.length === 1 ? "mezzo" : "mezzi"}{dal ? ` liberi ${al && al !== dal ? `dal ${dal.split("-").reverse().join("/")} al ${al.split("-").reverse().join("/")}` : `il ${dal.split("-").reverse().join("/")}`}` : ""}</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-mute">
+        <span>
+          <b className="text-navy-900">{list.length}</b> {list.length === 1 ? "mezzo" : "mezzi"}
+          {dal ? ` liberi ${al && al !== dal ? `dal ${fmt(dal)} al ${fmt(al)}` : `il ${fmt(dal)}`}` : ""}
+          {active && <button onClick={reset} className="ml-3 font-semibold text-teal-600 hover:underline">Azzera filtri</button>}
+        </span>
         {addHref && <Link href={addHref} className="btn-primary px-4 py-2 text-sm">Aggiungi mezzo</Link>}
       </div>
 

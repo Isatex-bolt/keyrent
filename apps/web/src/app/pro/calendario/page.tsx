@@ -60,7 +60,7 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
               </Link>
             ))}
           </div>
-          <AvailabilityPanel vehicle={mezzo} days={days} bookings={bookings} today={data.today} mese={mese} hrefFor={Object.fromEntries(
+          <AvailabilityPanel showLegend={false} vehicle={mezzo} days={days} bookings={bookings} today={data.today} mese={mese} hrefFor={Object.fromEntries(
             [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${mese.slice(0, 4)}-${String((Number(mese.slice(5)) <= 6 ? 1 : 7) + i).padStart(2, "0")}`)]
               .map((m) => [m, href({ mese: m })]))} />
         </div>

@@ -51,7 +51,7 @@ export async function AccountButton() {
     <div className="flex items-center gap-1">
       {staff && <Link href="/admin" className={linkCls}>Admin<LiveCount keys={["admin"]} initial={adminTotal(b)} /></Link>}
       <Link href={pro ? "/pro/messaggi" : "/messaggi"} className={linkCls}>Messaggi<LiveCount keys={["messages"]} initial={b.messages} /></Link>
-      {pro && <Link href="/account" className={linkCls}>Le mie prenotazioni<LiveCount keys={["customer_bookings"]} initial={b.customer_bookings} /></Link>}
+      {pro && <Link href="/pro" className={linkCls}>Area noleggiatore<LiveCount keys={["provider"]} initial={providerTotal(b)} /></Link>}
       <details data-menu className="group relative">
         <summary className="btn-ghost cursor-pointer list-none gap-2 py-2 [&::-webkit-details-marker]:hidden">
           {!pro ? (
@@ -64,14 +64,16 @@ export async function AccountButton() {
           )}
           <span className="max-w-[9rem] truncate">{who}</span>
           <LiveCount keys={pro ? ["provider"] : ["customer_bookings", "support"]} initial={pro ? providerTotal(b) : b.customer_bookings + b.support} className="hidden sm:inline-flex" />
-          <LiveCount keys={["messages", "customer_bookings", ...(memberships.length ? ["provider"] : ["support"]), ...(staff ? ["admin"] : [])]} initial={total} className="sm:hidden" />
+          <LiveCount keys={["messages", ...(memberships.length ? ["provider"] : ["customer_bookings", "support"]), ...(staff ? ["admin"] : [])]} initial={total - (memberships.length ? b.customer_bookings : 0)} className="sm:hidden" />
           <svg viewBox="0 0 20 20" className="h-4 w-4 text-mute transition group-open:rotate-180" fill="currentColor"><path d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" /></svg>
         </summary>
         <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-xl">
           <p className="truncate px-3 py-2 text-xs text-mute">{user.email}</p>
           {pro && <MenuLink href="/pro" label="Area noleggiatore" keys={["provider"]} n={providerTotal(b)} />}
           <MenuLink href={pro ? "/pro/messaggi" : "/messaggi"} label="Messaggi" keys={["messages"]} n={b.messages} />
-          <MenuLink href="/account" label={pro ? "Le mie prenotazioni" : "Il mio account"} keys={["customer_bookings"]} n={b.customer_bookings} />
+          {pro
+            ? <Link href="/account" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Il mio profilo</Link>
+            : <MenuLink href="/account" label="Il mio account" keys={["customer_bookings"]} n={b.customer_bookings} />}
           <MenuLink href={pro ? "/pro/assistenza" : "/assistenza"} label="Assistenza KeyRent" keys={["support"]} n={b.support} />
           {staff && <MenuLink href="/admin" label="Admin" keys={["admin"]} n={adminTotal(b)} />}
           <Link href="/account/password" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Cambia password</Link>
