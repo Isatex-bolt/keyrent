@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/catalog";
-import { CategoryIcon } from "./CategoryIcon";
 import { PlaceInput } from "./PlaceInput";
 import { DateField } from "./DateField";
 
@@ -19,16 +18,23 @@ function shortcut(kind: "oggi" | "domani" | "weekend") {
   if (kind === "oggi") {
     const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
     const start = Math.min(Math.max(h + 1, 8), 20);
-    return { dal: addDays(0), al: addDays(1), ora_ritiro: `${String(start).padStart(2, "0")}:00`, ora_riconsegna: "10:00" };
+    // oggi = in giornata: ritiro fra un'ora, riconsegna la sera stessa
+    return { dal: addDays(0), al: addDays(0), ora_ritiro: `${String(start).padStart(2, "0")}:00`, ora_riconsegna: start >= 19 ? "21:00" : "19:00" };
   }
-  if (kind === "domani") return { dal: addDays(1), al: addDays(2), ora_ritiro: "10:00", ora_riconsegna: "10:00" };
+  if (kind === "domani") return { dal: addDays(1), al: addDays(1), ora_ritiro: "09:00", ora_riconsegna: "19:00" };
   const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(
     new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Rome", weekday: "short" }).format(new Date()));
   const toSat = wd === 6 ? 0 : wd === 0 ? 6 : 6 - wd;
   return { dal: addDays(toSat), al: addDays(toSat + 1), ora_ritiro: "09:00", ora_riconsegna: "19:00" };
 }
 
-/** Ricerca della home: Prenota | Lungo termine, Dove con suggerimenti, Quando con scorciatoie, Cosa a chip. */
+/** Stesso giorno: ritiro al mattino, riconsegna la sera. Più giorni: ore 10. */
+function withTimes(d: { dal: string; al: string; ora_ritiro: string; ora_riconsegna: string }) {
+  if (d.dal && d.dal === d.al) return { ...d, ora_ritiro: "09:00", ora_riconsegna: "19:00" };
+  return { ...d, ora_ritiro: "10:00", ora_riconsegna: "10:00" };
+}
+
+/** Ricerca della home: Prenota | Lungo termine, Dove con suggerimenti, Quando con scorciatoie, Cosa a menu. */
 export function HomeSearch() {
   const [mode, setMode] = useState<"breve" | "lungo">("breve");
   const [dates, setDates] = useState<{ dal: string; al: string; ora_ritiro: string; ora_riconsegna: string }>(
@@ -62,12 +68,12 @@ export function HomeSearch() {
               <div>
                 <label htmlFor="h-dal" className="label">Ritiro</label>
                 <DateField id="h-dal" name="dal" min={today} value={dates.dal} placeholder="Data"
-                  onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, dal: v, al: d.al && d.al > v ? d.al : "" })); }} />
+                  onChange={(v) => { setQuick(null); setDates((d) => withTimes({ ...d, dal: v, al: d.al && d.al >= v ? d.al : v })); }} />
               </div>
               <div>
                 <label htmlFor="h-al" className="label">Riconsegna</label>
                 <DateField id="h-al" name="al" min={dates.dal || today} value={dates.al} placeholder="Data"
-                  onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, al: v })); }} />
+                  onChange={(v) => { setQuick(null); setDates((d) => withTimes({ ...d, al: v })); }} />
               </div>
               <input type="hidden" name="ora_ritiro" value={dates.ora_ritiro} />
               <input type="hidden" name="ora_riconsegna" value={dates.ora_riconsegna} />
@@ -97,27 +103,27 @@ export function HomeSearch() {
                 {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : "Questo weekend"}
               </button>
             ))}
+            {dates.dal && dates.al && (
+              <p className="w-full text-sm text-mute">
+                {dates.dal === dates.al ? "In giornata: " : ""}ritiro ore {dates.ora_ritiro}, riconsegna ore {dates.ora_riconsegna}
+              </p>
+            )}
           </div>
         )}
-
-        <fieldset>
-          <legend className="label">Cosa</legend>
-          <div className="flex flex-wrap gap-2">
-            <input type="hidden" name="cat" value={cat} />
-            {[{ slug: "", name: "Tutto" }, ...CATEGORIES].map((c) => (
-              <button key={c.slug || "all"} type="button" aria-pressed={cat === c.slug} onClick={() => setCat(c.slug)}
-                className={`chip ${cat === c.slug ? "chip-on" : ""}`}>
-                {c.slug && <CategoryIcon slug={c.slug} className="h-4 w-4" />}
-                {c.name}
-              </button>
-            ))}
-          </div>
-        </fieldset>
 
         {mode === "lungo" && (
           <p className="text-sm text-mute">Per noleggi di uno o più mesi vedi il totale calcolato con le tariffe settimanali e mensili dei noleggiatori.</p>
         )}
-        <button type="submit" className="btn-primary w-full sm:w-auto sm:px-10">Cerca</button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="sm:w-80">
+            <label htmlFor="h-cat" className="label">Cosa</label>
+            <select id="h-cat" name="cat" className="field" value={cat} onChange={(e) => setCat(e.target.value)}>
+              <option value="">Tutti i mezzi</option>
+              {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+            </select>
+          </div>
+          <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-48">Cerca</button>
+        </div>
       </form>
     </div>
   );

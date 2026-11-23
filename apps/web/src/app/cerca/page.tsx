@@ -58,7 +58,8 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
     if (m) sp.al = addMonths(sp.dal, m);
   }
   let pickup = sp.dal ? romeToIso(sp.dal, sp.ora_ritiro ?? "10:00") : null;
-  let ret = sp.al ? romeToIso(sp.al, sp.ora_riconsegna ?? "10:00") : null;
+  // stesso giorno senza orari: ritiro 10:00, riconsegna 19:00
+  let ret = sp.al ? romeToIso(sp.al, sp.ora_riconsegna ?? (sp.al === sp.dal ? "19:00" : "10:00")) : null;
   if (pickup && ret && ret <= pickup) { notes.push("La riconsegna deve essere dopo il ritiro."); pickup = ret = null; }
   if ((pickup && !ret) || (!pickup && ret)) { notes.push("Indica sia il ritiro sia la riconsegna per vedere prezzi totali e disponibilità."); pickup = ret = null; }
 
@@ -89,7 +90,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
   const items: ResultItem[] = results.map((r) => ({ ...r, href: listingHref(r, keep) }));
 
-  const where = bbox ? "nella zona della mappa" : sp.luogo && center ? `vicino a ${sp.luogo}` : "in Italia";
+  const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "Mezzi";
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
   const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), when, categoryName(cat)].filter(Boolean).join(" · ");

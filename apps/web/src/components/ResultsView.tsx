@@ -15,7 +15,7 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
 
 export type ResultItem = MapResult & { href: string };
 
-const SNAPS = [0.18, 0.5, 0.88]; // altezza del pannello su mobile (frazione dello schermo)
+const SNAPS = [0.2, 0.55, 0.98]; // altezza del pannello su mobile (frazione dello spazio sotto la barra di ricerca)
 
 /**
  * Risultati: lista + mappa sincronizzate. Desktop: lista a sinistra, mappa fissa a destra.
@@ -33,11 +33,16 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
   const [drag, setDrag] = useState<number | null>(null);
   const start = useRef<{ y: number; h: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // altezza dello spazio sotto la barra di ricerca (non di tutto lo schermo): il pannello alzato non finisce mai sotto la barra
+  const boxRef = useRef<HTMLDivElement>(null);
   const [vh, setVh] = useState(800);
   useEffect(() => {
-    const set = () => setVh(window.innerHeight);
-    set(); window.addEventListener("resize", set);
-    return () => window.removeEventListener("resize", set);
+    const el = boxRef.current;
+    if (!el) return;
+    const set = () => setVh(el.clientHeight || window.innerHeight);
+    set();
+    const ro = new ResizeObserver(set); ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   const pins: MapPin[] = items
@@ -81,14 +86,14 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
   const height = drag ?? SNAPS[snap] * vh;
 
   return (
-    <div className="relative h-[calc(100dvh-8.5rem)] overflow-hidden lg:grid lg:h-auto lg:grid-cols-[minmax(0,1fr)_44%] lg:overflow-visible">
+    <div ref={boxRef} className="relative h-[calc(100dvh-8.5rem-64px-env(safe-area-inset-bottom))] overflow-hidden lg:grid lg:h-auto lg:grid-cols-[minmax(0,1fr)_44%] lg:overflow-visible">
       <div className="absolute inset-0 lg:relative lg:order-2">
         <div className="h-full lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]">
           <ResultsMap pins={pins} hovered={hovered} selected={selected} onHover={setHovered}
             onSelect={(id) => { setSelected(id); if (id && snap === 2) setSnap(1); }}
             center={center} bbox={bbox} onSearchArea={searchArea} />
           {chosen && (
-            <div className="absolute inset-x-3 bottom-[calc(18dvh+0.75rem)] z-20 mx-auto max-w-sm lg:bottom-4">
+            <div className="absolute inset-x-3 bottom-[calc(20%+0.75rem)] z-20 mx-auto max-w-sm lg:bottom-4">
               <div className="relative">
                 <button type="button" aria-label="Chiudi" onClick={() => setSelected(null)}
                   className="absolute -right-2 -top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-navy-900 text-sm text-white shadow">✕</button>
