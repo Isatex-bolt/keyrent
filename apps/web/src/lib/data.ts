@@ -69,7 +69,7 @@ export async function catalogImages(keys: CatalogKey[]) {
 }
 
 /** Copertina per ogni annuncio: prima foto vera, altrimenti immagine indicativa di catalogo. */
-async function covers(ids: string[]) {
+export async function covers(ids: string[]) {
   const real = await coverImages(ids);
   const missing = ids.filter((id) => !real.has(id));
   const result = new Map<string, { url: string; indicative: boolean }>();

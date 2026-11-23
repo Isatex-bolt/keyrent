@@ -41,6 +41,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Area noleggiatore V2 (23/11): menu a sezioni (components/ProNav), dashboard KPI (/pro), catalogo flotta con filtri e Dal/Al (/pro/mezzi),
   scheda mezzo in sola lettura (/pro/mezzi/[id]) + modifica (/pro/mezzi/[id]/modifica), calendario flotta e singolo (/pro/calendario).
   Dati: lib/v2/fleet.ts (sola lettura, RLS). Cliente: header senza etichetta, dopo l'accesso resta in home.
+- Cliente V2 (23/11): barra in basso su telefono (components/v2/customer/BottomNav), home con noleggio in corso, /cerca/rapida,
+  /account = Il mio KeyRent, /account/noleggi (schede), /account/profilo, /account/dati, /account/azienda (+ /dati fatturazione).
+  0018: organizations.kind 'provider'|'renter' (azienda cliente: prenota, non pubblica), bookings.billing_organization_id,
+  contesto Personale/Azienda nel cookie kr_ctx; prenota: "Prenotazione per" e patente/età solo per mezzi a motore.
 - Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Manca: payout Connect, webhook.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

@@ -73,6 +73,7 @@ export async function signUp(formData: FormData) {
       if (!field(formData, "company_name") || !vat) back("Inserisci ragione sociale e partita IVA dell'azienda.");
       meta.company_name = field(formData, "company_name");
       meta.vat_number = vat;
+      meta.pending_renter_org = { name: field(formData, "company_name"), vat, sdi: field(formData, "sdi_code").toUpperCase(), pec: field(formData, "pec") };
     }
   }
 

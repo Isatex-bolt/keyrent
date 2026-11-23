@@ -12,7 +12,7 @@ export async function updateProfile(formData: FormData) {
   const { error } = await db.from("profiles").update({
     first_name: get("first_name"), last_name: get("last_name"), phone: get("phone"),
   }).eq("id", user.id);
-  const back = formData.get("back") === "/pro/profilo" ? "/pro/profilo" : "/account";
+  const back = ["/pro/profilo", "/account/dati"].includes(String(formData.get("back"))) ? String(formData.get("back")) : "/account/dati";
   revalidatePath(back);
   redirect(error ? `${back}?errore=${encodeURIComponent("Salvataggio non riuscito")}` : `${back}?ok=1`);
 }

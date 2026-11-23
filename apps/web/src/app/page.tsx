@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { HomeSearch } from "@/components/SearchForm";
+import { HomeStatus } from "@/components/v2/customer/HomeStatus";
 import { ListingCard } from "@/components/ListingCard";
 import { searchMap } from "@/lib/data";
 import { listingHref } from "@/lib/urls";
@@ -20,6 +21,7 @@ const steps = [
 export default function Home() {
   return (
     <>
+      <Suspense><HomeStatus /></Suspense>
       <section className="relative overflow-hidden bg-navy-900">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(2,168,169,0.25),transparent_55%)]" />
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20">

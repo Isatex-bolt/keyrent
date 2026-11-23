@@ -48,8 +48,8 @@ function Account({ pro }: { pro?: boolean }) {
         <div><label className="label" htmlFor="last_name">{pro ? "Cognome del referente" : "Cognome"}</label>
           <input id="last_name" name="last_name" required autoComplete="family-name" className="field" /></div>
       </div>
-      <div><label className="label" htmlFor="phone">Cellulare {pro ? "" : "(facoltativo)"}</label>
-        <input id="phone" name="phone" type="tel" required={pro} autoComplete="tel" className="field" /></div>
+      <div><label className="label" htmlFor="phone">Cellulare</label>
+        <input id="phone" name="phone" type="tel" required autoComplete="tel" placeholder="+39" className="field" /></div>
       <div><label className="label" htmlFor="email">Email per accedere</label>
         <input id="email" name="email" type="email" required autoComplete="email" className="field" /></div>
       <div><label className="label" htmlFor="password">Password (almeno 8 caratteri)</label>
@@ -83,11 +83,11 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   // 1 · cosa vuoi fare
   if (!tipo) {
     return (
-      <AuthCard wide title="Crea il tuo account KeyRent" subtitle="Scegli come vuoi usare KeyRent.">
+      <AuthCard wide title="Cosa vuoi fare su KeyRent?" subtitle="Un solo account: potrai fare anche l'altra cosa in seguito.">
         <FormError message={errore} />
         <Choices items={[
-          { href: `/registrati?tipo=cliente${n}`, icon: "🔑", title: "Voglio noleggiare", text: "Auto, moto, bici, camper, barche e furgoni da noleggiatori professionali verificati." },
-          { href: `/registrati?tipo=noleggiatore${n}`, icon: "🏢", title: "Metto a noleggio", text: "Sei un'attività con partita IVA e vuoi pubblicare i tuoi mezzi su KeyRent." },
+          { href: `/registrati?tipo=cliente${n}`, icon: "🔑", title: "Voglio noleggiare", text: "Cerca e prenota auto, moto, bici, camper, barche, furgoni e altri mezzi." },
+          { href: `/registrati?tipo=noleggiatore${n}`, icon: "🏢", title: "Metto mezzi a noleggio", text: "Pubblica e gestisci i tuoi mezzi con KeyRent." },
         ]} />
         {login}
       </AuthCard>
@@ -97,7 +97,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   // 2a · cliente: privato o azienda
   if (tipo === "cliente" && !come) {
     return (
-      <AuthCard wide title="Sei un privato o un'azienda?" subtitle="Così ti chiediamo solo i dati che servono.">
+      <AuthCard wide title="Come vuoi utilizzare KeyRent?" subtitle="Così ti chiediamo solo i dati che servono.">
         <Back href={`/registrati${next ? `?next=${encodeURIComponent(next)}` : ""}`} />
         <Choices items={[
           { href: `/registrati?tipo=cliente&come=privato${n}`, icon: "🙋", title: "Privato", text: "Noleggio per me, per una vacanza o un'uscita." },
@@ -115,7 +115,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
       title={pro ? "Registra la tua attività" : come === "azienda" ? "Account aziendale" : "Account privato"}
       subtitle={pro
         ? "Per noleggiatori professionali con P.IVA. Verifichiamo i dati prima di pubblicare i tuoi mezzi."
-        : "Gratuito. Per prenotare mezzi da noleggiatori professionali verificati."}>
+        : "Bastano 30 secondi. Patente e documenti li chiediamo solo se servono per il mezzo che prenoti."}>
       <Back href={pro ? `/registrati${next ? `?next=${encodeURIComponent(next)}` : ""}` : `/registrati?tipo=cliente${n}`} />
       <FormError message={errore} />
       <form action={signUp} className="space-y-8">
@@ -129,6 +129,11 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
               <input id="company_name" name="company_name" required autoComplete="organization" className="field" /></div>
             <div><label className="label" htmlFor="vat_number">Partita IVA</label>
               <input id="vat_number" name="vat_number" required placeholder="IT01234567890" className="field" /></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div><label className="label" htmlFor="sdi_code">Codice SDI</label><input id="sdi_code" name="sdi_code" maxLength={7} className="field" /></div>
+              <div><label className="label" htmlFor="pec">PEC (facoltativa)</label><input id="pec" name="pec" type="email" className="field" /></div>
+            </div>
+            <p className="text-xs text-mute">Prenoti per l&apos;azienda e ricevi i documenti intestati. Non diventi noleggiatore: per pubblicare mezzi c&apos;è un percorso a parte.</p>
           </Section>
         )}
         <Section title={pro || come === "azienda" ? "Referente e accesso" : "I tuoi dati"}><Account pro={pro} /></Section>

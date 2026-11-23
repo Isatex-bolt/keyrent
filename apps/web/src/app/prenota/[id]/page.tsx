@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { getBookingContext, requireUser } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { getListing, getQuote, getCancellationRules } from "@/lib/data";
 import { euro, romeToIso, todayRome, durationLabel } from "@/lib/format";
@@ -38,11 +38,15 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const db = await userDb();
-  const [quote, rules, { data: profile }] = await Promise.all([
+  const [quote, rules, { data: profile }, ctx] = await Promise.all([
     pickup && ret && ret > pickup ? getQuote(id, pickup, ret) : Promise.resolve(null),
     getCancellationRules(l.cancellation_policy_id),
     db.from("profiles").select("first_name, last_name").eq("id", user.id).maybeSingle(),
+    getBookingContext(),
   ]);
+  // patente ed età solo per i mezzi con motore (niente per bici e barche senza patente)
+  const needsLicense = ["auto", "moto", "scooter", "camper", "furgoni", "quad", "motoslitte"].includes(l.category_slug);
+  const who = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
 
   const paid = paymentsEnabled();
   return (
@@ -72,13 +76,28 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
           <input type="hidden" name="listing_id" value={id} />
           <input type="hidden" name="dal" value={dal} /><input type="hidden" name="al" value={al} />
           <input type="hidden" name="ora_ritiro" value={oraR} /><input type="hidden" name="ora_riconsegna" value={oraC} />
+          {ctx.orgs.length > 0 && (
+            <div className="card space-y-3 p-5">
+              <h2 className="font-semibold">Prenotazione per</h2>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {[{ id: "", name: who || "Me (personale)" }, ...ctx.orgs].map((o) => (
+                  <label key={o.id || "p"} className="flex cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-3 has-[:checked]:border-navy-900 has-[:checked]:bg-navy-50">
+                    <input type="radio" name="billing_org" value={o.id} defaultChecked={(ctx.current?.id ?? "") === o.id} className="accent-navy-900" />
+                    <span className="min-w-0"><span className="block truncate font-medium">{o.name}</span><span className="text-xs text-mute">{o.id ? "Fattura all'azienda" : "Personale"}</span></span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="card space-y-4 p-5">
-            <h2 className="font-semibold">Chi guida</h2>
+            <h2 className="font-semibold">{needsLicense ? "Chi guida" : "Chi ritira"}</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="label" htmlFor="first_name">Nome</label><input id="first_name" name="first_name" required defaultValue={profile?.first_name ?? ""} className="field" /></div>
               <div><label className="label" htmlFor="last_name">Cognome</label><input id="last_name" name="last_name" required defaultValue={profile?.last_name ?? ""} className="field" /></div>
-              <div><label className="label" htmlFor="birth_year">Anno di nascita</label><input id="birth_year" name="birth_year" type="number" min={1920} max={2015} required className="field" /></div>
-              <div><label className="label" htmlFor="license_year">Patente dal (anno)</label><input id="license_year" name="license_year" type="number" min={1950} max={2030} className="field" /></div>
+              {needsLicense && <>
+                <div><label className="label" htmlFor="birth_year">Anno di nascita</label><input id="birth_year" name="birth_year" type="number" inputMode="numeric" min={1920} max={2015} required className="field" /></div>
+                <div><label className="label" htmlFor="license_year">Patente dal (anno)</label><input id="license_year" name="license_year" type="number" inputMode="numeric" min={1950} max={2030} required className="field" /></div>
+              </>}
               <div className="sm:col-span-2"><label className="label" htmlFor="notes">Note per il noleggiatore (facoltative)</label>
                 <textarea id="notes" name="notes" rows={2} maxLength={500} className="field" placeholder="Es. orario di arrivo, richieste particolari" /></div>
             </div>

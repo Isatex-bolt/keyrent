@@ -42,6 +42,9 @@ export async function requestBooking(f: FormData) {
     }));
   }
   if (error) redirect(`${back}&errore=${encodeURIComponent(bookingError(error.message))}`);
+  // prenotazione intestata all'azienda scelta (il database controlla che il cliente ne faccia parte)
+  const billingOrg = str(f, "billing_org");
+  if (billingOrg) await serviceDb().rpc("svc_set_booking_billing", { p_booking: data, p_customer: user.id, p_org: billingOrg });
   // salva nome e cognome nel profilo se mancano
   const db = await userDb();
   const { data: p } = await db.from("profiles").select("first_name").eq("id", user.id).maybeSingle();

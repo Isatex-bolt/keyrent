@@ -19,6 +19,7 @@ export function pendingOrgOf(user: { user_metadata?: Record<string, unknown> } |
 export async function completePendingOrg(): Promise<boolean> {
   const db = await userDb();
   const { data: u } = await db.auth.getUser();
+  if (u.user) await completePendingRenter(db, u.user.user_metadata ?? {});
   const p = pendingOrgOf(u.user);
   if (!u.user || !p) return false;
   const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
@@ -35,4 +36,16 @@ export async function completePendingOrg(): Promise<boolean> {
   }
   await db.auth.updateUser({ data: { pending_org: null } });
   return true;
+}
+
+type Db = Awaited<ReturnType<typeof userDb>>;
+/** Azienda cliente indicata in registrazione ("Voglio noleggiare → Azienda"): la crea dopo la conferma dell'email. */
+async function completePendingRenter(db: Db, meta: Record<string, unknown>) {
+  const r = meta.pending_renter_org as { name?: string; vat?: string; sdi?: string; pec?: string } | undefined;
+  if (!r?.name || !r.vat) return;
+  const { error } = await db.rpc("create_renter_organization", {
+    p_legal_name: r.name, p_vat: r.vat, p_sdi: r.sdi || null, p_pec: r.pec || null, p_email: null, p_phone: null, p_address: {},
+  });
+  // P.IVA già presente o database non aggiornato: i dati restano e l'utente completa da Profilo → Azienda
+  if (!error) await db.auth.updateUser({ data: { pending_renter_org: null } });
 }

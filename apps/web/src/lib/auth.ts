@@ -21,12 +21,38 @@ export async function requireUser(next = "/account") {
   return user;
 }
 
+/** Le attività NOLEGGIATORE dell'utente (le aziende clienti non danno accesso all'area noleggiatore). */
 export async function getMemberships(): Promise<Membership[]> {
   const db = await userDb();
+  const res = await db.from("organization_members")
+    .select("organization_id, role, org:organizations!inner(id, legal_name, trade_name, verification_status, kind)")
+    .eq("status", "active").eq("org.kind", "provider");
+  if (!res.error) return (res.data ?? []) as unknown as Membership[];
+  // database senza la migrazione 0018: tutte le attività sono noleggiatori
   const { data } = await db.from("organization_members")
     .select("organization_id, role, org:organizations(id, legal_name, trade_name, verification_status)")
     .eq("status", "active");
   return (data ?? []) as unknown as Membership[];
+}
+
+export type BusinessProfile = { id: string; name: string; kind: "provider" | "renter"; role: string };
+/** Le aziende per cui l'utente può prenotare (aziende clienti e anche le proprie attività noleggiatore). */
+export async function getBusinessProfiles(): Promise<BusinessProfile[]> {
+  const db = await userDb();
+  const { data, error } = await db.from("organization_members")
+    .select("organization_id, role, org:organizations(legal_name, trade_name, kind)").eq("status", "active");
+  if (error) return [];
+  return ((data ?? []) as unknown as { organization_id: string; role: string; org: { legal_name: string; trade_name: string | null; kind: string } }[])
+    .map((m) => ({ id: m.organization_id, name: m.org.trade_name ?? m.org.legal_name, kind: m.org.kind === "renter" ? "renter" : "provider", role: m.role }));
+}
+
+/** Contesto di prenotazione del cliente: personale oppure una sua azienda (cookie). */
+export const CTX_COOKIE = "kr_ctx";
+export async function getBookingContext() {
+  const [orgs, jar] = await Promise.all([getBusinessProfiles(), cookies()]);
+  const v = jar.get(CTX_COOKIE)?.value;
+  const current = orgs.find((o) => o.id === v) ?? null;
+  return { orgs, current };
 }
 
 /** L'organizzazione su cui l'utente lavora (la prima; il selettore multi-azienda arriverà se servirà). */
