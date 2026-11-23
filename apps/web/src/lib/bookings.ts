@@ -23,6 +23,7 @@ export function bookingError(msg: string) {
     ["HOLD_LOST", "Le date non sono più bloccate per questa richiesta."],
     ["INVALID_TRANSITION", "Questa operazione non è possibile nello stato attuale."],
     ["FORBIDDEN", "Non hai i permessi per questa operazione."],
+    ["PAYMENT_MISSING", "Il cliente non ha ancora inserito la carta per questa richiesta."],
   ];
   return map.find(([k]) => msg.includes(k))?.[1] ?? "Operazione non riuscita. Riprova.";
 }

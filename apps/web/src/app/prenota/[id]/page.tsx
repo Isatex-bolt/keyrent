@@ -8,6 +8,7 @@ import { userDb } from "@/lib/supabase/server";
 import { getListing, getQuote, getCancellationRules } from "@/lib/data";
 import { euro, romeToIso, todayRome, durationLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
+import { paymentsEnabled } from "@/lib/stripe";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { requestBooking } from "@/app/account/bookingActions";
 
@@ -43,6 +44,7 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
     db.from("profiles").select("first_name, last_name").eq("id", user.id).maybeSingle(),
   ]);
 
+  const paid = paymentsEnabled();
   return (
     <div className="space-y-6">
       <div>
@@ -92,9 +94,11 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
             <div className="flex justify-between text-sm"><span className="text-mute">{durationLabel(quote.qty, quote.unit)}</span><span>{euro(quote.base_cents)}</span></div>
             <div className="flex items-baseline justify-between border-t border-line pt-3"><span className="text-sm text-mute">Totale noleggio</span><span className="text-2xl font-bold">{euro(quote.total_cents)}</span></div>
             {l.deposit_cents > 0 && <p className="text-xs text-mute">Cauzione {euro(l.deposit_cents)} gestita direttamente dal noleggiatore al ritiro.</p>}
-            <button className="btn-primary w-full">Invia richiesta</button>
+            <button className="btn-primary w-full">{paid ? "Continua: inserisci la carta" : "Invia richiesta"}</button>
             <p className="rounded-xl bg-teal-50 p-3 text-xs text-navy-900">
-              Il noleggiatore ha 24 ore per rispondere. Il pagamento online è in attivazione: in questa fase la richiesta non richiede la carta e non viene addebitato nulla.
+              {paid
+                ? "Al prossimo passo blocchiamo l'importo sulla carta: lo addebitiamo solo quando il noleggiatore accetta (ha 24 ore). Se rifiuta o non risponde, il blocco si annulla e non paghi nulla."
+                : "Il noleggiatore ha 24 ore per rispondere. Il pagamento online è in attivazione: in questa fase la richiesta non richiede la carta e non viene addebitato nulla."}
             </p>
           </aside>
         </form>

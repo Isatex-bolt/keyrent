@@ -11,6 +11,8 @@ import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
 import { PROVINCE } from "@/lib/province";
+import { captureIntent } from "@/lib/stripe";
+import { releaseHold } from "@/lib/payments";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import type { PreviewRow } from "@/lib/importSheet";
@@ -282,12 +284,48 @@ export async function respondBooking(f: FormData) {
   const id = str(f, "id");
   const decision = str(f, "decision");
   const { bookingError } = await import("@/lib/bookings");
-  const { error } = decision === "accept"
-    ? await serviceDb().rpc("svc_accept_booking", { p_booking: id, p_actor: ctx.user.id })
-    : await serviceDb().rpc("svc_decline_booking", { p_booking: id, p_actor: ctx.user.id, p_reason: str(f, "reason") || null });
-  if (error) fail("/pro/richieste", bookingError(error.message));
+  const db = serviceDb();
+  const { data: bk } = await db.from("bookings").select("payment_required").eq("id", id).maybeSingle();
+
+  if (decision !== "accept") {
+    const { error } = await db.rpc("svc_decline_booking", { p_booking: id, p_actor: ctx.user.id, p_reason: str(f, "reason") || null });
+    if (error) fail("/pro/richieste", bookingError(error.message));
+    await releaseHold(id);
+    revalidatePath("/pro/richieste");
+    redirect("/pro/richieste?ok=rifiutata");
+  }
+
+  if (!bk?.payment_required) {
+    const { error } = await db.rpc("svc_accept_booking", { p_booking: id, p_actor: ctx.user.id });
+    if (error) fail("/pro/richieste", bookingError(error.message));
+    revalidatePath("/pro/richieste");
+    redirect("/pro/richieste?ok=accettata");
+  }
+
+  // con pagamento: verifica → addebito sulla carta → conferma (cliente e noleggiatore avvisati)
+  const { data: pi, error } = await db.rpc("svc_accept_paid_booking", { p_booking: id, p_actor: ctx.user.id });
+  if (error || !pi) fail("/pro/richieste", bookingError(error?.message ?? ""));
+  let captured: { id: string; amount_received: number; status: string } | null = null;
+  try {
+    captured = await captureIntent(pi as string);
+  } catch (e) {
+    console.error("capture", id, e);
+  }
+  if (!captured || captured.status !== "succeeded") {
+    await db.rpc("svc_payment_failed", { p_booking: id });
+    await releaseHold(id);
+    revalidatePath("/pro/richieste");
+    fail("/pro/richieste", "Addebito non riuscito sulla carta del cliente: la prenotazione è stata annullata e il cliente avvisato.");
+  }
+  const { error: cErr } = await db.rpc("svc_confirm_paid_booking", {
+    p_booking: id, p_actor: ctx.user.id, p_pi: captured!.id, p_captured: captured!.amount_received,
+  });
+  if (cErr) {
+    console.error("confirm after capture", id, cErr.message);
+    fail("/pro/richieste", "Pagamento incassato ma conferma non registrata: avvisa l'assistenza KeyRent.");
+  }
   revalidatePath("/pro/richieste");
-  redirect(`/pro/richieste?ok=${decision === "accept" ? "accettata" : "rifiutata"}`);
+  redirect("/pro/richieste?ok=confermata");
 }
 
 // ---------- Selettore attività ----------

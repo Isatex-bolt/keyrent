@@ -1,9 +1,9 @@
+import { expireAll } from "@/lib/payments";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
-import { serviceDb } from "@/lib/supabase/admin";
 import { Badge } from "@/lib/status";
 import { bookingStatus, fmtDateTime } from "@/lib/bookings";
 import { euro } from "@/lib/format";
@@ -21,7 +21,7 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
   const { id } = await params;
   const sp = await searchParams;
   await requireUser(`/account/prenotazioni/${id}`);
-  await serviceDb().rpc("svc_expire_stale_bookings");
+  await expireAll();
   const db = await userDb();
   const [{ data: rows }, { data: identity }, { data: pickup }, { data: events }] = await Promise.all([
     db.rpc("my_bookings", { p_booking: id }),
@@ -29,6 +29,7 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
     db.rpc("get_booking_pickup_details", { p_booking: id }),
     db.from("booking_events").select("to_status, created_at, reason").eq("booking_id", id).order("created_at"),
   ]);
+  const { data: pay } = await db.from("bookings").select("payment_required, payment_ready").eq("id", id).maybeSingle();
   const b = rows?.[0];
   if (!b) notFound();
   await db.rpc("mark_booking_updates_seen", { p_booking: id, p_as: "customer" });
@@ -44,7 +45,9 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
         </div>
         <p className="text-sm text-mute">Prenotazione {b.code} · {b.city} ({b.province})</p>
       </div>
-      <Flash sp={sp} ok={{ richiesta: "Richiesta inviata! Il noleggiatore ha 24 ore per rispondere: ti avvisiamo appena lo fa.", cancellata: "Prenotazione cancellata." }} />
+      <Flash sp={sp} ok={{ richiesta: pay?.payment_required
+        ? "Richiesta inviata! L'importo è bloccato sulla carta: lo addebitiamo solo se il noleggiatore accetta (entro 24 ore)."
+        : "Richiesta inviata! Il noleggiatore ha 24 ore per rispondere: ti avvisiamo appena lo fa.", cancellata: "Prenotazione cancellata." }} />
 
       <section className="card grid gap-4 p-5 text-sm sm:grid-cols-3">
         <div><p className="text-mute">Ritiro</p><p className="font-semibold">{fmtDateTime(b.pickup_at)}</p></div>
@@ -53,8 +56,17 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
           {b.deposit_cents > 0 && <p className="text-xs text-mute">+ cauzione {euro(b.deposit_cents)} al ritiro</p>}</div>
       </section>
 
-      {b.status === "requested" && b.provider_response_due_at && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm">In attesa della risposta del noleggiatore, entro {fmtDateTime(b.provider_response_due_at)}.</p>
+      {b.status === "requested" && pay?.payment_required && !pay.payment_ready ? (
+        <section className="card space-y-3 border-amber-200 bg-amber-50 p-5">
+          <h2 className="font-semibold">Completa il pagamento</h2>
+          <p className="text-sm">La richiesta parte quando inserisci la carta. Teniamo le date bloccate per 30 minuti.</p>
+          <Link href={`/account/prenotazioni/${b.id}/pagamento`} className="btn-primary w-full">Inserisci la carta</Link>
+        </section>
+      ) : b.status === "requested" && b.provider_response_due_at && (
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm">
+          In attesa della risposta del noleggiatore, entro {fmtDateTime(b.provider_response_due_at)}.
+          {pay?.payment_ready && " L'importo è bloccato sulla carta: viene addebitato solo se accetta, altrimenti il blocco si annulla."}
+        </p>
       )}
 
       {identity && (

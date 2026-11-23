@@ -1,8 +1,8 @@
+import { expireAll } from "@/lib/payments";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
-import { serviceDb } from "@/lib/supabase/admin";
 import { BookingSummary, type ProBooking } from "@/components/BookingRow";
 import { ProHeader, Skeleton } from "@/components/ProPage";
 
@@ -15,7 +15,7 @@ export default function Page() {
 async function Bookings() {
   const { membership } = await requireProvider("/pro/prenotazioni");
   if (!membership) redirect("/pro");
-  await serviceDb().rpc("svc_expire_stale_bookings");
+  await expireAll();
   const db = await userDb();
   const { data } = await db.from("bookings")
     .select("id, code, status, pickup_at, return_at, total_cents, provider_net_cents, provider_response_due_at, driver, listings(title), locations(name)")
