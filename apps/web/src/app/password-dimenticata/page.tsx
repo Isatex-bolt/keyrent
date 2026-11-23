@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { AuthCard, FormNotice } from "@/components/AuthCard";
+import { AuthCard, FormError, FormNotice } from "@/components/AuthCard";
 import { requestPasswordReset } from "../accedi/actions";
 
 export const metadata = { title: "Password dimenticata" };
@@ -25,6 +25,7 @@ async function Form({ searchParams }: { searchParams: Promise<Record<string, str
   }
   return (
     <form action={requestPasswordReset} className="space-y-4">
+      <FormError message={typeof sp.errore === "string" ? sp.errore : undefined} />
       <div><label className="label" htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required autoComplete="email" defaultValue={typeof sp.email === "string" ? sp.email : ""} className="field" /></div>
       <button className="btn-primary w-full">Inviami il link</button>

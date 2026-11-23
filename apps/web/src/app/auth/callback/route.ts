@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
     const { error } = await db.auth.exchangeCodeForSession(code);
     if (!error) await completePendingOrg();
     if (!error) return NextResponse.redirect(new URL(next, url.origin));
-    // Link aperto in un altro browser o app: l'email è comunque confermata, basta accedere
+    // Link per la nuova password aperto in un altro browser o app: non si può usare, ne serve uno nuovo
+    if (next === "/account/password") {
+      return NextResponse.redirect(new URL(`/password-dimenticata?errore=${encodeURIComponent("Il link va aperto nello stesso browser in cui l'hai richiesto. Richiedine uno nuovo qui sotto.")}`, url.origin));
+    }
+    // Link di conferma aperto in un altro browser o app: l'email è comunque confermata, basta accedere
     return login("Email confermata ✓ Ora accedi con email e password.", true);
   }
   return login("Il link non è valido. Accedi con email e password.");

@@ -17,7 +17,8 @@ async function confirm(f: FormData) {
   const wanted = String(f.get("next") ?? "");
   const db = await userDb();
   const { data, error } = await db.auth.verifyOtp({ token_hash, type: TYPES.includes(type) ? type : "email" });
-  const next = wanted ? safe(wanted) : data.user?.user_metadata?.account_type === "provider" ? "/pro" : "/account";
+  const next = wanted ? safe(wanted) : type === "recovery" ? "/account/password"
+    : data.user?.user_metadata?.account_type === "provider" ? "/pro" : "/account";
   if (!error) await completePendingOrg();
   if (error) {
     redirect(`/accedi?errore=${encodeURIComponent("Il link è scaduto o è già stato usato. Se avevi già confermato, accedi con email e password.")}&next=${encodeURIComponent(next)}`);
