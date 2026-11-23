@@ -5,9 +5,9 @@ import { previewFleet, keep } from "@/lib/v2/context";
 import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
 import { userDb } from "@/lib/supabase/server";
 import { ProviderShellV2 } from "@/components/v2/Shell";
-import { MonthCalendar } from "@/components/v2/MonthCalendar";
+import { AvailabilityPanel } from "@/components/v2/AvailabilityPanel";
 import { VehicleEditor, type EditableVehicle } from "@/components/v2/VehicleEditor";
-import { DemoNote, LISTING_LABEL, Legend, STATE, euroShort, shortDate } from "@/components/v2/ui";
+import { DemoNote, LISTING_LABEL, STATE, euroShort, shortDate } from "@/components/v2/ui";
 
 export const metadata = { title: "Scheda mezzo V2 · anteprima" };
 type SP = Promise<Record<string, string | string[] | undefined>>;
@@ -44,7 +44,10 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
   const initial: EditableVehicle = { title: v.title, description: detail.description, dayPriceEuro: day ? String(day.price_cents / 100) : "",
     depositEuro: String(detail.deposit / 100), instantBook: detail.instant };
   const q = keep(sp);
-  const href = (m: string) => `/preview/provider-vehicle-v2/${v.id}${keep(sp, { mese: m })}`;
+  const href = (m: string) => `/preview/provider-vehicle-v2/${v.id}${keep(sp, { mese: m })}#calendario`;
+  const [yy, mm] = mese.split("-").map(Number);
+  const months = [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${yy}-${String((mm <= 6 ? 1 : 7) + i).padStart(2, "0")}`)];
+  const hrefs = Object.fromEntries(months.map((m) => [m, href(m)]));
   const today = v.days[data.today]?.state ?? "off";
   return (
     <ProviderShellV2 orgName={all.orgName} locations={all.locations} sede={sede}>
@@ -90,11 +93,6 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
           </div>
         </div>
         <div className="space-y-4">
-          <div id="calendario" className="space-y-2">
-            <MonthCalendar vehicle={{ ...v, days: data.vehicles.find((x) => x.id === v.id)?.days ?? v.days }} days={dayList(from, to)} bookings={bookings}
-              today={data.today} mese={mese} prevHref={href(shiftMonth(mese, -1))} nextHref={href(shiftMonth(mese, 1))} />
-            <Legend pool={v.quantityMode === "pool"} />
-          </div>
           <div id="prenotazioni" className="card p-5">
             <h2 className="mb-2 font-semibold">Prenotazioni</h2>
             {future.length ? (
@@ -104,6 +102,9 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
             ) : <p className="text-sm text-mute">Nessuna prenotazione in arrivo.</p>}
           </div>
         </div>
+      </div>
+      <div id="calendario">
+        <AvailabilityPanel vehicle={v} days={dayList(from, to)} bookings={bookings} today={data.today} mese={mese} hrefFor={hrefs} />
       </div>
     </ProviderShellV2>
   );

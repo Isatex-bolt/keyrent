@@ -4,7 +4,7 @@ import { previewFleet, keep } from "@/lib/v2/context";
 import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
 import { ProviderShellV2 } from "@/components/v2/Shell";
 import { FleetTimeline } from "@/components/v2/FleetTimeline";
-import { MonthCalendar } from "@/components/v2/MonthCalendar";
+import { AvailabilityPanel } from "@/components/v2/AvailabilityPanel";
 import { DemoNote, Legend, monthLabel } from "@/components/v2/ui";
 
 export const metadata = { title: "Calendario V2 · anteprima" };
@@ -60,8 +60,9 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
               </Link>
             ))}
           </div>
-          <MonthCalendar vehicle={mezzo} days={days} bookings={bookings} today={data.today} mese={mese}
-            prevHref={href({ mese: shiftMonth(mese, -1) })} nextHref={href({ mese: shiftMonth(mese, 1) })} />
+          <AvailabilityPanel vehicle={mezzo} days={days} bookings={bookings} today={data.today} mese={mese} hrefFor={Object.fromEntries(
+            [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${mese.slice(0, 4)}-${String((Number(mese.slice(5)) <= 6 ? 1 : 7) + i).padStart(2, "0")}`)]
+              .map((m) => [m, href({ mese: m })]))} />
         </div>
       ) : <p className="text-mute">Nessun mezzo.</p>}
     </ProviderShellV2>

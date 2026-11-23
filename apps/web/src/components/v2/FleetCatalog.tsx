@@ -26,12 +26,19 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
   const [view, setView] = useState<View>("card");
   const [q, setQ] = useState(""); const [sede, setSede] = useState(""); const [stato, setStato] = useState("");
   const [disp, setDisp] = useState(""); const [cat, setCat] = useState("");
+  const [dal, setDal] = useState(""); const [al, setAl] = useState("");
+  // libero in tutte le date scelte (giorni fuori dall'intervallo caricato: non si escludono)
+  const freeIn = (v: FleetVehicle) => {
+    if (!dal) return true;
+    const end = al && al >= dal ? al : dal;
+    return Object.entries(v.days).every(([d, c]) => d < dal || d > end || c.state === "free" || c.state === "partial");
+  };
   const cats = useMemo(() => [...new Map(vehicles.map((v) => [v.categorySlug, v.category])).entries()], [vehicles]);
   const list = vehicles.filter((v) => {
     const t = v.days[today]?.state;
     return (!q || `${v.title} ${v.make} ${v.model}`.toLowerCase().includes(q.toLowerCase()))
       && (!sede || v.locationId === sede) && (!stato || v.status === stato) && (!cat || v.categorySlug === cat)
-      && (!disp || (disp === "libero" ? t === "free" || t === "partial" : disp === "occupato" ? t === "booked" || t === "pending" : t === "off"));
+      && freeIn(v) && (!disp || (disp === "libero" ? t === "free" || t === "partial" : disp === "occupato" ? t === "booked" || t === "pending" : t === "off"));
   });
   const sel = "rounded-xl border border-line bg-white px-3 py-2 text-sm";
   return (
@@ -41,6 +48,11 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
         <select value={sede} onChange={(e) => setSede(e.target.value)} className={sel}><option value="">Tutte le sedi</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
         <select value={stato} onChange={(e) => setStato(e.target.value)} className={sel}><option value="">Ogni stato</option>{Object.entries(LISTING).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
         <select value={disp} onChange={(e) => setDisp(e.target.value)} className={sel}><option value="">Disponibilità oggi</option><option value="libero">Libero oggi</option><option value="occupato">Occupato oggi</option><option value="fermo">Non disponibile</option></select>
+        <label className={`${sel} flex items-center gap-2`}><span className="text-mute">Dal</span>
+          <input type="date" value={dal} min={today} onChange={(e) => { setDal(e.target.value); if (!al || al < e.target.value) setAl(e.target.value); }} className="min-h-0 border-0 bg-transparent p-0 text-sm outline-none" /></label>
+        <label className={`${sel} flex items-center gap-2`}><span className="text-mute">Al</span>
+          <input type="date" value={al} min={dal || today} onChange={(e) => setAl(e.target.value)} className="min-h-0 border-0 bg-transparent p-0 text-sm outline-none" /></label>
+        {dal && <button onClick={() => { setDal(""); setAl(""); }} className="text-sm text-teal-600 hover:underline">Tutte le date</button>}
         <select value={cat} onChange={(e) => setCat(e.target.value)} className={sel}><option value="">Tutte le categorie</option>{cats.map(([s, n]) => <option key={s} value={s}>{n}</option>)}</select>
         <div className="ml-auto flex rounded-xl border border-line bg-white p-1">
           {(["card", "tabella", "calendario"] as View[]).map((v) => (
@@ -51,7 +63,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
         </div>
       </div>
       <div className="flex items-center justify-between text-sm text-mute">
-        <span>{list.length} {list.length === 1 ? "mezzo" : "mezzi"}</span>
+        <span>{list.length} {list.length === 1 ? "mezzo" : "mezzi"}{dal ? ` liberi ${al && al !== dal ? `dal ${dal.split("-").reverse().join("/")} al ${al.split("-").reverse().join("/")}` : `il ${dal.split("-").reverse().join("/")}`}` : ""}</span>
         <Link href={addHref} className="btn-primary px-4 py-2 text-sm">Aggiungi mezzo</Link>
       </div>
 
@@ -86,16 +98,13 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
                   {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-xs font-semibold uppercase tracking-[0.2em] text-navy-700/50">{v.category} · foto da caricare</span>}
                   <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm ${l.tone}`}>{l.label}</span>
                   <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold shadow-sm">
-                    <span className={`h-2 w-2 rounded-full ${STATE[t].dot}`} />{v.quantityMode === "pool" ? `${v.days[today]?.free ?? 0}/${v.units} liberi` : STATE[t].label}
+                    {dal ? <><span className="h-2 w-2 rounded-full bg-emerald-500" />Libero nelle date</> : <><span className={`h-2 w-2 rounded-full ${STATE[t].dot}`} />{v.quantityMode === "pool" ? `${v.days[today]?.free ?? 0}/${v.units} liberi` : STATE[t].label}</>}
                   </span>
                 </Link>
                 <div className="space-y-2 p-4">
                   <div>
                     <Link href={vehicleHref(v.id)} className="font-semibold text-navy-900 hover:text-teal-600">{v.title}</Link>
                     <p className="text-xs text-mute">{v.category} · {[v.make, v.model].filter(Boolean).join(" ") || "—"} · {v.locationName}</p>
-                  </div>
-                  <div className="flex gap-[3px]" aria-label="Prossimi 14 giorni">
-                    {days.filter((d) => d >= today).slice(0, 14).map((d) => <span key={d} title={d} className={`h-2 flex-1 rounded-full ${STATE[v.days[d]?.state ?? "off"].dot}`} />)}
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span>{v.priceFromCents ? <>da <b>{euroShort(v.priceFromCents)}</b></> : <span className="text-mute">Prezzo da impostare</span>}</span>
