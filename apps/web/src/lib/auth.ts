@@ -36,23 +36,43 @@ export async function getMemberships(): Promise<Membership[]> {
 }
 
 export type BusinessProfile = { id: string; name: string; kind: "provider" | "renter"; role: string };
-/** Le aziende per cui l'utente può prenotare (aziende clienti e anche le proprie attività noleggiatore). */
+/** Profili AZIENDA cliente dell'utente (aziende per cui noleggia). Le attività di noleggio NON sono profili azienda cliente. */
 export async function getBusinessProfiles(): Promise<BusinessProfile[]> {
   const db = await userDb();
   const { data, error } = await db.from("organization_members")
-    .select("organization_id, role, org:organizations(legal_name, trade_name, kind)").eq("status", "active");
+    .select("organization_id, role, org:organizations!inner(legal_name, trade_name, kind)").eq("status", "active").eq("org.kind", "renter");
   if (error) return [];
   return ((data ?? []) as unknown as { organization_id: string; role: string; org: { legal_name: string; trade_name: string | null; kind: string } }[])
-    .map((m) => ({ id: m.organization_id, name: m.org.trade_name ?? m.org.legal_name, kind: m.org.kind === "renter" ? "renter" : "provider", role: m.role }));
+    .map((m) => ({ id: m.organization_id, name: m.org.trade_name ?? m.org.legal_name, kind: "renter" as const, role: m.role }));
+}
+
+/**
+ * Capacità dell'account, indipendenti tra loro (una non dà mai l'altra):
+ * privato = noleggia come persona · aziende = profili azienda cliente · noleggiatore = ha un'attività di noleggio.
+ */
+export type Capabilities = { privato: boolean; aziende: BusinessProfile[]; noleggiatore: boolean };
+export async function getCapabilities(): Promise<Capabilities> {
+  const user = await getUser();
+  if (!user) return { privato: false, aziende: [], noleggiatore: false };
+  const db = await userDb();
+  const [{ data: p, error }, aziende, memberships] = await Promise.all([
+    db.from("profiles").select("rents_personally").eq("id", user.id).maybeSingle(),
+    getBusinessProfiles(), getMemberships(),
+  ]);
+  // database senza la migrazione 0019: come prima, chi non è noleggiatore noleggia come privato
+  const privato = error ? memberships.length === 0 : !!p?.rents_personally;
+  return { privato, aziende, noleggiatore: memberships.length > 0 };
 }
 
 /** Contesto di prenotazione del cliente: personale oppure una sua azienda (cookie). */
 export const CTX_COOKIE = "kr_ctx";
 export async function getBookingContext() {
-  const [orgs, jar] = await Promise.all([getBusinessProfiles(), cookies()]);
+  const [caps, jar] = await Promise.all([getCapabilities(), cookies()]);
+  const orgs = caps.aziende;
   const v = jar.get(CTX_COOKIE)?.value;
-  const current = orgs.find((o) => o.id === v) ?? null;
-  return { orgs, current };
+  // senza profilo privato si prenota sempre per un'azienda (la prima, se non ne è scelta una)
+  const current = orgs.find((o) => o.id === v) ?? (caps.privato ? null : orgs[0] ?? null);
+  return { orgs, current, privato: caps.privato, noleggiatore: caps.noleggiatore };
 }
 
 /** L'organizzazione su cui l'utente lavora (la prima; il selettore multi-azienda arriverà se servirà). */

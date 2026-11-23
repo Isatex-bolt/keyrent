@@ -15,7 +15,7 @@ export type Thread = { id: string; title: string; other: string; last: string; a
 export type Business = { name: string; vat: string; sdi: string; pec: string; email: string; street: string; city: string; province: string; cap: string };
 export type CustomerData = {
   demo: boolean; loggedIn: boolean; first: string; last: string; email: string; phone: string;
-  isProvider: boolean; business: Business | null; context: "personale" | "azienda";
+  isProvider: boolean; privato: boolean; business: Business | null; context: "personale" | "azienda";
   businessId: string | null; orgs: BusinessProfile[];
   rentals: Rental[]; threads: Thread[];
 };
@@ -53,7 +53,7 @@ export async function loadCustomer(): Promise<CustomerData | null> {
   return {
     demo: false, loggedIn: true,
     first: profile?.first_name ?? meta.first_name ?? "", last: profile?.last_name ?? meta.last_name ?? "", email: user.email ?? "", phone: profile?.phone ?? "",
-    isProvider: memberships.length > 0,
+    isProvider: memberships.length > 0, privato: ctx.privato,
     business: cur ? { name: cur.name, vat: "", sdi: "", pec: "", email: "", street: "", city: "", province: "", cap: "" } : null,
     businessId: cur?.id ?? null, orgs: ctx.orgs,
     context: cur ? "azienda" : "personale",

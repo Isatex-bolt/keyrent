@@ -69,24 +69,39 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
         <p className="mt-2 text-xs text-mute">Il totale si aggiorna da solo quando cambi date o orari.</p>
       </form>
 
-      {!quote ? (
+      {!ctx.privato && ctx.orgs.length === 0 ? (
+        <div className="card space-y-3 p-5">
+          <h2 className="font-semibold">{ctx.noleggiatore ? "Questo è un account noleggiatore" : "Ti manca un profilo per noleggiare"}</h2>
+          <p className="text-sm text-mute">{ctx.noleggiatore
+            ? "Il tuo account serve a mettere a noleggio i mezzi della tua attività. Per prenotare un mezzo usa un account cliente."
+            : "Aggiungi un profilo privato o un profilo azienda: ci vuole un minuto e poi torni qui."}</p>
+          {!ctx.noleggiatore && <div className="flex flex-wrap gap-2"><Link href="/account/privato" className="btn-primary">Aggiungi profilo privato</Link><Link href="/account/azienda/dati" className="btn-ghost">Aggiungi profilo azienda</Link></div>}
+        </div>
+      ) : !quote ? (
         <p className="card p-5 text-sm text-mute">{pickup && ret ? "Per queste date non è possibile calcolare un prezzo: verifica la durata minima o cambia date." : "Scegli le date per vedere il prezzo."}</p>
       ) : (
         <form action={requestBooking} className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <input type="hidden" name="listing_id" value={id} />
           <input type="hidden" name="dal" value={dal} /><input type="hidden" name="al" value={al} />
           <input type="hidden" name="ora_ritiro" value={oraR} /><input type="hidden" name="ora_riconsegna" value={oraC} />
-          {ctx.orgs.length > 0 && (
+          {ctx.privato && ctx.orgs.length > 0 && (
             <div className="card space-y-3 p-5">
-              <h2 className="font-semibold">Prenotazione per</h2>
+              <h2 className="font-semibold">Prenota come</h2>
               <div className="grid gap-2 sm:grid-cols-2">
-                {[{ id: "", name: who || "Me (personale)" }, ...ctx.orgs].map((o) => (
-                  <label key={o.id || "p"} className="flex cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-3 has-[:checked]:border-navy-900 has-[:checked]:bg-navy-50">
+                {[{ id: "", title: "Privato", name: who || "Il tuo profilo privato" }, ...ctx.orgs.map((o) => ({ id: o.id, title: "Azienda", name: o.name }))].map((o) => (
+                  <label key={o.id || "p"} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-3 has-[:checked]:border-navy-900 has-[:checked]:bg-navy-50">
                     <input type="radio" name="billing_org" value={o.id} defaultChecked={(ctx.current?.id ?? "") === o.id} className="accent-navy-900" />
-                    <span className="min-w-0"><span className="block truncate font-medium">{o.name}</span><span className="text-xs text-mute">{o.id ? "Fattura all'azienda" : "Personale"}</span></span>
+                    <span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-wide text-mute">{o.title}</span><span className="block truncate font-medium">{o.name}</span></span>
                   </label>
                 ))}
               </div>
+            </div>
+          )}
+          {!ctx.privato && ctx.current && (
+            <div className="card flex items-center justify-between gap-3 p-5">
+              <span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-wide text-mute">Prenota come azienda</span><span className="block truncate font-medium">{ctx.current.name}</span></span>
+              <input type="hidden" name="billing_org" value={ctx.current.id} />
+              <span className="text-xs text-mute">Fattura all&apos;azienda</span>
             </div>
           )}
           <div className="card space-y-4 p-5">

@@ -52,6 +52,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Home (23/11): Cosa = menu a tendina, solo giorni (stesso giorno = 1 giorno, nessun orario imposto).
 - Checkout V2: preview sul ramo preview-checkout (/preview/booking-v2, tutto simulato). Utente ok a pubblicarlo a tappe;
   consegna solo se il noleggiatore la attiva (raggio km + prezzo al km + eventuale fisso), prezzo calcolato dalla distanza.
+- Capacità separate (0019, 23/11): profiles.rents_personally = PRIVATO; organizations kind 'renter' = AZIENDA cliente;
+  kind 'provider' = ATTIVITÀ DI NOLEGGIO. Nessuna capacità automatica (lib/auth getCapabilities). P.IVA unica per tipo
+  (organizations_kind_vat_key). Profilo /account/profilo: card Privato / Azienda / Attività di noleggio; /account/privato
+  aggiunge il profilo privato (enable_personal_renting). Prenota come: solo profili cliente; noleggiatore puro non prenota.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

@@ -46,16 +46,23 @@ export function RentalRow({ r, href }: { r: Rental; href: string }) {
   );
 }
 
-/** Interruttore Personale / Azienda: decide per chi prenoti e quali noleggi vedi. */
+/** Interruttore Privato / Azienda: decide per chi prenoti e quali noleggi vedi. Solo se l'account ha entrambi i profili. */
 export function ContextSwitch({ c, back }: { c: CustomerData; back: string }) {
-  if (!c.orgs.length) return null;
-  const opts = [{ id: "", name: "Personale" }, ...c.orgs.map((o) => ({ id: o.id, name: o.name }))];
+  if (!c.orgs.length || !c.privato) return null;
+  const me = [c.first, c.last].filter(Boolean).join(" ");
+  const opts = [{ id: "", title: "Privato", sub: me }, ...c.orgs.map((o) => ({ id: o.id, title: "Azienda", sub: o.name }))];
   return (
-    <form action={setBookingContext} className={`grid gap-1 rounded-xl bg-navy-50 p-1 text-sm font-semibold ${opts.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
+    <form action={setBookingContext} className={`grid gap-1 rounded-2xl bg-navy-50 p-1 ${opts.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
       <input type="hidden" name="back" value={back} />
       {opts.map((o) => {
         const on = (c.businessId ?? "") === o.id;
-        return <button key={o.id || "p"} name="ctx" value={o.id} className={`truncate rounded-lg px-3 py-2 text-center transition ${on ? "bg-white text-navy-900 shadow-sm" : "text-mute"}`}>{o.name}</button>;
+        return (
+          <button key={o.id || "p"} name="ctx" value={o.id} aria-pressed={on}
+            className={`min-h-12 rounded-xl px-3 py-2 text-center transition ${on ? "bg-white shadow-sm" : ""}`}>
+            <span className={`block text-sm font-semibold ${on ? "text-navy-900" : "text-mute"}`}>{o.title}</span>
+            {o.sub && <span className="block truncate text-xs text-mute">{o.sub}</span>}
+          </button>
+        );
       })}
     </form>
   );

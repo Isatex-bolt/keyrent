@@ -4,7 +4,7 @@ import { sendEmailsSoon } from "@/lib/email";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/auth";
+import { getCapabilities, requireUser } from "@/lib/auth";
 import { serviceDb } from "@/lib/supabase/admin";
 import { userDb } from "@/lib/supabase/server";
 import { romeToIso } from "@/lib/format";
@@ -24,6 +24,14 @@ export async function requestBooking(f: FormData) {
   const pickup = romeToIso(dal, str(f, "ora_ritiro") || "10:00");
   const ret = romeToIso(al, str(f, "ora_riconsegna") || "10:00");
   if (!pickup || !ret || ret <= pickup) redirect(`${back}&errore=${encodeURIComponent("Controlla le date: la riconsegna deve essere dopo il ritiro.")}`);
+  // per chi si prenota: profilo privato oppure un profilo azienda cliente (un'attività di noleggio non noleggia)
+  const caps = await getCapabilities();
+  let billingOrg = str(f, "billing_org");
+  if (billingOrg && !caps.aziende.some((a) => a.id === billingOrg)) billingOrg = "";
+  if (!billingOrg && !caps.privato) {
+    if (caps.aziende[0]) billingOrg = caps.aziende[0].id;
+    else redirect(`${back}&errore=${encodeURIComponent("Per noleggiare aggiungi un profilo privato o un profilo azienda dal tuo Profilo.")}`);
+  }
   const driver = {
     first_name: str(f, "first_name"), last_name: str(f, "last_name"),
     birth_year: str(f, "birth_year"), license_year: str(f, "license_year"), notes: str(f, "notes").slice(0, 500),
@@ -43,7 +51,6 @@ export async function requestBooking(f: FormData) {
   }
   if (error) redirect(`${back}&errore=${encodeURIComponent(bookingError(error.message))}`);
   // prenotazione intestata all'azienda scelta (il database controlla che il cliente ne faccia parte)
-  const billingOrg = str(f, "billing_org");
   if (billingOrg) await serviceDb().rpc("svc_set_booking_billing", { p_booking: data, p_customer: user.id, p_org: billingOrg });
   // salva nome e cognome nel profilo se mancano
   const db = await userDb();

@@ -28,7 +28,7 @@ export function dbMessage(msg: string) {
   if (msg.includes("REVISION_ALREADY_PENDING")) return "C'è già una modifica in attesa di revisione.";
   if (msg.includes("FORBIDDEN")) return "Non hai i permessi per questa operazione.";
   if (msg.includes("REASON_REQUIRED")) return "Scrivi il motivo.";
-  if (msg.includes("organizations_vat_number_key")) return "Esiste già un'attività con questa partita IVA.";
+  if (msg.includes("organizations_vat_number_key") || msg.includes("organizations_kind_vat_key")) return "Esiste già un'attività con questa partita IVA.";
   if (msg.includes("vat_number_check")) return "Partita IVA non valida (es. IT01234567890).";
   if (msg.includes("row-level security")) return "Operazione non consentita.";
   return "Operazione non riuscita: " + msg;

@@ -18,7 +18,8 @@ async function Billing({ searchParams }: { searchParams: Promise<Record<string, 
   const sp = await searchParams;
   const user = await requireUser("/account/azienda/dati");
   const { orgs, current } = await getBookingContext();
-  const renter = (current && current.kind === "renter" ? current : orgs.find((o) => o.kind === "renter")) ?? null;
+  const wanted = typeof sp.id === "string" ? orgs.find((o) => o.id === sp.id) : undefined;
+  const renter = sp.nuova ? null : wanted ?? current ?? orgs[0] ?? null;
   let org: Org | null = null;
   if (renter) {
     const { data } = await (await userDb()).from("organizations")
@@ -35,8 +36,8 @@ async function Billing({ searchParams }: { searchParams: Promise<Record<string, 
   return (
     <div className="space-y-4">
       <Link href="/account/profilo" className="text-sm text-mute">← Profilo</Link>
-      <h1 className="text-[28px] font-bold tracking-tight">{org ? "Dati di fatturazione" : "Aggiungi un profilo azienda"}</h1>
-      <p className="text-sm text-mute">{org ? `Usati quando prenoti come ${org.legal_name}.` : "Prenoti per l'azienda e ricevi i documenti intestati. Non diventi noleggiatore: per pubblicare mezzi c'è un percorso a parte."}</p>
+      <h1 className="text-[28px] font-bold tracking-tight">{org ? "Profilo azienda" : "Aggiungi profilo azienda"}</h1>
+      <p className="text-sm text-mute">{org ? `Usati quando prenoti come ${org.legal_name}.` : "Noleggi mezzi per la tua azienda e ricevi fatture e documenti intestati. È diverso dall'attività di noleggio: per pubblicare mezzi c'è un percorso a parte."}</p>
       <FormNotice message={sp.ok ? "Dati salvati." : undefined} />
       <FormError message={typeof sp.errore === "string" ? sp.errore : undefined} />
       <form action={org ? updateBilling : createRenterOrg} className="grid grid-cols-2 gap-3 rounded-2xl border border-line bg-white p-4">
