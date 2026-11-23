@@ -71,9 +71,7 @@ export async function AccountButton() {
           <p className="truncate px-3 py-2 text-xs text-mute">{user.email}</p>
           {pro && <MenuLink href="/pro" label="Area noleggiatore" keys={["provider"]} n={providerTotal(b)} />}
           <MenuLink href={pro ? "/pro/messaggi" : "/messaggi"} label="Messaggi" keys={["messages"]} n={b.messages} />
-          {pro
-            ? <Link href="/account" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Il mio profilo</Link>
-            : <MenuLink href="/account" label="Il mio account" keys={["customer_bookings"]} n={b.customer_bookings} />}
+          {!pro && <MenuLink href="/account" label="Il mio account" keys={["customer_bookings"]} n={b.customer_bookings} />}
           <MenuLink href={pro ? "/pro/assistenza" : "/assistenza"} label="Assistenza KeyRent" keys={["support"]} n={b.support} />
           {staff && <MenuLink href="/admin" label="Admin" keys={["admin"]} n={adminTotal(b)} />}
           <Link href="/account/password" className="flex items-center rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-navy-50">Cambia password</Link>
