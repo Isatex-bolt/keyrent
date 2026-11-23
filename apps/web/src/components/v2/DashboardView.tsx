@@ -1,27 +1,23 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { previewFleet, keep } from "@/lib/v2/context";
-import { dayList, isoDay, type FleetBooking } from "@/lib/v2/fleet";
-import { ProviderShellV2 } from "@/components/v2/Shell";
-import { FleetTimeline } from "@/components/v2/FleetTimeline";
-import { DemoNote, Kpi, Legend, euroShort, shortDate } from "@/components/v2/ui";
-
-export const metadata = { title: "Dashboard V2 · anteprima" };
-type SP = Promise<Record<string, string | string[] | undefined>>;
-
-export default function Page({ searchParams }: { searchParams: SP }) {
-  return <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-white" />}><Dashboard searchParams={searchParams} /></Suspense>;
-}
+import { dayList, isoDay, type FleetBooking, type FleetData } from "@/lib/v2/fleet";
+import { FleetTimeline } from "./FleetTimeline";
+import { SedeChips } from "./SedeChips";
+import { Kpi, Legend, euroShort, shortDate } from "./ui";
 
 const plus = (d: string, n: number) => isoDay(new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000));
 
-async function Dashboard({ searchParams }: { searchParams: SP }) {
-  const sp = await searchParams;
+/** Intervallo da caricare per la dashboard: dal primo del mese a oggi + 14 giorni (o fine mese). */
+export function dashboardRange() {
   const today = isoDay(new Date());
   const monthStart = `${today.slice(0, 7)}-01`;
   const monthEnd = plus(`${plus(monthStart, 32).slice(0, 7)}-01`, -1);
   const to = plus(today, 14) > monthEnd ? plus(today, 14) : monthEnd;
-  const { data, all, sede, reason } = await previewFleet(sp, monthStart, to);
+  return { today, monthStart, monthEnd, to };
+}
+
+/** Dashboard del noleggiatore: “cosa devo fare oggi?”. */
+export function DashboardView({ data, all, sede, q, header }: { data: FleetData; all: FleetData; sede: string; q: string; header?: React.ReactNode }) {
+  const { today, monthStart, monthEnd } = dashboardRange();
   const now = new Date().toISOString();
   const live = ["confirmed", "picked_up", "completed"];
   const month = data.bookings.filter((b) => live.includes(b.status) && b.pickupAt.slice(0, 7) === today.slice(0, 7));
@@ -47,19 +43,19 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
   const title = (b: FleetBooking) => data.vehicles.find((v) => v.id === b.listingId)?.title ?? "Mezzo";
   const daily = monthDays.map((d) => month.filter((b) => b.pickupAt.slice(0, 10) === d).reduce((s, b) => s + b.netCents, 0));
   const maxDaily = Math.max(1, ...daily);
-  const q = keep(sp);
   const dateLabel = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Rome" }).format(new Date());
 
   return (
-    <ProviderShellV2 orgName={all.orgName} locations={all.locations} sede={sede}>
-      {reason && <DemoNote reason={reason} />}
+    <div className="space-y-6">
+      <SedeChips locations={all.locations} sede={sede} />
+      {header}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm capitalize text-mute">{dateLabel}</p>
           <h1 className="text-3xl font-bold tracking-tight">Panoramica di oggi</h1>
           <p className="text-mute">Richieste, ritiri, rientri e disponibilità della flotta.</p>
         </div>
-        <Link href={`/preview/provider-fleet-v2${q}`} className="btn-ghost">I miei mezzi →</Link>
+        <Link href={`/pro/mezzi${q}`} className="btn-ghost">I miei mezzi →</Link>
       </header>
 
       <section className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
@@ -140,13 +136,13 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
       <section className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 className="font-semibold">Disponibilità · prossimi 14 giorni</h2>
-          <Link href={`/preview/provider-calendar-v2${q}`} className="text-sm font-semibold text-teal-600">Calendario completo →</Link>
+          <Link href={`/pro/calendario${q}`} className="text-sm font-semibold text-teal-600">Calendario completo →</Link>
         </div>
         <Legend pool={data.vehicles.some((v) => v.quantityMode === "pool")} />
         <FleetTimeline vehicles={data.vehicles} days={dayList(today, plus(today, 13))} bookings={[...data.bookings, ...data.requests]} today={today}
-          vehicleBase="/preview/provider-vehicle-v2" qs={q} />
+          vehicleBase="/pro/mezzi" qs={q} />
       </section>
-    </ProviderShellV2>
+    </div>
   );
 }
 

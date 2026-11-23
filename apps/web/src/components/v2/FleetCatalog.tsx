@@ -8,6 +8,7 @@ import { Legend, STATE, euroShort } from "./ui";
 
 const LISTING: Record<string, { label: string; tone: string }> = {
   published: { label: "Pubblicato", tone: "bg-emerald-50 text-emerald-800" },
+  draft: { label: "Bozza", tone: "bg-slate-100 text-slate-600" },
   pending_review: { label: "In approvazione", tone: "bg-amber-50 text-amber-800" },
   changes_required: { label: "Modifiche richieste", tone: "bg-amber-50 text-amber-800" },
   approved: { label: "Approvato", tone: "bg-emerald-50 text-emerald-800" },
@@ -44,7 +45,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca mezzo, marca, modello…" className={`${sel} min-w-0 flex-1 sm:max-w-xs`} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca mezzo, marca, modello…" className={`${sel} w-full sm:w-64`} />
         <select value={sede} onChange={(e) => setSede(e.target.value)} className={sel}><option value="">Tutte le sedi</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
         <select value={stato} onChange={(e) => setStato(e.target.value)} className={sel}><option value="">Ogni stato</option>{Object.entries(LISTING).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
         <select value={disp} onChange={(e) => setDisp(e.target.value)} className={sel}><option value="">Disponibilità oggi</option><option value="libero">Libero oggi</option><option value="occupato">Occupato oggi</option><option value="fermo">Non disponibile</option></select>
@@ -64,7 +65,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
       </div>
       <div className="flex items-center justify-between text-sm text-mute">
         <span>{list.length} {list.length === 1 ? "mezzo" : "mezzi"}{dal ? ` liberi ${al && al !== dal ? `dal ${dal.split("-").reverse().join("/")} al ${al.split("-").reverse().join("/")}` : `il ${dal.split("-").reverse().join("/")}`}` : ""}</span>
-        <Link href={addHref} className="btn-primary px-4 py-2 text-sm">Aggiungi mezzo</Link>
+        {addHref && <Link href={addHref} className="btn-primary px-4 py-2 text-sm">Aggiungi mezzo</Link>}
       </div>
 
       <div key={view} className="animate-[riseIn_.25s_ease-out]">

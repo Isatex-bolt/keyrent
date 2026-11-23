@@ -38,6 +38,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   /api/email/flush (CRON_SECRET). Senza RESEND_API_KEY restano pending.
 - Assistenza (0016 `support_threads`/`support_messages`): /assistenza (clienti), /pro/assistenza, /admin/messaggi; email support_to_staff/support_reply.
   Account solo staff (info@keyrent.it): header con pill ADMIN, niente area cliente.
+- Area noleggiatore V2 (23/11): menu a sezioni (components/ProNav), dashboard KPI (/pro), catalogo flotta con filtri e Dal/Al (/pro/mezzi),
+  scheda mezzo in sola lettura (/pro/mezzi/[id]) + modifica (/pro/mezzi/[id]/modifica), calendario flotta e singolo (/pro/calendario).
+  Dati: lib/v2/fleet.ts (sola lettura, RLS). Cliente: header senza etichetta, dopo l'accesso resta in home.
+- Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Manca: payout Connect, webhook.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

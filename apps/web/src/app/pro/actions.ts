@@ -116,14 +116,14 @@ export async function deleteDraftListing(f: FormData) {
   const id = str(f, "id");
   const admin = serviceDb();
   const { data: l } = await admin.from("listings").select("id, status, organization_id").eq("id", id).maybeSingle();
-  if (!l || l.organization_id !== membership.organization_id || l.status !== "draft") fail(`/pro/mezzi/${id}`, "Si possono eliminare solo le bozze.");
+  if (!l || l.organization_id !== membership.organization_id || l.status !== "draft") fail(`/pro/mezzi/${id}/modifica`, "Si possono eliminare solo le bozze.");
   const { count } = await admin.from("bookings").select("id", { count: "exact", head: true }).eq("listing_id", id);
-  if ((count ?? 0) > 0) fail(`/pro/mezzi/${id}`, "Questo annuncio ha prenotazioni: non si può eliminare.");
+  if ((count ?? 0) > 0) fail(`/pro/mezzi/${id}/modifica`, "Questo annuncio ha prenotazioni: non si può eliminare.");
   const { data: media } = await admin.from("listing_media").select("storage_path").eq("listing_id", id);
   const paths = (media ?? []).map((m) => m.storage_path).filter(Boolean);
   if (paths.length) await admin.storage.from("listings").remove(paths);
   const { error } = await admin.from("listings").delete().eq("id", id);
-  if (error) fail(`/pro/mezzi/${id}`, dbMessage(error.message));
+  if (error) fail(`/pro/mezzi/${id}/modifica`, dbMessage(error.message));
   revalidatePath("/pro/mezzi");
   redirect("/pro/mezzi?ok=eliminato");
 }
@@ -180,16 +180,16 @@ export async function createListing(f: FormData) {
   // doppio invio dello stesso modulo: riapri la bozza appena creata invece di farne un'altra
   const { data: same } = await db.from("listings").select("id").eq("organization_id", membership.organization_id)
     .eq("title", payload.title).eq("status", "draft").gte("created_at", new Date(Date.now() - 2 * 60_000).toISOString()).limit(1);
-  if (same?.length) redirect(`/pro/mezzi/${same[0].id}?nuovo=1`);
+  if (same?.length) redirect(`/pro/mezzi/${same[0].id}/modifica?nuovo=1`);
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail("/pro/mezzi/nuovo", dbMessage(error.message));
-  redirect(`/pro/mezzi/${data}?nuovo=1`);
+  redirect(`/pro/mezzi/${data}/modifica?nuovo=1`);
 }
 
 export async function updateListingDetails(f: FormData) {
   const { user } = await editor();
   const id = str(f, "id");
-  const back = `/pro/mezzi/${id}`;
+  const back = `/pro/mezzi/${id}/modifica`;
   const db = await userDb();
   const { data: l } = await db.from("listings").select("status, title, description").eq("id", id).maybeSingle();
   if (!l) fail("/pro/mezzi", "Annuncio non trovato.");
@@ -213,21 +213,21 @@ export async function updatePrices(f: FormData) {
   const { error } = await db.rpc("set_listing_prices", {
     p_listing: id, p_prices: ["hour", "half_day", "day", "week"].map((unit) => ({ unit, price_cents: cents(f, `price_${unit}`) })),
   });
-  if (error) fail(`/pro/mezzi/${id}`, dbMessage(error.message));
+  if (error) fail(`/pro/mezzi/${id}/modifica`, dbMessage(error.message));
   await serviceDb().rpc("svc_refresh_price_from", { p_listing: id });
-  redirect(`/pro/mezzi/${id}?ok=prezzi`);
+  redirect(`/pro/mezzi/${id}/modifica?ok=prezzi`);
 }
 
 export async function transitionListing(f: FormData) {
   const { user } = await editor();
   const id = str(f, "id");
   const to = str(f, "to");
-  if (!["pending_review", "unpublished", "published"].includes(to)) fail(`/pro/mezzi/${id}`, "Azione non valida.");
+  if (!["pending_review", "unpublished", "published"].includes(to)) fail(`/pro/mezzi/${id}/modifica`, "Azione non valida.");
   // il controllo di appartenenza lo fa la funzione nel DB (attore = utente della sessione)
   const { error } = await serviceDb().rpc("svc_listing_transition", { p_listing: id, p_to: to, p_actor: user.id });
-  if (error) fail(`/pro/mezzi/${id}`, dbMessage(error.message));
+  if (error) fail(`/pro/mezzi/${id}/modifica`, dbMessage(error.message));
   revalidatePath("/pro/mezzi");
-  redirect(`/pro/mezzi/${id}?ok=${to}`);
+  redirect(`/pro/mezzi/${id}/modifica?ok=${to}`);
 }
 
 // ---------- Foto ----------
@@ -261,7 +261,7 @@ export async function registerMedia(listingId: string, path: string, indicative 
   const { count } = await db.from("listing_media").select("id", { count: "exact", head: true }).eq("listing_id", listingId);
   const { error } = await db.from("listing_media").insert({ listing_id: listingId, storage_path: path, sort: count ?? 0, ...(indicative ? { is_indicative: true } : {}) });
   if (error) throw new Error(dbMessage(error.message));
-  revalidatePath(`/pro/mezzi/${listingId}`);
+  revalidatePath(`/pro/mezzi/${listingId}/modifica`);
 }
 
 export async function deleteMedia(f: FormData) {
@@ -273,7 +273,7 @@ export async function deleteMedia(f: FormData) {
     await db.from("listing_media").delete().eq("id", str(f, "id"));
     await serviceDb().storage.from("listings").remove([m.storage_path]);
   }
-  redirect(`/pro/mezzi/${listingId}`);
+  redirect(`/pro/mezzi/${listingId}/modifica`);
 }
 
 // ---------- Richieste di prenotazione ----------

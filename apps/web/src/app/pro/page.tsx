@@ -2,7 +2,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
-import { Badge, orgStatus, listingStatus } from "@/lib/status";
+import { Badge, orgStatus } from "@/lib/status";
+import { bySede, loadFleet } from "@/lib/v2/fleet";
+import { keepSede } from "@/lib/v2/pro";
+import { DashboardView, dashboardRange } from "@/components/v2/DashboardView";
 import { OrgFields } from "@/components/OrgFields";
 import { pendingOrgOf } from "@/lib/pendingOrg";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
@@ -36,16 +39,18 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
       </div>
     );
   }
-  const db = await userDb();
-  const [{ data: listings }, { count: sedi }] = await Promise.all([
-    db.from("listings").select("status").eq("organization_id", membership.organization_id),
-    db.from("locations").select("id", { count: "exact", head: true }).eq("organization_id", membership.organization_id),
-  ]);
-  const by = (s: string) => (listings ?? []).filter((l) => l.status === s).length;
   const org = membership.org;
-  return (
-    <div className="space-y-6">
-      <ProHeader title={org.trade_name ?? org.legal_name} action={<Badge map={orgStatus} value={org.verification_status} />} />
+  const { monthStart, to } = dashboardRange();
+  const all = await loadFleet(membership.organization_id, org.trade_name ?? org.legal_name, monthStart, to);
+  const sede = typeof sp.sede === "string" ? sp.sede : "tutte";
+  const db = await userDb();
+  const { count: sedi } = await db.from("locations").select("id", { count: "exact", head: true }).eq("organization_id", membership.organization_id);
+  const header = (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-navy-900">{org.trade_name ?? org.legal_name}</p>
+        <Badge map={orgStatus} value={org.verification_status} />
+      </div>
       {memberships.length > 1 && (
         <form action={switchOrganization} className="card flex flex-wrap items-center gap-3 p-3">
           <label htmlFor="org" className="text-sm text-mute">Stai lavorando su</label>
@@ -61,21 +66,13 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
           KeyRent sta verificando la tua attività. Intanto puoi aggiungere sedi e mezzi: potrai inviarli in revisione dopo la verifica.
         </p>
       )}
-      <div className="grid gap-3 sm:grid-cols-4">
-        {[["Pubblicati", by("published")], ["In revisione", by("pending_review")], ["Da modificare", by("changes_required")], ["Bozze", by("draft")]].map(([l, n]) => (
-          <div key={l} className="card p-4"><p className="text-xs text-mute">{l}</p><p className="mt-1 text-2xl font-bold">{n}</p></div>
-        ))}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link href={sedi ? "/pro/mezzi/nuovo" : "/pro/sedi"} className="card p-5 transition hover:border-teal-500/60">
-          <p className="font-semibold">{sedi ? "Aggiungi un mezzo" : "Aggiungi la prima sede"}</p>
-          <p className="mt-1 text-sm text-mute">{sedi ? "Procedura guidata: categoria, modello, caratteristiche, prezzi." : "Ogni mezzo va associato a una sede di ritiro."}</p>
+      {!sedi && (
+        <Link href="/pro/sedi" className="card block p-5 transition hover:border-teal-500/60">
+          <p className="font-semibold">Aggiungi la prima sede</p>
+          <p className="mt-1 text-sm text-mute">Ogni mezzo va associato a una sede di ritiro. Poi aggiungi i tuoi mezzi.</p>
         </Link>
-        <Link href="/pro/mezzi" className="card p-5 transition hover:border-teal-500/60">
-          <p className="font-semibold">I miei mezzi</p>
-          <p className="mt-1 text-sm text-mute">{(listings ?? []).length} annunci · {Object.keys(listingStatus).length} stati possibili</p>
-        </Link>
-      </div>
-    </div>
+      )}
+    </>
   );
+  return <DashboardView data={bySede(all, sede)} all={all} sede={sede} q={keepSede(sp)} header={header} />;
 }

@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireProvider, canEdit } from "@/lib/auth";
+import { canEdit } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
-import { Badge, listingStatus } from "@/lib/status";
-import { euro } from "@/lib/format";
-import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
+import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
+import { keepSede, proFleet } from "@/lib/v2/pro";
+import { FleetCatalog } from "@/components/v2/FleetCatalog";
+import { SedeChips } from "@/components/v2/SedeChips";
+import { Flash, Skeleton, type SP } from "@/components/ProPage";
 
 export const metadata = { title: "I miei mezzi" };
 
@@ -15,66 +16,53 @@ export default function Page({ searchParams }: PageProps<"/pro/mezzi">) {
 
 async function Mezzi({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
-  const { membership } = await requireProvider("/pro/mezzi");
-  if (!membership) redirect("/pro");
+  const { from, to: monthEnd } = monthRange(undefined);
+  // 4 mesi di disponibilità per il filtro "Dal / Al"; la vista calendario mostra il mese corrente
+  const to = monthRange(shiftMonth(from.slice(0, 7), 3)).to;
+  const { data, all, sede, membership } = await proFleet(sp, from, to, "/pro/mezzi");
   const db = await userDb();
-  const { data: rows } = await db.from("listings")
-    .select("id, title, status, quantity_mode, price_from_cents, updated_at, categories(name_it), locations(city)")
-    .eq("organization_id", membership.organization_id).order("updated_at", { ascending: false });
   // avvisi sull'esito delle revisioni: mostrati una volta, poi segnati come letti
-  const { data: notices } = await db.from("listing_notices")
-    .select("id, listing_id, kind, message, listings(title)")
-    .eq("organization_id", membership.organization_id).is("seen_at", null).order("created_at", { ascending: false });
+  const [{ data: notices }, { count: sedi }] = await Promise.all([
+    db.from("listing_notices").select("id, listing_id, kind, message, listings(title)")
+      .eq("organization_id", membership.organization_id).is("seen_at", null).order("created_at", { ascending: false }),
+    db.from("locations").select("id", { count: "exact", head: true }).eq("organization_id", membership.organization_id),
+  ]);
   if (notices?.length) await db.rpc("mark_listing_notices_seen", { p_listing: null });
-  type Row = { id: string; title: string; status: string; quantity_mode: string; price_from_cents: number | null;
-    categories: { name_it: string } | null; locations: { city: string } | null };
   return (
-    <div>
-      <ProHeader title="I miei mezzi" action={canEdit(membership) && (
-        <div className="flex flex-wrap gap-2">
-          <Link href="/pro/mezzi/importa" className="btn-ghost">Importa da Excel</Link>
-          <Link href="/pro/mezzi/nuovo" className="btn-primary">+ Aggiungi mezzo</Link>
+    <div className="space-y-6">
+      <SedeChips locations={all.locations} sede={sede} />
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">I miei mezzi</h1>
+          <p className="text-mute">La tua flotta: stato degli annunci, disponibilità e prossime prenotazioni.</p>
         </div>
-      )} />
+        {canEdit(membership) && <Link href="/pro/mezzi/importa" className="btn-ghost">Importa da Excel</Link>}
+      </header>
       <Flash sp={sp} ok={{ eliminato: "Bozza eliminata." }} />
       {(notices?.length ?? 0) > 0 && (
-        <div className="mb-4 space-y-2">
-          {((notices ?? []) as unknown as Notice[]).map((n) => <NoticeRow key={n.id} n={n} />)}
-        </div>
+        <div className="space-y-2">{((notices ?? []) as unknown as Notice[]).map((n) => <NoticeRow key={n.id} n={n} />)}</div>
       )}
-      <ul className="space-y-2">
-        {((rows ?? []) as unknown as Row[]).map((r) => (
-          <li key={r.id}>
-            <Link href={`/pro/mezzi/${r.id}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-teal-500/60">
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{r.title}</p>
-                <p className="text-sm text-mute">{r.categories?.name_it} · {r.locations?.city}{r.quantity_mode === "pool" ? " · più unità" : ""}{r.price_from_cents ? ` · da ${euro(r.price_from_cents)}` : ""}</p>
-              </div>
-              <Badge map={listingStatus} value={r.status} />
-            </Link>
-          </li>
-        ))}
-        {!rows?.length && <li className="card p-6 text-sm text-mute">Nessun mezzo ancora. Clicca “Aggiungi mezzo”.</li>}
-      </ul>
+      <FleetCatalog vehicles={data.vehicles} days={dayList(from, monthEnd)} bookings={[...data.bookings, ...data.requests]} today={data.today}
+        locations={all.locations} vehicleBase="/pro/mezzi" qs={keepSede(sp)} addHref={canEdit(membership) ? (sedi ? "/pro/mezzi/nuovo" : "/pro/sedi") : ""} />
     </div>
   );
 }
 
 type Notice = { id: string; listing_id: string; kind: string; message: string | null; listings: { title: string } | null };
 
-const NOTICE: Record<string, { icon: string; text: string; tone: string }> = {
-  approved: { icon: "✅", text: "è stato approvato ed è online", tone: "bg-teal-50 border-teal-500/40" },
-  changes_approved: { icon: "✅", text: "le tue modifiche sono state approvate e sono online", tone: "bg-teal-50 border-teal-500/40" },
-  changes_required: { icon: "✏️", text: "servono alcune modifiche prima della pubblicazione", tone: "bg-amber-50 border-amber-400/50" },
-  rejected: { icon: "⛔", text: "non è stato approvato", tone: "bg-red-50 border-red-300" },
-  changes_rejected: { icon: "⛔", text: "le modifiche non sono state approvate (l'annuncio resta online com'era)", tone: "bg-red-50 border-red-300" },
+const NOTICE: Record<string, { text: string; tone: string; dot: string }> = {
+  approved: { text: "è stato approvato ed è online", tone: "bg-teal-50 border-teal-500/40", dot: "bg-teal-500" },
+  changes_approved: { text: "le tue modifiche sono state approvate e sono online", tone: "bg-teal-50 border-teal-500/40", dot: "bg-teal-500" },
+  changes_required: { text: "servono alcune modifiche prima della pubblicazione", tone: "bg-amber-50 border-amber-400/50", dot: "bg-amber-500" },
+  rejected: { text: "non è stato approvato", tone: "bg-red-50 border-red-300", dot: "bg-red-500" },
+  changes_rejected: { text: "le modifiche non sono state approvate (l'annuncio resta online com'era)", tone: "bg-red-50 border-red-300", dot: "bg-red-500" },
 };
 
 function NoticeRow({ n }: { n: Notice }) {
   const c = NOTICE[n.kind] ?? NOTICE.approved;
   return (
-    <Link href={`/pro/mezzi/${n.listing_id}`} className={`flex items-start gap-3 rounded-2xl border p-4 text-sm ${c.tone}`}>
-      <span className="text-xl leading-none">{c.icon}</span>
+    <Link href={`/pro/mezzi/${n.listing_id}/modifica`} className={`flex items-start gap-3 rounded-2xl border p-4 text-sm ${c.tone}`}>
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${c.dot}`} />
       <span className="min-w-0">
         <span className="font-semibold">{n.listings?.title ?? "Annuncio"}</span>: {c.text}.
         {n.message && <span className="mt-1 block text-mute">Nota di KeyRent: {n.message}</span>}

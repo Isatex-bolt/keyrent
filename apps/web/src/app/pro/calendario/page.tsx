@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { previewFleet, keep } from "@/lib/v2/context";
+import { proFleet, keepSede as keep } from "@/lib/v2/pro";
 import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
-import { ProviderShellV2 } from "@/components/v2/Shell";
+import { SedeChips } from "@/components/v2/SedeChips";
 import { FleetTimeline } from "@/components/v2/FleetTimeline";
 import { AvailabilityPanel } from "@/components/v2/AvailabilityPanel";
-import { DemoNote, Legend, monthLabel } from "@/components/v2/ui";
+import { Legend, monthLabel } from "@/components/v2/ui";
 
-export const metadata = { title: "Calendario V2 · anteprima" };
+export const metadata = { title: "Calendario" };
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
 export default function Page({ searchParams }: { searchParams: SP }) {
@@ -18,14 +18,14 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const { mese, from, to } = monthRange(typeof sp.mese === "string" ? sp.mese : undefined);
   const vista = sp.vista === "mezzo" ? "mezzo" : "flotta";
-  const { data, all, sede, reason } = await previewFleet(sp, from, to);
+  const { data, all, sede } = await proFleet(sp, from, to, "/pro/calendario");
   const days = dayList(from, to);
   const mezzo = data.vehicles.find((v) => v.id === sp.mezzo) ?? data.vehicles[0];
-  const href = (extra: Record<string, string>) => `/preview/provider-calendar-v2${keep(sp, { vista, mese, ...(mezzo ? { mezzo: mezzo.id } : {}), ...extra })}`;
+  const href = (extra: Record<string, string>) => `/pro/calendario${keep(sp, { vista, mese, ...(mezzo ? { mezzo: mezzo.id } : {}), ...extra })}`;
   const bookings = [...data.bookings, ...data.requests];
   return (
-    <ProviderShellV2 orgName={all.orgName} locations={all.locations} sede={sede}>
-      {reason && <DemoNote reason={reason} />}
+    <div className="space-y-6">
+      <SedeChips locations={all.locations} sede={sede} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendario</h1>
@@ -48,7 +48,7 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
 
       {vista === "flotta" ? (
         <div key={mese} className="animate-[fadeIn_.25s_ease-out]">
-          <FleetTimeline vehicles={data.vehicles} days={days} bookings={bookings} today={data.today} vehicleBase="/preview/provider-vehicle-v2" qs={keep(sp)} />
+          <FleetTimeline vehicles={data.vehicles} days={days} bookings={bookings} today={data.today} vehicleBase="/pro/mezzi" qs={keep(sp)} />
         </div>
       ) : mezzo ? (
         <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
@@ -64,7 +64,7 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
             [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${mese.slice(0, 4)}-${String((Number(mese.slice(5)) <= 6 ? 1 : 7) + i).padStart(2, "0")}`)]
               .map((m) => [m, href({ mese: m })]))} />
         </div>
-      ) : <p className="text-mute">Nessun mezzo.</p>}
-    </ProviderShellV2>
+      ) : <p className="text-mute">Nessun mezzo: aggiungine uno da “I miei mezzi”.</p>}
+    </div>
   );
 }

@@ -37,7 +37,9 @@ export function dayList(from: string, to: string) {
 function parseRange(r: string): [number, number] | null {
   const m = r.match(/^[[(]"?([^",]*)"?,"?([^",)\]]*)"?[)\]]$/);
   if (!m) return null;
-  const a = Date.parse(m[1].replace(" ", "T")), b = Date.parse(m[2].replace(" ", "T"));
+  // Postgres scrive "2026-11-23 09:00:00+00": per JavaScript serve "2026-11-23T09:00:00+00:00"
+  const iso = (x: string) => x.trim().replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
+  const a = Date.parse(iso(m[1])), b = Date.parse(iso(m[2]));
   return Number.isFinite(a) && Number.isFinite(b) ? [a, b] : null;
 }
 /** giorni (Europe/Rome) toccati da un intervallo */
@@ -74,7 +76,7 @@ export async function loadFleet(orgId: string, orgName: string, from: string, to
   const [{ data: locs }, { data: listings }, { data: units }, { data: bks }, { data: payouts }] = await Promise.all([
     db.from("locations").select("id, name, city").eq("organization_id", orgId).order("name"),
     db.from("listings").select("id, title, status, quantity_mode, price_from_cents, location_id, categories(name_it, slug), makes(name), models(name), listing_units(vehicle_unit_id)")
-      .eq("organization_id", orgId).neq("status", "draft"),
+      .eq("organization_id", orgId),
     db.from("vehicle_units").select("id, operational_status").eq("organization_id", orgId),
     db.from("bookings").select("id, code, status, listing_id, location_id, pickup_at, return_at, total_cents, provider_net_cents, driver, payment_required, payment_ready")
       .eq("organization_id", orgId).in("status", ["requested", "accepted", "confirmed", "picked_up", "completed"])

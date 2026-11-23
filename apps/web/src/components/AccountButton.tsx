@@ -3,8 +3,6 @@ import { accountType, getUser, getMemberships, getStaffRole } from "@/lib/auth";
 import { getBadges, providerTotal, adminTotal } from "@/lib/badges";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { MenuCloser } from "./MenuCloser";
-import { cookies } from "next/headers";
-import { PREVIEW_V2_COOKIE } from "@/lib/v2/flag";
 import { LiveCount } from "./LiveCount";
 
 const partner = (
@@ -21,7 +19,6 @@ export async function AccountButton() {
   const total = b.messages + b.customer_bookings + (memberships.length ? providerTotal(b) : 0) + (staff ? adminTotal(b) : 0) + (memberships.length ? 0 : b.support);
   const pro = accountType(user, memberships) === "provider";
   const who = (user.user_metadata?.first_name as string | undefined) || user.email?.split("@")[0] || "";
-  const v2 = (await cookies()).get(PREVIEW_V2_COOKIE)?.value === "1";
   const initials = [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).map((s) => String(s)[0]).join("").toUpperCase() || who.slice(0, 1).toUpperCase();
   // account del team KeyRent (senza attività): solo area admin e messaggi al team
   if (staff && memberships.length === 0) {
@@ -57,8 +54,8 @@ export async function AccountButton() {
       {pro && <Link href="/account" className={linkCls}>Le mie prenotazioni<LiveCount keys={["customer_bookings"]} initial={b.customer_bookings} /></Link>}
       <details data-menu className="group relative">
         <summary className="btn-ghost cursor-pointer list-none gap-2 py-2 [&::-webkit-details-marker]:hidden">
-          {v2 && !pro ? (
-            /* ANTEPRIMA V2 (solo con il flag): cliente senza etichetta, avatar con iniziali */
+          {!pro ? (
+            /* cliente: niente etichetta di ruolo, avatar con iniziali */
             <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-navy-900 to-teal-600 text-[11px] font-bold text-white">{initials}</span>
           ) : (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pro ? "bg-navy-900 text-white" : "bg-teal-50 text-teal-600"}`}>

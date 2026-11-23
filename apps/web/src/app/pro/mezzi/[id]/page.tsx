@@ -1,198 +1,119 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
-import { requireProvider, canEdit } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { proFleet, keepSede as keep } from "@/lib/v2/pro";
+import { redirect } from "next/navigation";
+import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
 import { userDb } from "@/lib/supabase/server";
-import { mediaUrl } from "@/lib/supabase/public";
-import { Badge, listingStatus } from "@/lib/status";
-import { euro, priceUnitLabel } from "@/lib/format";
-import { listingHref } from "@/lib/urls";
-import { Flash, Skeleton, type SP } from "@/components/ProPage";
-import { PhotoUploader } from "./PhotoUploader";
-import { AiPhotoHelper } from "./AiPhotoHelper";
-import { settingsFor } from "@/lib/aiImage";
-import { deleteDraftListing, deleteMedia, transitionListing, updateListingDetails, updatePrices } from "../../actions";
+import { AvailabilityPanel } from "@/components/v2/AvailabilityPanel";
+import { LISTING_LABEL, STATE, euroShort, shortDate } from "@/components/v2/ui";
+import { canEdit } from "@/lib/auth";
 
-export const maxDuration = 90;
-export const metadata = { title: "Scheda annuncio" };
+export const metadata = { title: "Scheda mezzo" };
+type SP = Promise<Record<string, string | string[] | undefined>>;
 
-export default function Page({ params, searchParams }: PageProps<"/pro/mezzi/[id]">) {
-  return <Suspense fallback={<Skeleton />}><Scheda params={params} searchParams={searchParams} /></Suspense>;
+export default function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
+  return <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-white" />}><Vehicle params={params} searchParams={searchParams} /></Suspense>;
 }
 
-const OK: Record<string, string> = {
-  salvato: "Modifiche salvate.", revisione: "Modifica inviata a KeyRent: resta online la versione attuale finché non viene approvata.",
-  prezzi: "Prezzi aggiornati.", pending_review: "Annuncio inviato in revisione. Ti avviseremo appena KeyRent lo avrà controllato.",
-  unpublished: "Annuncio tolto dalla ricerca.", published: "Annuncio di nuovo online.",
-};
+const UNIT: Record<string, string> = { hour: "ora", half_day: "mezza giornata", day: "giorno", weekend: "weekend", week: "settimana", month: "mese" };
 
-async function Scheda({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
+async function Vehicle({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
   const { id } = await params;
   const sp = await searchParams;
-  const { membership } = await requireProvider(`/pro/mezzi/${id}`);
-  if (!membership) redirect("/pro");
-  const db = await userDb();
-  await db.rpc("mark_listing_notices_seen", { p_listing: id });
-  const [{ data: l }, { data: media }, { data: prices }, { data: terms }, { data: revs }, { data: units }] = await Promise.all([
-    db.from("listings").select("*, categories(name_it, slug), makes(name), models(name), locations(name, city)").eq("id", id).maybeSingle(),
-    db.from("listing_media").select("id, storage_path, moderation_status, sort, is_indicative").eq("listing_id", id).order("sort"),
-    db.from("pricing_rules").select("unit, price_cents, valid_from").eq("listing_id", id),
-    db.from("rental_terms").select("*").eq("listing_id", id).maybeSingle(),
-    db.from("listing_revisions").select("number, status, review_notes, reviewed_at, submitted_at, snapshot").eq("listing_id", id).order("number", { ascending: false }).limit(5),
-    db.from("listing_units").select("vehicle_unit_id, vehicle_units(year, custom_make, custom_model)").eq("listing_id", id),
-  ]);
-  if (!l) notFound();
-  const edit = canEdit(membership);
-  const editing = typeof sp.modifica === "string" ? sp.modifica : null;
-  const draftLike = ["draft", "changes_required"].includes(l.status);
-  const lastReview = (revs ?? []).find((r) => r.review_notes && ["changes_required", "rejected"].includes(r.status));
-  const pendingChange = (revs ?? []).find((r) => r.status === "pending_review" && r.snapshot?.changes);
-  const base = (unit: string) => (prices ?? []).find((p) => p.unit === unit && !p.valid_from)?.price_cents;
-
+  const { mese, from, to } = monthRange(typeof sp.mese === "string" ? sp.mese : undefined);
+  const { data, all, membership } = await proFleet(sp, from, to, `/pro/mezzi/${id}`);
+  const v = all.vehicles.find((x) => x.id === id);
+  if (!v) notFound();
+  // una bozza non ha ancora una scheda: si continua a compilarla
+  if (v.status === "draft") redirect(`/pro/mezzi/${id}/modifica`);
+  // dettagli dell'annuncio vero (sola lettura); per i dati di esempio valori di prova
+  let detail = { description: "Mezzo di esempio: descrizione dell'annuncio.", attributes: {} as Record<string, unknown>, prices: [] as { unit: string; price_cents: number }[],
+    deposit: 30000, minHours: 24, instant: false };
+  {
+    const db = await userDb();
+    const [{ data: l }, { data: pr }, { data: rt }] = await Promise.all([
+      db.from("listings").select("description, attributes, instant_book").eq("id", id).maybeSingle(),
+      db.from("pricing_rules").select("unit, price_cents").eq("listing_id", id).order("price_cents"),
+      db.from("rental_terms").select("deposit_cents, min_duration_minutes").eq("listing_id", id).maybeSingle(),
+    ]);
+    detail = { description: l?.description ?? "", attributes: (l?.attributes ?? {}) as Record<string, unknown>, prices: pr ?? [],
+      deposit: rt?.deposit_cents ?? 0, minHours: Math.round((rt?.min_duration_minutes ?? 60) / 60), instant: !!l?.instant_book };
+  }
+  const bookings = [...all.bookings, ...all.requests].filter((b) => b.listingId === v.id);
+  const future = bookings.filter((b) => b.returnAt >= new Date().toISOString()).sort((a, b) => a.pickupAt.localeCompare(b.pickupAt));
+  const q = keep(sp);
+  const href = (m: string) => `/pro/mezzi/${v.id}${keep(sp, { mese: m })}#calendario`;
+  const [yy, mm] = mese.split("-").map(Number);
+  const months = [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${yy}-${String((mm <= 6 ? 1 : 7) + i).padStart(2, "0")}`)];
+  const hrefs = Object.fromEntries(months.map((m) => [m, href(m)]));
+  const today = v.days[data.today]?.state ?? "off";
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link href="/pro/mezzi" className="text-sm text-mute hover:text-navy-900">← I miei mezzi</Link>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">{l.title}</h1>
-          <p className="text-sm text-mute">{l.categories?.name_it} · {l.locations?.name} ({l.locations?.city}) · {units?.length ?? 0} {units?.length === 1 ? "unità" : "unità identiche"}</p>
+      <Link href={`/pro/mezzi${q}`} className="text-sm text-mute hover:text-navy-900">← I miei mezzi</Link>
+      <header className="grid gap-4 sm:grid-cols-[220px_1fr]">
+        <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-navy-50 to-teal-50">
+          {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <Link href={`/pro/mezzi/${v.id}/modifica`} className="grid h-full place-items-center text-xs font-semibold uppercase tracking-[0.2em] text-navy-700/50 hover:text-teal-600">Carica le foto</Link>}
         </div>
-        <Badge map={listingStatus} value={l.status} />
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">{v.title}</h1>
+          <p className="text-mute">{v.category} · {[v.make, v.model].filter(Boolean).join(" ") || "—"} · {v.locationName}{v.quantityMode === "pool" ? ` · ${v.units} unità` : ""}</p>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="rounded-full bg-navy-50 px-2.5 py-1">Annuncio: {LISTING_LABEL[v.status] ?? v.status}</span>
+            <span className={`rounded-full px-2.5 py-1 ring-1 ${STATE[today].cell}`}>Oggi: {STATE[today].label}</span>
+            <span className="rounded-full bg-navy-50 px-2.5 py-1">{future.length} prenotazioni attive/future</span>
+          </div>
+          {v.alerts.length > 0 && <p className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{v.alerts.join(" · ")}</p>}
+        </div>
+      </header>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+        <div className="space-y-4">
+          <div className="card space-y-4 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-semibold">Annuncio</h2>
+              {canEdit(membership) && <Link href={`/pro/mezzi/${v.id}/modifica`} className="btn-primary px-4 py-2 text-sm">Modifica annuncio</Link>}
+            </div>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div className="sm:col-span-2"><dt className="text-xs text-mute">Descrizione</dt><dd className="whitespace-pre-line">{detail.description || "—"}</dd></div>
+              <div><dt className="text-xs text-mute">Prenotazione immediata</dt><dd className="font-medium">{detail.instant ? "Sì" : "No"}</dd></div>
+              <div><dt className="text-xs text-mute">Unità</dt><dd className="font-medium">{v.units}</dd></div>
+            </dl>
+          </div>
+          <div className="card grid gap-4 p-5 text-sm sm:grid-cols-2">
+            <div>
+              <h2 className="mb-2 font-semibold">Prezzi</h2>
+              <ul className="space-y-1">{detail.prices.length ? detail.prices.map((p, i) => <li key={i} className="flex justify-between"><span className="text-mute">{UNIT[p.unit] ?? p.unit}</span><b>{euroShort(p.price_cents)}</b></li>) : <li className="text-mute">Nessuna tariffa</li>}</ul>
+            </div>
+            <div>
+              <h2 className="mb-2 font-semibold">Condizioni</h2>
+              <ul className="space-y-1">
+                <li className="flex justify-between"><span className="text-mute">Cauzione</span><b>{euroShort(detail.deposit)}</b></li>
+                <li className="flex justify-between"><span className="text-mute">Durata minima</span><b>{detail.minHours} ore</b></li>
+              </ul>
+            </div>
+            {Object.keys(detail.attributes).length > 0 && (
+              <div className="sm:col-span-2">
+                <h2 className="mb-2 font-semibold">Caratteristiche</h2>
+                <div className="flex flex-wrap gap-1.5">{Object.entries(detail.attributes).map(([k, val]) => <span key={k} className="rounded-full bg-navy-50 px-2.5 py-1 text-xs">{k}: <b>{String(val)}</b></span>)}</div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div id="prenotazioni" className="card p-5">
+            <h2 className="mb-2 font-semibold">Prenotazioni</h2>
+            {future.length ? (
+              <ul className="divide-y divide-line text-sm">
+                {future.map((b) => <li key={b.id} className="py-2"><b>{b.customer}</b> · {b.code}<br /><span className="text-xs text-mute">{shortDate(b.pickupAt)} → {shortDate(b.returnAt)} · {euroShort(b.totalCents)}</span></li>)}
+              </ul>
+            ) : <p className="text-sm text-mute">Nessuna prenotazione in arrivo.</p>}
+          </div>
+        </div>
       </div>
-      <Flash sp={sp} ok={OK} />
-      {sp.nuovo && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm">Bozza creata. Ora aggiungi almeno 4 foto, poi clicca <strong>Invia per approvazione</strong>.</p>}
-      {lastReview && l.status !== "published" && (
-        <div className="rounded-xl bg-orange-50 px-4 py-3 text-sm text-orange-900">
-          <p className="font-semibold">Note di KeyRent</p>
-          <ul className="mt-1 list-disc pl-5">{Object.entries(lastReview.review_notes as Record<string, string>).map(([k, v]) => <li key={k}>{v}</li>)}</ul>
-        </div>
-      )}
-      {pendingChange && <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Hai una modifica in attesa di revisione. Online resta la versione approvata.</p>}
-
-      {/* Azioni di stato */}
-      {edit && (
-        <div className="card flex flex-wrap items-center gap-3 p-4">
-          {draftLike && <StateButton id={id} to="pending_review" label="Invia per approvazione" primary />}
-          {l.status === "draft" && (
-            <form action={deleteDraftListing} className="ml-auto">
-              <input type="hidden" name="id" value={id} />
-              <button className="rounded-xl px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">Elimina bozza</button>
-            </form>
-          )}
-          {l.status === "published" && <>
-            <Link href={listingHref({ id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>
-            <StateButton id={id} to="unpublished" label="Togli dalla ricerca" />
-          </>}
-          {l.status === "unpublished" && <StateButton id={id} to="published" label="Rimetti online" primary />}
-          {l.status === "pending_review" && <p className="text-sm text-mute">In revisione da parte di KeyRent: di solito entro 1 giorno lavorativo.</p>}
-          {l.status === "rejected" && <p className="text-sm text-mute">Annuncio rifiutato. Per riproporlo crea un nuovo annuncio.</p>}
-        </div>
-      )}
-
-      {/* Foto */}
-      <section className="card p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-semibold">Foto <span className="text-sm font-normal text-mute">({media?.length ?? 0}, minimo 4)</span></h2>
-          {edit && <PhotoUploader listingId={id} />}
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(media ?? []).map((m) => (
-            <div key={m.id} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-navy-50">
-              <Image src={mediaUrl(m.storage_path)} alt="" fill sizes="25vw" className="object-cover" />
-              {m.is_indicative && <span className="absolute bottom-2 left-2 rounded bg-navy-950/70 px-2 py-0.5 text-[11px] text-white">Indicativa (AI)</span>}
-              {m.moderation_status === "pending" && l.status === "published" && <span className="absolute left-2 top-2 rounded bg-white/90 px-2 py-0.5 text-[11px]">In revisione</span>}
-              {edit && (
-                <form action={deleteMedia} className="absolute right-2 top-2">
-                  <input type="hidden" name="id" value={m.id} /><input type="hidden" name="listing_id" value={id} />
-                  <button className="rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-red-700 shadow">Elimina</button>
-                </form>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {edit && (
-        <AiPhotoHelper
-          listingId={id}
-          settings={settingsFor(l.categories?.slug ?? "").map(({ key, label }) => ({ key, label }))}
-          vehicle={[l.makes?.name ?? (units?.[0] as any)?.vehicle_units?.custom_make, l.models?.name ?? (units?.[0] as any)?.vehicle_units?.custom_model].filter(Boolean).join(" ") || l.title}
-          year={(units?.[0] as any)?.vehicle_units?.year ?? null}
-        />
-      )}
-
-      {/* Dettagli */}
-      <section className="card p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Titolo e descrizione</h2>
-          {edit && editing !== "dettagli" && <Link href={`?modifica=dettagli`} className="btn-ghost">Modifica</Link>}
-        </div>
-        {editing === "dettagli" && edit ? (
-          <form action={updateListingDetails} className="space-y-4">
-            <input type="hidden" name="id" value={id} />
-            {!draftLike && <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">L&apos;annuncio è {listingStatus[l.status]?.label.toLowerCase()}: la modifica sarà controllata da KeyRent prima di andare online.</p>}
-            <div><label className="label" htmlFor="title">Titolo</label><input id="title" name="title" required defaultValue={l.title} className="field" /></div>
-            <div><label className="label" htmlFor="description">Descrizione</label><textarea id="description" name="description" rows={6} defaultValue={l.description ?? ""} className="field" /></div>
-            <div className="flex gap-2"><button className="btn-primary">Salva modifiche</button><Link href="?" className="btn-ghost">Annulla</Link></div>
-          </form>
-        ) : (
-          <p className="whitespace-pre-line text-sm leading-relaxed">{l.description || <span className="text-mute">Nessuna descrizione.</span>}</p>
-        )}
-      </section>
-
-      {/* Prezzi */}
-      <section className="card p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Prezzi</h2>
-          {edit && editing !== "prezzi" && <Link href={`?modifica=prezzi`} className="btn-ghost">Modifica</Link>}
-        </div>
-        {editing === "prezzi" && edit ? (
-          <form action={updatePrices} className="space-y-4">
-            <input type="hidden" name="id" value={id} />
-            <div className="grid gap-4 sm:grid-cols-4">
-              {(["hour", "half_day", "day", "week"] as const).map((u) => (
-                <div key={u}><label className="label" htmlFor={`price_${u}`}>{priceUnitLabel[u]} (€)</label>
-                  <input id={`price_${u}`} name={`price_${u}`} type="number" min={0} step="0.01" defaultValue={base(u) ? base(u)! / 100 : ""} className="field" /></div>
-              ))}
-            </div>
-            <p className="text-xs text-mute">I prezzi si aggiornano subito, anche su un annuncio pubblicato. Le prenotazioni già fatte mantengono il prezzo concordato.</p>
-            <div className="flex gap-2"><button className="btn-primary">Salva prezzi</button><Link href="?" className="btn-ghost">Annulla</Link></div>
-          </form>
-        ) : (
-          <ul className="grid gap-2 text-sm sm:grid-cols-4">
-            {(["hour", "half_day", "day", "week"] as const).filter((u) => base(u)).map((u) => (
-              <li key={u} className="rounded-xl bg-canvas p-3"><p className="text-xs text-mute">{priceUnitLabel[u]}</p><p className="font-semibold">{euro(base(u)!)}</p></li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Caratteristiche e condizioni (sola lettura per ora) */}
-      <section className="card p-5 text-sm">
-        <h2 className="mb-3 font-semibold">Caratteristiche e condizioni</h2>
-        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          {[l.makes?.name ?? null, l.models?.name ?? null].some(Boolean) && <Item k="Marca e modello" v={[l.makes?.name, l.models?.name].filter(Boolean).join(" ")} />}
-          {Object.entries(l.attributes ?? {}).map(([k, v]) => <Item key={k} k={k.replaceAll("_", " ")} v={typeof v === "boolean" ? (v ? "Sì" : "No") : String(v)} />)}
-          <Item k="Cauzione" v={terms?.deposit_cents ? euro(terms.deposit_cents) : "Nessuna"} />
-          {terms?.min_driver_age && <Item k="Età minima" v={`${terms.min_driver_age} anni`} />}
-          {terms?.included_km_per_day && <Item k="Km inclusi" v={`${terms.included_km_per_day} al giorno`} />}
-        </dl>
-        <p className="mt-3 text-xs text-mute">Per cambiare caratteristiche o condizioni di un annuncio pubblicato scrivi a KeyRent: la modifica guidata arriva con il prossimo aggiornamento.</p>
-      </section>
+      <div id="calendario">
+        <AvailabilityPanel vehicle={v} days={dayList(from, to)} bookings={bookings} today={data.today} mese={mese} hrefFor={hrefs} />
+      </div>
     </div>
   );
-}
-
-function StateButton({ id, to, label, primary = false }: { id: string; to: string; label: string; primary?: boolean }) {
-  return (
-    <form action={transitionListing}>
-      <input type="hidden" name="id" value={id} /><input type="hidden" name="to" value={to} />
-      <button className={primary ? "btn-primary" : "btn-ghost"}>{label}</button>
-    </form>
-  );
-}
-
-function Item({ k, v }: { k: string; v: string }) {
-  return <div className="flex justify-between gap-4 border-b border-line py-1.5"><dt className="capitalize text-mute">{k}</dt><dd className="text-right font-medium">{v}</dd></div>;
 }

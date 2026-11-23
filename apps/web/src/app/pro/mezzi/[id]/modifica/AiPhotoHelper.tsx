@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateListingPhoto } from "../../actions";
+import { generateListingPhoto } from "../../../actions";
 
 export type SettingOption = { key: string; label: string };
 

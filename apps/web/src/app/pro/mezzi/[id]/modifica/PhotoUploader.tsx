@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { createUploadUrl, registerMedia } from "../../actions";
+import { createUploadUrl, registerMedia } from "../../../actions";
 import { errorText, prepareImage } from "@/lib/prepareImage";
 
 /** Carica le foto direttamente su Supabase Storage con un URL firmato dal server (niente limiti di dimensione del server). */
