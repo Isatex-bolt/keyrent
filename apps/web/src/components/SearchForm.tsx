@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CATEGORIES } from "@/lib/catalog";
 import { PlaceInput } from "./PlaceInput";
 import { DateField } from "./DateField";
+import { CategoryPicker } from "./CategoryPicker";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
@@ -99,10 +99,7 @@ export function HomeSearch() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="sm:w-80">
             <label htmlFor="h-cat" className="label">Cosa</label>
-            <select id="h-cat" name="cat" className="field" value={cat} onChange={(e) => setCat(e.target.value)}>
-              <option value="">Tutti i mezzi</option>
-              {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-            </select>
+            <CategoryPicker id="h-cat" value={cat} onChange={setCat} />
           </div>
           <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-48">Cerca</button>
         </div>
@@ -132,10 +129,7 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}
       <div>
         <label htmlFor="s-cat" className="label">Cosa</label>
-        <select id="s-cat" name="cat" className="field" defaultValue={values.cat ?? ""}>
-          <option value="">Tutto</option>
-          {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-        </select>
+        <CategoryPicker id="s-cat" defaultValue={values.cat ?? ""} allLabel="Tutto" />
       </div>
       <div className="flex items-end">
         <button type="submit" className="btn-primary w-full">Cerca</button>

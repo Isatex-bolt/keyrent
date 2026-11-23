@@ -80,12 +80,17 @@ export function Guide({ path, viewer }: { path: "cliente" | "noleggiatore"; view
     return () => window.removeEventListener("keydown", onKey);
   }, [go, idx]);
 
-  const onScroll = () => {
+  // slide visibile: la decide il browser (IntersectionObserver), non un calcolo sulle misure, così funziona anche su Safari
+  useEffect(() => {
     const el = track$.current;
     if (!el) return;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
-    if (i !== idx) setIdx(i);
-  };
+    el.scrollLeft = 0;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) setIdx(Number((e.target as HTMLElement).dataset.i));
+    }, { root: el, threshold: 0.6 });
+    el.querySelectorAll<HTMLElement>("[data-i]").forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, []);
 
   const frame = path === "cliente" ? "phone" : "browser";
   return (
@@ -96,15 +101,15 @@ export function Guide({ path, viewer }: { path: "cliente" | "noleggiatore"; view
         <Link href="/guida" className="rounded-xl px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-navy-50">{idx === last ? "Chiudi" : "Salta"}</Link>
       </header>
 
-      <div ref={track$} onScroll={onScroll} className="no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto scroll-smooth">
+      <div ref={track$} className="no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto scroll-smooth">
         {slides.map((s, i) => (
-          <section key={s.title} aria-roledescription="slide" aria-label={`${i + 1} di ${slides.length}`} aria-hidden={i !== idx}
+          <section key={s.title} data-i={i} aria-roledescription="slide" aria-label={`${i + 1} di ${slides.length}`} aria-hidden={i !== idx}
             className="h-full w-full flex-none snap-center snap-always overflow-y-auto">
             <div className="mx-auto grid min-h-full max-w-6xl content-start gap-6 px-5 pb-6 pt-5 sm:px-8 lg:grid-cols-2 lg:content-center lg:items-center lg:gap-14 lg:py-10">
               <div className="lg:order-1">
                 {frame === "phone" ? (
                   <div className="mx-auto w-full max-w-sm lg:rounded-[2.6rem] lg:border-[10px] lg:border-navy-950 lg:bg-canvas lg:p-4 lg:shadow-2xl">
-                    <div key={i === idx ? "on" : "off"}>{Math.abs(i - idx) <= 1 && s.visual}</div>
+                    <div key={i === idx ? "on" : "off"}>{s.visual}</div>
                   </div>
                 ) : (
                   <div className="mx-auto w-full max-w-sm lg:max-w-none lg:overflow-hidden lg:rounded-2xl lg:border lg:border-line lg:bg-white lg:shadow-2xl">
@@ -112,7 +117,7 @@ export function Guide({ path, viewer }: { path: "cliente" | "noleggiatore"; view
                       <span className="flex gap-1.5">{[0, 1, 2].map((d) => <span key={d} className="h-2.5 w-2.5 rounded-full bg-navy-100" />)}</span>
                       <span className="ml-3 rounded-md bg-white px-3 py-1 text-xs text-mute">keyrent.it/pro</span>
                     </div>
-                    <div className="lg:bg-canvas lg:p-6"><div key={i === idx ? "on" : "off"}>{Math.abs(i - idx) <= 1 && s.visual}</div></div>
+                    <div className="lg:bg-canvas lg:p-6"><div key={i === idx ? "on" : "off"}>{s.visual}</div></div>
                   </div>
                 )}
               </div>

@@ -82,6 +82,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; }
 /* Guida KeyRent: animazioni leggere e scorrimento a slide */
 @keyframes kr-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes kr-rise { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes kr-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
