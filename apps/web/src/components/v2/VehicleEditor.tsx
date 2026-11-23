@@ -8,7 +8,7 @@ const FIELDS: { key: keyof EditableVehicle; label: string; type?: "textarea" | "
   { key: "description", label: "Descrizione", type: "textarea" },
   { key: "dayPriceEuro", label: "Prezzo al giorno (€)", type: "number" },
   { key: "depositEuro", label: "Cauzione (€)", type: "number" },
-  { key: "instantBook", label: "Prenotazione immediata ⚡", type: "check" },
+  { key: "instantBook", label: "Prenotazione immediata", type: "check" },
 ];
 
 /**

@@ -15,7 +15,6 @@ const LISTING: Record<string, { label: string; tone: string }> = {
   unpublished: { label: "Non pubblicato", tone: "bg-slate-100 text-slate-600" },
   rejected: { label: "Rifiutato", tone: "bg-red-50 text-red-700" },
 };
-const CAT_ICON: Record<string, string> = { auto: "🚗", moto: "🏍️", scooter: "🛵", bici: "🚲", camper: "🚐", barche: "⛵", furgoni: "🚚", quad: "🏁", motoslitte: "🛷" };
 
 type View = "card" | "tabella" | "calendario";
 
@@ -53,7 +52,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
       </div>
       <div className="flex items-center justify-between text-sm text-mute">
         <span>{list.length} {list.length === 1 ? "mezzo" : "mezzi"}</span>
-        <Link href={addHref} className="btn-primary px-4 py-2 text-sm">＋ Aggiungi mezzo</Link>
+        <Link href={addHref} className="btn-primary px-4 py-2 text-sm">Aggiungi mezzo</Link>
       </div>
 
       <div key={view} className="animate-[riseIn_.25s_ease-out]">
@@ -84,7 +83,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
             {list.map((v) => { const t = v.days[today]?.state ?? "off"; const l = LISTING[v.status] ?? { label: v.status, tone: "bg-slate-100" }; return (
               <article key={v.id} className="group overflow-hidden rounded-2xl border border-line bg-white transition hover:-translate-y-0.5 hover:shadow-lg">
                 <Link href={vehicleHref(v.id)} className="relative block aspect-[16/9] bg-gradient-to-br from-navy-50 to-teal-50">
-                  {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-5xl">{CAT_ICON[v.categorySlug] ?? "🔑"}</span>}
+                  {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-xs font-semibold uppercase tracking-[0.2em] text-navy-700/50">{v.category} · foto da caricare</span>}
                   <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm ${l.tone}`}>{l.label}</span>
                   <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold shadow-sm">
                     <span className={`h-2 w-2 rounded-full ${STATE[t].dot}`} />{v.quantityMode === "pool" ? `${v.days[today]?.free ?? 0}/${v.units} liberi` : STATE[t].label}
@@ -102,7 +101,7 @@ export function FleetCatalog({ vehicles, days, bookings, today, locations, vehic
                     <span>{v.priceFromCents ? <>da <b>{euroShort(v.priceFromCents)}</b></> : <span className="text-mute">Prezzo da impostare</span>}</span>
                     <span className="text-xs text-mute">{v.upcoming} prenotazioni</span>
                   </div>
-                  {v.alerts.length > 0 && <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">⚠️ {v.alerts.join(" · ")}</p>}
+                  {v.alerts.length > 0 && <p className="flex items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />{v.alerts.join(" · ")}</p>}
                   <div className="grid grid-cols-4 gap-1 pt-1 text-center text-xs font-medium">
                     {[["Visualizza", ""], ["Modifica", "?modifica=1"], ["Disponibilità", "#calendario"], ["Prenotazioni", "#prenotazioni"]].map(([a, h]) => (
                       <Link key={a} href={vehicleHref(v.id, h)} className="rounded-lg px-1 py-2 text-navy-800 hover:bg-navy-50">{a}</Link>

@@ -52,7 +52,7 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
       <Link href={`/preview/provider-fleet-v2${q}`} className="text-sm text-mute hover:text-navy-900">← I miei mezzi</Link>
       <header className="grid gap-4 sm:grid-cols-[220px_1fr]">
         <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-navy-50 to-teal-50">
-          {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-6xl">🔑</span>}
+          {v.cover ? <img src={v.cover} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-xs font-semibold uppercase tracking-[0.2em] text-navy-700/50">Foto da caricare</span>}
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">{v.title}</h1>
@@ -62,7 +62,7 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
             <span className={`rounded-full px-2.5 py-1 ring-1 ${STATE[today].cell}`}>Oggi: {STATE[today].label}</span>
             <span className="rounded-full bg-navy-50 px-2.5 py-1">{future.length} prenotazioni attive/future</span>
           </div>
-          {v.alerts.length > 0 && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">⚠️ {v.alerts.join(" · ")}</p>}
+          {v.alerts.length > 0 && <p className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{v.alerts.join(" · ")}</p>}
         </div>
       </header>
 

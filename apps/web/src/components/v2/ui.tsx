@@ -45,7 +45,7 @@ export function DemoNote({ reason }: { reason: "demo" | "no-login" | "no-provide
   const text = reason === "demo" ? "Stai vedendo dati di esempio (?demo=1): niente di tutto questo esiste nel database."
     : reason === "no-login" ? "Non hai fatto l'accesso: vedi dati di esempio. Accedi come noleggiatore per vedere i tuoi."
     : "Questo account non ha un'attività: vedi dati di esempio.";
-  return <p className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-950">🧪 {text}</p>;
+  return <p className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-950">{text}</p>;
 }
 
 export const LISTING_LABEL: Record<string, string> = {

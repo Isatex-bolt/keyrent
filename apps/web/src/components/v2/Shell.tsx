@@ -4,19 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const NAV: { label: string; href: string; icon: string; soon?: boolean; current?: boolean }[] = [
-  { label: "Dashboard", href: "/preview/provider-dashboard-v2", icon: "◧" },
-  { label: "I miei mezzi", href: "/preview/provider-fleet-v2", icon: "🚗" },
-  { label: "Calendario", href: "/preview/provider-calendar-v2", icon: "📅" },
-  { label: "Richieste", href: "/pro/richieste", icon: "📥", current: true },
-  { label: "Prenotazioni", href: "/pro/prenotazioni", icon: "🗓️", current: true },
-  { label: "Messaggi", href: "/pro/messaggi", icon: "💬", current: true },
-  { label: "La mia attività", href: "/pro/attivita", icon: "🏢", current: true },
-  { label: "Le mie sedi", href: "/pro/sedi", icon: "📍", current: true },
-  { label: "Pagamenti e incassi", href: "#", icon: "💶", soon: true },
-  { label: "Statistiche", href: "#", icon: "📈", soon: true },
-  { label: "Team", href: "#", icon: "👥", soon: true },
-  { label: "Impostazioni", href: "#", icon: "⚙️", soon: true },
+const NAV: { section: string; items: { label: string; href: string; soon?: boolean; current?: boolean }[] }[] = [
+  { section: "Operatività", items: [
+    { label: "Dashboard", href: "/preview/provider-dashboard-v2" },
+    { label: "Calendario", href: "/preview/provider-calendar-v2" },
+    { label: "Richieste", href: "/pro/richieste", current: true },
+    { label: "Prenotazioni", href: "/pro/prenotazioni", current: true },
+    { label: "Messaggi", href: "/pro/messaggi", current: true },
+  ] },
+  { section: "Flotta", items: [
+    { label: "I miei mezzi", href: "/preview/provider-fleet-v2" },
+    { label: "Le mie sedi", href: "/pro/sedi", current: true },
+  ] },
+  { section: "Attività", items: [
+    { label: "La mia attività", href: "/pro/attivita", current: true },
+    { label: "Pagamenti e incassi", href: "#", soon: true },
+    { label: "Statistiche", href: "#", soon: true },
+    { label: "Team", href: "#", soon: true },
+    { label: "Impostazioni", href: "#", soon: true },
+  ] },
 ];
 
 /** Struttura dell'area noleggiatore V2: menu laterale (cassetto su telefono) + filtro sede. */
@@ -34,29 +40,36 @@ export function ProviderShellV2({ orgName, locations, sede, children }: {
   };
   const keepQs = qs({ mese: null, mezzo: null });
   const nav = (
-    <nav className="space-y-0.5">
-      <p className="px-3 pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teal-600">{orgName}</p>
-      {NAV.map((n) => {
-        const on = path === n.href;
-        if (n.soon) return (
-          <span key={n.label} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-mute/70">
-            <span className="w-5 text-center">{n.icon}</span>{n.label}<span className="ml-auto rounded-full bg-navy-50 px-2 py-0.5 text-[10px] font-bold uppercase">presto</span>
-          </span>
-        );
-        return (
-          <Link key={n.label} href={n.current ? n.href : `${n.href}${keepQs}`} onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${on ? "bg-navy-900 text-white" : "text-ink hover:bg-white"}`}>
-            <span className="w-5 text-center">{n.icon}</span>{n.label}
-            {n.current && <span className="ml-auto text-[10px] text-mute">attuale</span>}
-          </Link>
-        );
-      })}
+    <nav className="space-y-6">
+      <div className="px-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">Area noleggiatore</p>
+        <p className="mt-0.5 truncate text-sm font-semibold text-navy-900">{orgName}</p>
+      </div>
+      {NAV.map((g) => (
+        <div key={g.section} className="space-y-0.5">
+          <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-mute/80">{g.section}</p>
+          {g.items.map((n) => {
+            const on = path === n.href;
+            if (n.soon) return (
+              <span key={n.label} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-mute/60">
+                {n.label}<span className="text-[11px]">In arrivo</span>
+              </span>
+            );
+            return (
+              <Link key={n.label} href={n.current ? n.href : `${n.href}${keepQs}`} onClick={() => setOpen(false)}
+                className={`relative block rounded-lg px-3 py-2 text-sm transition ${on ? "bg-white font-semibold text-navy-900 shadow-sm ring-1 ring-line before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-teal-500" : "text-ink/80 hover:bg-white hover:text-navy-900"}`}>
+                {n.label}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
       <div className="mb-4 flex items-center gap-2 lg:hidden">
-        <button onClick={() => setOpen(true)} className="btn-ghost px-3" aria-label="Apri menu">☰ Menu</button>
+        <button onClick={() => setOpen(true)} className="btn-ghost px-3" aria-label="Apri menu">Menu</button>
       </div>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">

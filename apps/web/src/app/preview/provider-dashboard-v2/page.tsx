@@ -56,8 +56,8 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm capitalize text-mute">{dateLabel}</p>
-          <h1 className="text-3xl font-bold tracking-tight">Buongiorno 👋</h1>
-          <p className="text-mute">Ecco cosa c&apos;è da fare oggi.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Panoramica di oggi</h1>
+          <p className="text-mute">Richieste, ritiri, rientri e disponibilità della flotta.</p>
         </div>
         <Link href={`/preview/provider-fleet-v2${q}`} className="btn-ghost">I miei mezzi →</Link>
       </header>
