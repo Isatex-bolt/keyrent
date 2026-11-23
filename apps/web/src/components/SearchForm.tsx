@@ -72,9 +72,10 @@ export function HomeSearch() {
                 <DateField id="h-da" name="dal" min={today} value={longFrom} onChange={setLongFrom} placeholder="Data" />
               </div>
               <div>
-                <label htmlFor="h-mesi" className="label">Per quanto</label>
-                <select id="h-mesi" name="mesi" className="field" defaultValue="3">
-                  {[1, 2, 3, 6, 12].map((m) => <option key={m} value={m}>{m === 1 ? "1 mese" : `${m} mesi`}</option>)}
+                <label htmlFor="h-durata" className="label">Durata</label>
+                <input type="hidden" name="lungo" value="1" />
+                <select id="h-durata" name="durata" className="field" defaultValue="36">
+                  {[12, 24, 36, 48].map((m) => <option key={m} value={m}>{m} mesi</option>)}
                 </select>
               </div>
             </>
@@ -94,7 +95,7 @@ export function HomeSearch() {
         )}
 
         {mode === "lungo" && (
-          <p className="text-sm text-mute">Per noleggi di uno o più mesi vedi il totale calcolato con le tariffe settimanali e mensili dei noleggiatori.</p>
+          <p className="text-sm text-mute">Noleggio da 12 a 48 mesi: vedi la rata mensile e scegli i servizi (bollo, assicurazione, gomme, tagliandi, auto sostitutiva).</p>
         )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="sm:w-80">

@@ -61,6 +61,11 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Staff (0021): lo staff può inviare in revisione bozze preparate per un noleggiatore. Admin: menu stile noleggiatore,
   /admin/profilo (ISATEX), /admin/anagrafiche/[id] (+ nuovo, annunci/[lid]) con app/admin/listingActions.ts. Foto catalogo rimossa.
   Header: account staff sempre ADMIN, mai area noleggiatore.
+- Lungo termine (0022, 23/11): rental_terms short_term_enabled/long_term_enabled, lt_prices {"12".."48": cents/mese},
+  lt_services {bollo,assicurazione,gomme,tagliandi,sostitutiva: {offered,cents}} (0 = incluso), lt_km_per_year, lt_extra_km_cents.
+  lib/longTerm.ts, components/LongTermFields (wizard + modifica, revisione su online), LongTermConfigurator (scheda: rata live,
+  "Richiedi questo noleggio" → messaggio precompilato). Ricerca lungo=1&durata: solo annunci lungo termine, "da X €/mese".
+  Manca: richiesta/contratto lungo termine strutturati (oggi via messaggio).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

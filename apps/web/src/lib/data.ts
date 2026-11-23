@@ -217,3 +217,13 @@ export async function getDelivery(id: string): Promise<{ radius_km: number; fee_
   const row = !error && Array.isArray(data) ? (data[0] as { enabled: boolean; radius_km: number; fee_cents: number; per_km_cents: number } | undefined) : undefined;
   return row?.enabled ? { radius_km: row.radius_km, fee_cents: row.fee_cents, per_km_cents: row.per_km_cents } : null;
 }
+
+export type Offer = { listing_id: string; short_term: boolean; long_term: boolean; lt_prices: Record<string, number>;
+  lt_services: Record<string, { offered: boolean; cents: number }>; lt_km_per_year: number | null; lt_extra_km_cents: number | null; lt_from_cents: number | null };
+/** Breve / lungo termine degli annunci pubblicati (mappa vuota se il database non è aggiornato). */
+export async function getOffers(ids: string[]): Promise<Map<string, Offer>> {
+  if (!ids.length) return new Map();
+  const { data, error } = await publicDb().rpc("listing_offers", { p_ids: ids });
+  if (error || !Array.isArray(data)) return new Map();
+  return new Map((data as Offer[]).map((o) => [o.listing_id, o]));
+}

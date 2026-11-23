@@ -9,7 +9,7 @@ import { findPlace } from "@/lib/places";
 import { formatDateIt, romeToIso } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
-import { attributesForCategory, makesForCategory, searchMap, MAP_LIMIT } from "@/lib/data";
+import { attributesForCategory, getOffers, makesForCategory, searchMap, MAP_LIMIT } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Cerca mezzi a noleggio" };
 
@@ -52,12 +52,15 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   if (sp.luogo && lat == null && !bbox) notes.push(`Non abbiamo trovato "${sp.luogo}": mostriamo i risultati in tutta Italia.`);
   const center = lat != null && lng != null ? { lat, lng } : null;
 
+  // Lungo termine: niente date, rata mensile "da"
+  const lungo = sp.lungo === "1";
+  if (lungo) { delete sp.al; delete sp.mesi; }
   // Quando
-  if (sp.mesi && sp.dal && !sp.al) {
+  if (!lungo && sp.mesi && sp.dal && !sp.al) {
     const m = num(sp.mesi, 1, 24);
     if (m) sp.al = addMonths(sp.dal, m);
   }
-  let pickup = sp.dal ? romeToIso(sp.dal, sp.ora_ritiro ?? "10:00") : null;
+  let pickup = !lungo && sp.dal ? romeToIso(sp.dal, sp.ora_ritiro ?? "10:00") : null;
   let ret = sp.al ? romeToIso(sp.al, sp.ora_riconsegna ?? "10:00") : null;
   // stesso giorno senza orari (li decide il noleggiatore): conta come 1 giorno intero
   if (sp.dal && sp.dal === sp.al && !sp.ora_ritiro && !sp.ora_riconsegna) {
@@ -90,16 +93,19 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
     category: cat, subcategory: cat && sp.sub && /^[a-z0-9-]{2,40}$/.test(sp.sub) ? sp.sub : undefined, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax, instantOnly,
     sort: sp.ordina,
   });
-  const total = Number(results[0]?.total_count ?? 0);
+  // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
+  const offers = await getOffers(results.map((r) => r.id));
+  const shown = results.filter((r) => { const o = offers.get(r.id); return lungo ? !!o?.long_term : !o || o.short_term; });
+  const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
-  const items: ResultItem[] = results.map((r) => ({ ...r, href: listingHref(r, keep) }));
+  const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined }));
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "Mezzi";
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
-  const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), when, categoryName(cat)].filter(Boolean).join(" · ");
+  const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax)) + Number(instantOnly);
-  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub"];
+  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata"];
 
   const top = (
     <>
@@ -107,7 +113,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">{what} {where}</h1>
         <p className="text-sm text-mute">
           {total > MAP_LIMIT ? `primi ${MAP_LIMIT} di ${total}` : `${total} ${total === 1 ? "risultato" : "risultati"}`}
-          {pickup ? " · prezzi totali per le tue date" : ""}
+          {lungo ? " · noleggio a lungo termine, rata mensile" : pickup ? " · prezzi totali per le tue date" : ""}
         </p>
       </div>
       {notes.map((n) => <p key={n} className="mb-3 rounded-xl bg-teal-50 px-4 py-3 text-sm text-navy-800">{n}</p>)}

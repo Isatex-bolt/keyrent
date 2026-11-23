@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/auth";
 import { dbMessage } from "@/lib/status";
 import { deliveryOf, listingPayload } from "@/lib/listingForm";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
+import { longTermOf } from "@/lib/longTerm";
 
 /*
  * Il team KeyRent gestisce gli annunci di un noleggiatore su sua richiesta.
@@ -38,13 +39,14 @@ export async function createListingForOrg(f: FormData) {
   const { user } = await requireStaff();
   const orgId = str(f, "org_id");
   await providerOrg(orgId);
+  const lt = longTermOf(f);
+  if (lt.error) fail(`/admin/anagrafiche/${orgId}/nuovo`, lt.error);
   const payload = await listingPayload(f, orgId);
   if (payload.make && payload.model) await ensureCatalogEntry(payload.category, payload.make, payload.model).catch(() => undefined);
   const db = serviceDb();
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail(`/admin/anagrafiche/${orgId}/nuovo`, dbMessage(error.message));
-  const delivery = deliveryOf(f);
-  if (delivery.delivery_enabled) await db.from("rental_terms").update(delivery).eq("listing_id", String(data));
+  await db.from("rental_terms").update({ ...deliveryOf(f), ...lt.data }).eq("listing_id", String(data));
   await audit(user.id, String(data), "staff:create_for_provider", { organization_id: orgId });
   redirect(`/admin/anagrafiche/${orgId}/annunci/${data}?ok=creato`);
 }
@@ -105,4 +107,17 @@ export async function staffSubmitListing(f: FormData) {
   if (error) fail(back, dbMessage(error.message));
   revalidatePath("/admin/revisione");
   redirect(`/admin/revisione/${l.id}`);
+}
+
+export async function staffUpdateModes(f: FormData) {
+  const { user } = await requireStaff();
+  const l = await listingOf(str(f, "id"));
+  const back = `/admin/anagrafiche/${l.organization_id}/annunci/${l.id}`;
+  const lt = longTermOf(f);
+  if (lt.error) fail(back, lt.error);
+  const { error } = await serviceDb().from("rental_terms").update(lt.data).eq("listing_id", l.id);
+  if (error) fail(back, dbMessage(error.message));
+  await audit(user.id, l.id, "staff:update_rental_modes", lt.data);
+  revalidatePath(back);
+  redirect(`${back}?ok=salvato`);
 }

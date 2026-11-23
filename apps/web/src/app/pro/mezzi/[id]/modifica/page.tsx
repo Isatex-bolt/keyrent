@@ -12,7 +12,8 @@ import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
 import { AiPhotoHelper } from "./AiPhotoHelper";
 import { settingsFor } from "@/lib/aiImage";
-import { deleteDraftListing, deleteMedia, transitionListing, updateDelivery, updateListingDetails, updatePrices } from "../../../actions";
+import { deleteDraftListing, deleteMedia, transitionListing, updateDelivery, updateListingDetails, updatePrices, updateRentalModes } from "../../../actions";
+import { LongTermFields } from "@/components/LongTermFields";
 import { DeliveryFields } from "@/components/DeliveryFields";
 
 export const maxDuration = 90;
@@ -166,6 +167,21 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
               <li key={u} className="rounded-xl bg-canvas p-3"><p className="text-xs text-mute">{priceUnitLabel[u]}</p><p className="font-semibold">{euro(base(u)!)}</p></li>
             ))}
           </ul>
+        )}
+      </section>
+
+      {/* Breve / lungo termine: bozza → subito; annuncio online → torna in verifica */}
+      <section className="card space-y-3 p-5">
+        <h2 className="font-semibold">Breve e lungo termine</h2>
+        {edit ? (
+          <form action={updateRentalModes} className="space-y-3">
+            <input type="hidden" name="id" value={id} />
+            <LongTermFields initial={terms ?? undefined} />
+            {!draftLike && <p className="text-xs text-mute">L&apos;annuncio è online: la modifica torna in verifica dal team KeyRent. Fino all&apos;approvazione resta online la versione attuale.</p>}
+            <button className="btn-primary" disabled={!!pendingChange && !draftLike}>{draftLike ? "Salva" : "Invia in verifica"}</button>
+          </form>
+        ) : (
+          <p className="text-sm text-mute">{terms?.long_term_enabled ? (terms?.short_term_enabled ? "Breve e lungo termine" : "Solo lungo termine") : "Solo breve termine"}</p>
         )}
       </section>
 

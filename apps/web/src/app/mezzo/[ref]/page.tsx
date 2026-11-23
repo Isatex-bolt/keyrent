@@ -7,7 +7,8 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { euro, priceUnitLabel, romeToIso, todayRome, formatDateIt } from "@/lib/format";
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
-import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, quoteOrError } from "@/lib/data";
+import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, getOffers, quoteOrError } from "@/lib/data";
+import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
 type Raw = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -36,13 +37,19 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);
-  const [attrs, rules, quote, busy, delivery] = await Promise.all([
+  const [attrs, rules, quote, busy, delivery, offers] = await Promise.all([
     attributesForCategory(l.category_slug),
     getCancellationRules(l.cancellation_policy_id),
     pickup && ret ? quoteOrError(id, pickup, ret) : Promise.resolve(null),
     getBusyDays(id, from, to),
     getDelivery(id),
+    getOffers([id]),
   ]);
+  const offer = offers.get(id) ?? null;
+  const shortTerm = offer ? offer.short_term : true;
+  const longTerm = !!offer?.long_term;
+  const durata = Number(first(sp.durata)) || undefined;
+  const lungo = first(sp.lungo) === "1";
 
   const specs = attrs
     .map((a) => {
@@ -69,7 +76,11 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
       {/* telefono: "Prenota ora" subito sotto le foto. Con date già scelte va alla prenotazione, altrimenti scende al riquadro date */}
       <div className="mt-4 lg:hidden">
-        {quote && !("error" in quote) && dal && al ? (
+        {!shortTerm || (lungo && longTerm) ? (
+          <a href="#prenota" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-teal-500 px-5 text-base font-semibold text-navy-950">
+            Calcola la rata mensile <span aria-hidden>↓</span>
+          </a>
+        ) : quote && !("error" in quote) && dal && al ? (
           <Link href={`/prenota/${id}?${new URLSearchParams({ dal, al, ora_ritiro: oraR, ora_riconsegna: oraC })}`}
             className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-teal-500 px-5 font-semibold text-navy-950">
             <span>Prenota ora</span><span>{euro(quote.total_cents)} totale →</span>
@@ -157,7 +168,10 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
         </div>
 
         <aside id="prenota" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start">
-          <div className="card space-y-5 p-5 shadow-sm">
+          {longTerm && offer && (
+            <div className="card mb-4 p-5 shadow-sm"><LongTermConfigurator listingId={id} title={l.title} offer={offer} initialMonths={durata} /></div>
+          )}
+          {shortTerm && <div className="card space-y-5 p-5 shadow-sm">
             <div>
               <p className="text-sm text-mute">Tariffe</p>
               <ul className="mt-1 space-y-1">
@@ -173,7 +187,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
               initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
             <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
             <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost w-full">Fai una domanda</Link>
-          </div>
+          </div>}
+          {!shortTerm && <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>}
         </aside>
       </div>
     </div>

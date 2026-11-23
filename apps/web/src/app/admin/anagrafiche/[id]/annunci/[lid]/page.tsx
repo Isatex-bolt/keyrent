@@ -8,7 +8,8 @@ import { priceUnitLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
 import { DeliveryFields } from "@/components/DeliveryFields";
-import { staffSubmitListing, staffUpdateDelivery, staffUpdateDetails, staffUpdatePrices } from "@/app/admin/listingActions";
+import { staffSubmitListing, staffUpdateDelivery, staffUpdateDetails, staffUpdateModes, staffUpdatePrices } from "@/app/admin/listingActions";
+import { LongTermFields } from "@/components/LongTermFields";
 
 export const metadata = { title: "Modifica annuncio del noleggiatore" };
 
@@ -67,6 +68,15 @@ async function Edit({ params, searchParams }: { params: Promise<{ id: string; li
             ))}
           </div>
           <button className="btn-primary">Salva prezzi</button>
+        </form>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="mb-3 font-semibold">Breve e lungo termine</h2>
+        <form action={staffUpdateModes} className="space-y-3">
+          <input type="hidden" name="id" value={lid} />
+          <LongTermFields initial={terms ?? undefined} />
+          <button className="btn-primary">Salva</button>
         </form>
       </section>
 

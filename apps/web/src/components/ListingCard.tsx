@@ -4,7 +4,7 @@ import { CategoryIcon } from "./CategoryIcon";
 import { euro } from "@/lib/format";
 import type { SearchResult } from "@/lib/data";
 
-type CardData = SearchResult & { total_cents?: number | null; instant_book?: boolean };
+type CardData = SearchResult & { total_cents?: number | null; instant_book?: boolean; monthly_from_cents?: number | null };
 
 export function ListingCard({ r, href, active = false }: { r: CardData; href: string; active?: boolean }) {
   return (
@@ -34,7 +34,9 @@ export function ListingCard({ r, href, active = false }: { r: CardData; href: st
           {r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}
         </p>
         <p className="pt-1 text-sm">
-          {r.total_cents != null
+          {r.monthly_from_cents != null
+            ? <>da <span className="text-base font-bold">{euro(r.monthly_from_cents)}</span> <span className="text-mute">/mese</span></>
+            : r.total_cents != null
             ? <><span className="text-base font-bold">{euro(r.total_cents)}</span> <span className="text-mute">totale</span></>
             : r.price_from_cents != null ? <>da <span className="text-base font-bold">{euro(r.price_from_cents)}</span></> : "Prezzo su richiesta"}
         </p>

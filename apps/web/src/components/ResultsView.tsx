@@ -16,7 +16,7 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
   loading: () => <div className="h-full w-full animate-pulse bg-navy-50" />,
 });
 
-export type ResultItem = MapResult & { href: string };
+export type ResultItem = MapResult & { href: string; monthly_from_cents?: number | null };
 
 const PEEK = 0.55; // su telefono l'elenco parte dal 55% della mappa; scorrendo la pagina sale e copre la mappa
 
@@ -61,7 +61,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
     .filter((r) => r.approx_latitude != null && r.approx_longitude != null)
     .map((r) => ({
       id: r.id, lat: r.approx_latitude!, lng: r.approx_longitude!,
-      label: r.total_cents != null ? euro(r.total_cents) : r.price_from_cents != null ? `da ${euro(r.price_from_cents)}` : "—",
+      label: r.monthly_from_cents != null ? `${euro(r.monthly_from_cents)}/mese` : r.total_cents != null ? euro(r.total_cents) : r.price_from_cents != null ? `da ${euro(r.price_from_cents)}` : "—",
     }));
 
   useEffect(() => {
@@ -145,7 +145,7 @@ function MiniCard({ r, onClose }: { r: ResultItem; onClose: () => void }) {
           <p className="line-clamp-2 font-semibold leading-snug">{r.instant_book && <span className="mr-1 text-teal-600">⚡</span>}{r.title}</p>
           <p className="truncate text-sm text-mute">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</p>
           <p className="pt-1 text-sm">
-            {r.total_cents != null
+            {r.monthly_from_cents != null ? <>da <span className="text-base font-bold">{euro(r.monthly_from_cents)}</span> <span className="text-mute">/mese</span></> : r.total_cents != null
               ? <><span className="text-base font-bold">{euro(r.total_cents)}</span> <span className="text-mute">totale</span></>
               : r.price_from_cents != null ? <>da <span className="text-base font-bold">{euro(r.price_from_cents)}</span></> : "Prezzo su richiesta"}
           </p>

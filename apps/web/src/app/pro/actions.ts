@@ -16,6 +16,7 @@ import { releaseHold } from "@/lib/payments";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import { deliveryOf, listingPayload } from "@/lib/listingForm";
+import { longTermOf } from "@/lib/longTerm";
 import type { PreviewRow } from "@/lib/importSheet";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -145,6 +146,8 @@ async function geocode(q: string): Promise<{ lat: number; lng: number } | null> 
 // ---------- Mezzi ----------
 export async function createListing(f: FormData) {
   const { membership } = await editor();
+  const lt = longTermOf(f);
+  if (lt.error) fail("/pro/mezzi/nuovo", lt.error);
   const payload = await listingPayload(f, membership.organization_id);
   const db = await userDb();
   // doppio invio dello stesso modulo: riapri la bozza appena creata invece di farne un'altra
@@ -153,9 +156,9 @@ export async function createListing(f: FormData) {
   if (same?.length) redirect(`/pro/mezzi/${same[0].id}/modifica?nuovo=1`);
   const { data, error } = await db.rpc("create_listing_draft", { p: payload });
   if (error) fail("/pro/mezzi/nuovo", dbMessage(error.message));
-  // consegna a domicilio: sulla bozza si salva direttamente
-  const delivery = deliveryOf(f);
-  if (delivery.delivery_enabled) await db.from("rental_terms").update(delivery).eq("listing_id", String(data));
+  // consegna a domicilio e lungo termine: sulla bozza si salvano direttamente
+  const { error: tErr } = await db.from("rental_terms").update({ ...deliveryOf(f), ...lt.data }).eq("listing_id", String(data));
+  if (tErr) console.error("condizioni nuova bozza", tErr.message);
   redirect(`/pro/mezzi/${data}/modifica?nuovo=1`);
 }
 
@@ -181,6 +184,26 @@ export async function updateDelivery(f: FormData) {
     redirect(`${back}?ok=salvato`);
   }
   const { error } = await serviceDb().rpc("svc_propose_listing_changes", { p_listing: id, p_actor: user.id, p_changes: { terms: d } });
+  if (error) fail(back, error.message.includes("REVISION_ALREADY_PENDING") ? "C'è già una modifica in verifica: attendi la risposta del team prima di inviarne un'altra." : dbMessage(error.message));
+  redirect(`${back}?ok=revisione`);
+}
+
+/** Breve / lungo termine: bozza → salvata subito; annuncio online → passa dalla revisione del team. */
+export async function updateRentalModes(f: FormData) {
+  const { user } = await editor();
+  const id = str(f, "id");
+  const back = `/pro/mezzi/${id}/modifica`;
+  const lt = longTermOf(f);
+  if (lt.error) fail(back, lt.error);
+  const db = await userDb();
+  const { data: l } = await db.from("listings").select("status").eq("id", id).maybeSingle();
+  if (!l) fail("/pro/mezzi", "Annuncio non trovato.");
+  if (["draft", "changes_required"].includes(l!.status)) {
+    const { error } = await db.from("rental_terms").update(lt.data).eq("listing_id", id);
+    if (error) fail(back, dbMessage(error.message));
+    redirect(`${back}?ok=salvato`);
+  }
+  const { error } = await serviceDb().rpc("svc_propose_listing_changes", { p_listing: id, p_actor: user.id, p_changes: { terms: lt.data } });
   if (error) fail(back, error.message.includes("REVISION_ALREADY_PENDING") ? "C'è già una modifica in verifica: attendi la risposta del team prima di inviarne un'altra." : dbMessage(error.message));
   redirect(`${back}?ok=revisione`);
 }

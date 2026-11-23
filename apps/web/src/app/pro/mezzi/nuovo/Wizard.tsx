@@ -1,6 +1,7 @@
 "use client";
 
 import { DeliveryFields } from "@/components/DeliveryFields";
+import { LongTermFields } from "@/components/LongTermFields";
 
 import { useFormStatus } from "react-dom";
 
@@ -20,6 +21,7 @@ export function Wizard({ cats, attrs, locations, action = createListing, orgId }
   /** il team KeyRent prepara l'annuncio per un noleggiatore: azione e attività diverse */
   action?: (f: FormData) => Promise<void>; orgId?: string;
 }) {
+  const [modes, setModes] = useState({ short: true, long: false });
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<CatalogEntry | null>(null);
   const [manual, setManual] = useState(false);
@@ -219,11 +221,12 @@ export function Wizard({ cats, attrs, locations, action = createListing, orgId }
 
       {/* 3 · Prezzi e condizioni principali */}
       <section data-step="2" hidden={step !== 2} className="space-y-5">
-        <div>
-          <h2 className="text-lg font-bold">Prezzi</h2>
+        <LongTermFields onModeChange={setModes} />
+        <div hidden={!modes.short}>
+          <h2 className="text-lg font-bold">Prezzi breve termine</h2>
           <p className="text-sm text-mute">Compila solo le tariffe che offri: al cliente proponiamo sempre la combinazione più conveniente.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div hidden={!modes.short} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[["price_day", "Al giorno"], ["price_week", "A settimana"], ["price_half_day", "Mezza giornata"], ["price_hour", "All'ora"]].map(([n, l], i) => (
             <div key={n}><label className="label" htmlFor={n}>{l} (€)</label>
               <input id={n} name={n} type="number" inputMode="decimal" min={0} step="0.01" className={`field ${i === 0 ? "border-teal-500" : ""}`} /></div>
