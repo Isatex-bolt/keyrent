@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PartnerCta } from "@/components/PartnerCta";
 import type { Metadata } from "next";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES } from "@/lib/catalog";
@@ -54,10 +55,7 @@ export default function Page() {
             <p className="mt-4 max-w-xl text-lg text-white/75">
               Auto, moto, bici, camper, barche e furgoni. Pubblichi gratis, ricevi prenotazioni con disponibilità reale e pagamento protetto.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/registrati?tipo=noleggiatore" className="btn-primary px-6 py-3.5 text-base">Registra la tua attività</Link>
-              <Link href="/accedi?tipo=noleggiatore" className="inline-flex items-center rounded-xl px-5 py-3.5 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">Accedi</Link>
-            </div>
+            <div className="mt-7"><PartnerCta showLogin /></div>
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/80">
               {["Pubblicazione gratuita", "Nessun canone", "Commissione solo sul concluso"].map((t) => (
                 <li key={t} className="flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-teal-500 text-[11px] font-bold text-navy-950">✓</span>{t}</li>
@@ -172,7 +170,7 @@ export default function Page() {
             <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Pronto a ricevere le prime prenotazioni?</h2>
             <p className="mt-1 text-white/70">La registrazione richiede pochi minuti.</p>
           </div>
-          <Link href="/registrati?tipo=noleggiatore" className="btn-primary px-6 py-3.5 text-base">Registra la tua attività</Link>
+          <PartnerCta />
         </div>
       </section>
     </>

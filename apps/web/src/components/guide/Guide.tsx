@@ -6,7 +6,7 @@ import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
 import * as V from "./visuals";
 
-export type Viewer = { loggedIn: boolean; provider: boolean };
+export type Viewer = { loggedIn: boolean; provider: boolean; orgName?: string };
 type Cta = { label: string; href: string; ghost?: boolean };
 type Slide = { title: string; text: string; visual: ReactNode; strong?: string; ctas?: Cta[] };
 
@@ -28,7 +28,9 @@ function customerSlides(v: Viewer): Slide[] {
 function providerSlides(v: Viewer): Slide[] {
   const start: Cta = v.provider ? { label: "Vai alla dashboard", href: "/pro" } : { label: "Registra la tua attività", href: v.loggedIn ? "/pro" : "/registrati?tipo=noleggiatore" };
   return [
-    { title: "Registra la tua attività", text: "Inserisci i dati della tua azienda e le sedi da cui noleggi i tuoi mezzi. KeyRent verifica l'attività prima della pubblicazione.", visual: <V.VBusiness />,
+    { title: v.provider ? "La tua attività è registrata" : "Registra la tua attività", text: v.provider
+        ? `La tua attività${v.orgName ? ` ${v.orgName}` : ""} è già registrata. Dati dell'azienda e sedi li trovi e li modifichi nell'area noleggiatore.`
+        : "Inserisci i dati della tua azienda e le sedi da cui noleggi i tuoi mezzi. KeyRent verifica l'attività prima della pubblicazione.", visual: <V.VBusiness />,
       ctas: v.provider ? undefined : [{ label: "Configura la tua attività", href: start.href, ghost: true }] },
     { title: "La tua attività in una dashboard", text: "Ricavi, richieste, noleggi attivi e mezzi disponibili oggi, appena entri.", visual: <V.VDashboard /> },
     { title: "Inserisci il tuo primo mezzo", text: "Foto, caratteristiche, prezzo e condizioni di noleggio, passo dopo passo. Il team KeyRent lo controlla e lo pubblica.", visual: <V.VWizard />,

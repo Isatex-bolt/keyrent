@@ -201,7 +201,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
 function Shell({ sp, summary, children }: { sp: Record<string, string | undefined>; summary: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="relative z-20 border-b border-line bg-white">
+      <div className="sticky top-16 z-20 border-b border-line bg-white lg:relative lg:top-0">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <SearchForm summary={summary}
             values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna }} />

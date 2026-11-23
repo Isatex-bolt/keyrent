@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthCard, FormError } from "@/components/AuthCard";
 import { OrgFields } from "@/components/OrgFields";
 import { signUp } from "../accedi/actions";
+import { getViewer } from "@/lib/viewer";
 
 export const metadata = { title: "Registrati" };
 
@@ -74,6 +75,30 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   const errore = typeof sp.errore === "string" ? sp.errore : undefined;
   const tipo = sp.tipo === "noleggiatore" ? "noleggiatore" : sp.tipo === "cliente" ? "cliente" : null;
   const come = sp.come === "azienda" ? "azienda" : sp.come === "privato" ? "privato" : null;
+
+  // già dentro: niente seconda registrazione
+  const v = await getViewer();
+  if (v.loggedIn) {
+    if (v.provider) {
+      return (
+        <AuthCard title="La tua azienda è già registrata"
+          subtitle={`${v.orgName ? `${v.orgName} è` : "La tua attività è"} già su KeyRent con questo account.`}>
+          <Link href="/pro" className="btn-primary w-full py-3.5 text-base">Vai all&apos;area noleggiatore</Link>
+          <p className="mt-4 text-center text-sm text-mute">Vuoi un altro account? Prima <Link href="/esci" className="font-semibold text-teal-600">esci</Link>.</p>
+        </AuthCard>
+      );
+    }
+    return (
+      <AuthCard title="Hai già un account KeyRent" subtitle={tipo === "noleggiatore"
+        ? "Puoi aggiungere la tua attività al tuo account, senza una nuova registrazione."
+        : "Sei già dentro: puoi cercare e prenotare subito."}>
+        <Link href={tipo === "noleggiatore" ? "/pro" : "/"} className="btn-primary w-full py-3.5 text-base">
+          {tipo === "noleggiatore" ? "Registra la tua attività" : "Cerca un mezzo"}
+        </Link>
+        <p className="mt-4 text-center text-sm text-mute">Vuoi un altro account? Prima <Link href="/esci" className="font-semibold text-teal-600">esci</Link>.</p>
+      </AuthCard>
+    );
+  }
   const login = (
     <p className="mt-6 text-center text-sm text-mute">
       Hai già un account? <Link href={`/accedi${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-teal-600">Accedi</Link>

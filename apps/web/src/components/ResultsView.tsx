@@ -7,6 +7,9 @@ import { ListingCard } from "./ListingCard";
 import type { MapResult } from "@/lib/data";
 import type { Bounds, MapPin } from "./ResultsMap";
 import { euro } from "@/lib/format";
+import Link from "next/link";
+import Image from "next/image";
+import { CategoryIcon } from "./CategoryIcon";
 
 const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap), {
   ssr: false,
@@ -15,11 +18,13 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
 
 export type ResultItem = MapResult & { href: string };
 
-const SNAPS = [0.2, 0.55, 0.98]; // altezza del pannello su mobile (frazione dello spazio sotto la barra di ricerca)
+const PEEK = 0.55; // su telefono l'elenco parte dal 55% della mappa; scorrendo la pagina sale e copre la mappa
 
 /**
  * Risultati: lista + mappa sincronizzate. Desktop: lista a sinistra, mappa fissa a destra.
- * Mobile: mappa a tutto schermo con pannello trascinabile a 3 altezze. Senza token Mapbox: solo lista.
+ * Telefono: mappa ferma dietro, l'elenco scorre con la pagina e sale sopra la mappa (un solo gesto, una mano).
+ * Tornando in cima ricompare la mappa. Pulsante "Apri mappa" fisso in alto quando l'elenco la copre.
+ * Senza token Mapbox: solo lista.
  */
 export function ResultsView({ items, top, center, bbox, hasMap }: {
   items: ResultItem[]; top: React.ReactNode;
@@ -29,21 +34,28 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
   const params = useSearchParams();
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [snap, setSnap] = useState(1);
-  const [drag, setDrag] = useState<number | null>(null);
-  const start = useRef<{ y: number; h: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  // altezza dello spazio sotto la barra di ricerca (non di tutto lo schermo): il pannello alzato non finisce mai sotto la barra
   const boxRef = useRef<HTMLDivElement>(null);
-  const [vh, setVh] = useState(800);
+  // altezza occupata da header + barra di ricerca (fissi in alto su telefono): la mappa parte sotto di loro
+  const [top0, setTop0] = useState(136);
+  const [covered, setCovered] = useState(false);
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
-    const set = () => setVh(el.clientHeight || window.innerHeight);
-    set();
-    const ro = new ResizeObserver(set); ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    const measure = () => setTop0(Math.round(el.getBoundingClientRect().top + window.scrollY));
+    measure();
+    const onScroll = () => {
+      const mapH = window.innerHeight - top0 - 64;
+      setCovered(window.scrollY > mapH * PEEK + 40);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", measure); };
+  }, [top0]);
+
+  const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+  function showMap() { window.scrollTo({ top: 0, behavior: "smooth" }); }
 
   const pins: MapPin[] = items
     .filter((r) => r.approx_latitude != null && r.approx_longitude != null)
@@ -53,7 +65,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
     }));
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || !isDesktop()) return;
     listRef.current?.querySelector(`[data-id="${selected}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [selected]);
 
@@ -83,54 +95,64 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
 
   if (!hasMap) return <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{list}</div>;
 
-  const height = drag ?? SNAPS[snap] * vh;
-
   return (
-    <div ref={boxRef} className="relative h-[calc(100dvh-8.5rem-64px-env(safe-area-inset-bottom))] overflow-hidden lg:grid lg:h-auto lg:grid-cols-[minmax(0,1fr)_44%] lg:overflow-visible">
-      <div className="absolute inset-0 lg:relative lg:order-2">
-        <div className="h-full lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]">
-          <ResultsMap pins={pins} hovered={hovered} selected={selected} onHover={setHovered}
-            onSelect={(id) => { setSelected(id); if (id && snap === 2) setSnap(1); }}
-            center={center} bbox={bbox} onSearchArea={searchArea} />
-          {chosen && (
-            <div className="absolute inset-x-3 bottom-[calc(20%+0.75rem)] z-20 mx-auto max-w-sm lg:bottom-4">
-              <div className="relative">
-                <button type="button" aria-label="Chiudi" onClick={() => setSelected(null)}
-                  className="absolute -right-2 -top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-navy-900 text-sm text-white shadow">✕</button>
-                <ListingCard r={chosen} href={chosen.href} />
-              </div>
-            </div>
-          )}
-        </div>
+    <div ref={boxRef} style={{ "--top": `${top0}px` } as React.CSSProperties}
+      className="relative [--maph:calc(100dvh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
+      {/* mappa: ferma dietro l'elenco su telefono, colonna fissa a destra su computer */}
+      <div className="sticky top-[var(--top)] z-0 mb-[calc(var(--maph)*-1)] h-[var(--maph)] lg:top-16 lg:order-2 lg:mb-0 lg:h-[calc(100dvh-4rem)]">
+        <ResultsMap pins={pins} hovered={hovered} selected={selected} onHover={setHovered}
+          onSelect={(id) => { setSelected(id); if (id && !isDesktop()) showMap(); }}
+          center={center} bbox={bbox} onSearchArea={searchArea} />
+        {chosen && (
+          <div className={`absolute inset-x-3 z-20 mx-auto max-w-md bottom-[calc(45%+0.75rem)] lg:bottom-4`}>
+            <MiniCard r={chosen} onClose={() => setSelected(null)} />
+          </div>
+        )}
       </div>
 
-      <div
-        className={`absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-3xl bg-canvas shadow-[0_-8px_30px_rgba(1,25,56,0.15)]
-          lg:static lg:order-1 lg:!h-auto lg:rounded-none lg:shadow-none ${drag == null ? "transition-[height] duration-300 ease-out" : ""}`}
-        style={{ height }}
-      >
-        <div
-          className="flex flex-none cursor-grab touch-none justify-center py-3 lg:hidden"
-          onPointerDown={(e) => { start.current = { y: e.clientY, h: height }; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
-          onPointerMove={(e) => {
-            if (!start.current) return;
-            setDrag(Math.min(Math.max(start.current.h + (start.current.y - e.clientY), SNAPS[0] * vh), SNAPS[2] * vh));
-          }}
-          onPointerUp={() => {
-            if (start.current && drag != null) {
-              const frac = drag / vh;
-              const nearest = SNAPS.reduce((best, s, i) => (Math.abs(s - frac) < Math.abs(SNAPS[best] - frac) ? i : best), 0);
-              setSnap(nearest);
-            } else if (start.current) {
-              setSnap((s) => (s + 1) % SNAPS.length);
-            }
-            start.current = null; setDrag(null);
-          }}
-        >
+      {/* elenco: su telefono parte sotto la mappa e sale scorrendo la pagina */}
+      <div className="relative z-10 mt-[calc(var(--maph)*0.55)] min-h-[var(--maph)] rounded-t-3xl bg-canvas shadow-[0_-8px_30px_rgba(1,25,56,0.15)]
+        lg:order-1 lg:mt-0 lg:min-h-0 lg:rounded-none lg:shadow-none">
+        <button type="button" aria-label="Scorri l'elenco" onClick={() => window.scrollTo({ top: (window.innerHeight - top0 - 64) * PEEK, behavior: "smooth" })}
+          className="flex w-full justify-center py-3 lg:hidden">
           <span className="h-1.5 w-10 rounded-full bg-navy-900/20" />
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 sm:px-6 lg:overflow-visible lg:py-6">{list}</div>
+        </button>
+        <div className="px-4 pb-8 sm:px-6 lg:py-6">{list}</div>
       </div>
+
+      {/* telefono: "Apri mappa" fisso in alto quando l'elenco copre la mappa */}
+      <button type="button" onClick={showMap} aria-hidden={!covered} tabIndex={covered ? 0 : -1}
+        className={`fixed left-1/2 top-[calc(var(--top)+0.75rem)] z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition lg:hidden ${
+          covered ? "opacity-100" : "pointer-events-none -translate-y-2 opacity-0"}`}>
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" /><path d="M9 4v14M15 6v14" /></svg>
+        Apri mappa
+      </button>
+    </div>
+  );
+}
+
+/** Scheda compatta del mezzo scelto sulla mappa: foto piccola a sinistra, dati a destra. */
+function MiniCard({ r, onClose }: { r: ResultItem; onClose: () => void }) {
+  return (
+    <div className="relative animate-[kr-rise_.2s_ease-out_both]">
+      <Link href={r.href} className="flex overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_30px_rgba(1,25,56,0.2)]">
+        <div className="relative h-28 w-28 flex-none bg-navy-50">
+          {r.cover
+            ? <Image src={r.cover} alt="" fill sizes="112px" className="object-cover" />
+            : <div className="grid h-full place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-9 w-9" /></div>}
+        </div>
+        <div className="min-w-0 flex-1 space-y-0.5 p-3 pr-9">
+          <p className="line-clamp-2 font-semibold leading-snug">{r.instant_book && <span className="mr-1 text-teal-600">⚡</span>}{r.title}</p>
+          <p className="truncate text-sm text-mute">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</p>
+          <p className="pt-1 text-sm">
+            {r.total_cents != null
+              ? <><span className="text-base font-bold">{euro(r.total_cents)}</span> <span className="text-mute">totale</span></>
+              : r.price_from_cents != null ? <>da <span className="text-base font-bold">{euro(r.price_from_cents)}</span></> : "Prezzo su richiesta"}
+          </p>
+        </div>
+      </Link>
+      <button type="button" aria-label="Chiudi" onClick={onClose}
+        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-navy-50 text-sm text-navy-900">✕</button>
     </div>
   );
 }
