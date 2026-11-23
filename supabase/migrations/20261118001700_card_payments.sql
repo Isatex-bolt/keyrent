@@ -64,7 +64,7 @@ begin
   if not exists (select 1 from payments where booking_id = p_booking and stripe_payment_intent_id = p_pi) then
     raise exception 'PAYMENT_MISMATCH' using errcode = 'P0001';
   end if;
-  if not exists (select 1 from unit_reservations where booking_id = p_booking and active) then
+  if not exists (select 1 from unit_reservations where booking_id = p_booking and active and (expires_at is null or expires_at > now())) then
     raise exception 'HOLD_LOST' using errcode = 'P0001';
   end if;
   update unit_reservations set expires_at = b.provider_response_due_at where booking_id = p_booking and active;
