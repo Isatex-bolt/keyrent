@@ -25,7 +25,7 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
     const p = pendingOrgOf(user);
     const org = p ? { ...p, legal_address: { street: p.street ?? "", city: p.city ?? "", postal_code: p.postal_code ?? "", province: p.province ?? "" } } : undefined;
     return (
-      <div className="card p-6">
+      <div className="card mx-auto max-w-4xl p-6">
         <ProHeader title={p ? "Conferma i dati della tua attività" : "Registra la tua attività"}
           subtitle={p ? "Abbiamo compilato i dati inseriti in registrazione: controllali e conferma." : "KeyRent è riservato a operatori professionali. Dopo la verifica potrai pubblicare i tuoi mezzi."} />
         <Flash sp={sp} />
@@ -33,7 +33,7 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
           <OrgFields org={org} />
           <div className="flex flex-wrap items-center gap-3">
             <button className="btn-primary">Registra attività</button>
-            {!p && <Link href="/account" className="btn-ghost">Annulla, resto cliente</Link>}
+            {!p && <Link href="/account/profilo" className="btn-ghost">Annulla, torna al mio profilo</Link>}
           </div>
           {!p && <p className="text-xs text-mute">Finché non registri l&apos;attività il tuo account resta un account cliente.</p>}
         </form>
