@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
 import { completePendingOrg } from "@/lib/pendingOrg";
+import { cookies } from "next/headers";
+import { PREVIEW_V2_COOKIE } from "@/lib/v2/flag";
 
 function safeNext(v: FormDataEntryValue | null) {
   const s = typeof v === "string" ? v : "";
@@ -34,6 +36,8 @@ export async function signIn(formData: FormData) {
   // senza destinazione: noleggiatori nella loro area, clienti nel loro account
   const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
   const isProvider = (count ?? 0) > 0 || !!data.user?.user_metadata?.pending_org;
+  // ANTEPRIMA V2 (solo con il flag su questo browser): il cliente resta sulla home
+  if (!isProvider && (await cookies()).get(PREVIEW_V2_COOKIE)?.value === "1") redirect("/");
   redirect(isProvider ? "/pro" : "/account");
 }
 
