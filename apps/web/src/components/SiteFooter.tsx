@@ -9,8 +9,8 @@ export function SiteFooter() {
           <Logo light />
           <p className="text-sm">Noleggio di auto, moto, bici, camper, barche e furgoni da operatori professionali verificati.</p>
         </div>
-        <Col title="Per chi noleggia" links={[["Guida KeyRent", "/guida"], ["Come funziona", "/come-funziona"], ["I miei noleggi", "/account/noleggi"], ["Assistenza", "/assistenza"]]} />
-        <Col title="Per chi mette a noleggio" links={[["Diventa partner", "/diventa-partner"], ["Guida noleggiatori", "/guida/noleggiatori"], ["Gestisci la tua flotta", "/pro"]]} />
+        <Col title="Per chi noleggia" links={[["Come funziona", "/guida"], ["I miei noleggi", "/account/noleggi"], ["Assistenza", "/assistenza"]]} />
+        <Col title="Per chi mette a noleggio" links={[["Come funziona", "/guida"], ["Diventa partner", "/diventa-partner"], ["Gestisci la tua flotta", "/pro"]]} />
         <Col title="Informazioni" links={[["Termini e condizioni", "/termini"], ["Privacy", "/privacy"]]} />
       </div>
       <div className="border-t border-white/10">
@@ -31,7 +31,7 @@ function Col({ title, links }: { title: string; links: [string, string][] }) {
     <div className="text-sm">
       <p className="mb-2 font-semibold text-white">{title}</p>
       <ul className="space-y-1.5">
-        {links.map(([l, h]) => <li key={h}><Link href={h} className="hover:text-white">{l}</Link></li>)}
+        {links.map(([l, h]) => <li key={l + h}><Link href={h} className="hover:text-white">{l}</Link></li>)}
       </ul>
     </div>
   );
