@@ -21,6 +21,7 @@ const NAV: { section: string; items: Item[] }[] = [
   ] },
   { section: "Attività", items: [
     { label: "La mia attività", href: "/pro/attivita" },
+    { label: "Il mio profilo", href: "/pro/profilo" },
     { label: "Assistenza KeyRent", href: "/pro/assistenza", badge: "support" },
     { label: "Pagamenti e incassi" }, { label: "Statistiche" }, { label: "Team" },
   ] },

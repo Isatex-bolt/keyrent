@@ -12,6 +12,7 @@ export async function updateProfile(formData: FormData) {
   const { error } = await db.from("profiles").update({
     first_name: get("first_name"), last_name: get("last_name"), phone: get("phone"),
   }).eq("id", user.id);
-  revalidatePath("/account");
-  redirect(error ? `/account?errore=${encodeURIComponent("Salvataggio non riuscito")}` : "/account?ok=1");
+  const back = formData.get("back") === "/pro/profilo" ? "/pro/profilo" : "/account";
+  revalidatePath(back);
+  redirect(error ? `${back}?errore=${encodeURIComponent("Salvataggio non riuscito")}` : `${back}?ok=1`);
 }
