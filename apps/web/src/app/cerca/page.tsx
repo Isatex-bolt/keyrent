@@ -30,9 +30,9 @@ function num(v: string | undefined, min: number, max: number) {
   return v && Number.isFinite(n) && n >= min && n <= max ? n : undefined;
 }
 
-function addMonths(date: string, months: number) {
+function addMonths(date: string, months: number, days = 0) {
   const [y, m, d] = date.split("-").map(Number);
-  const t = new Date(Date.UTC(y, m - 1 + months, d));
+  const t = new Date(Date.UTC(y, m - 1 + months, d + days));
   return t.toISOString().slice(0, 10);
 }
 
@@ -58,8 +58,12 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
     if (m) sp.al = addMonths(sp.dal, m);
   }
   let pickup = sp.dal ? romeToIso(sp.dal, sp.ora_ritiro ?? "10:00") : null;
-  // stesso giorno senza orari: ritiro 10:00, riconsegna 19:00
-  let ret = sp.al ? romeToIso(sp.al, sp.ora_riconsegna ?? (sp.al === sp.dal ? "19:00" : "10:00")) : null;
+  let ret = sp.al ? romeToIso(sp.al, sp.ora_riconsegna ?? "10:00") : null;
+  // stesso giorno senza orari (li decide il noleggiatore): conta come 1 giorno intero
+  if (sp.dal && sp.dal === sp.al && !sp.ora_ritiro && !sp.ora_riconsegna) {
+    pickup = romeToIso(sp.dal, "00:00");
+    ret = romeToIso(addMonths(sp.dal, 0, 1), "00:00");
+  }
   if (pickup && ret && ret <= pickup) { notes.push("La riconsegna deve essere dopo il ritiro."); pickup = ret = null; }
   if ((pickup && !ret) || (!pickup && ret)) { notes.push("Indica sia il ritiro sia la riconsegna per vedere prezzi totali e disponibilità."); pickup = ret = null; }
 
