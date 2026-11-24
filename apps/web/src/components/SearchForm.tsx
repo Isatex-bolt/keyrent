@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PlaceInput } from "./PlaceInput";
 import { DateField } from "./DateField";
 import { CategoryPicker } from "./CategoryPicker";
+import { CATEGORIES } from "@/lib/catalog";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
@@ -24,87 +25,105 @@ function shortcut(kind: "oggi" | "domani" | "weekend") {
   return { dal: addDays(toSat), al: addDays(toSat + 1) };
 }
 
-/** Ricerca della home: Prenota | Lungo termine, Dove con suggerimenti, Quando con scorciatoie, Cosa a menu. */
+/** Data compatta stile Booking: si legge "sab 28 nov", si tocca e si apre il calendario del telefono. */
+function DatePill({ id, name, label, value, min, onChange }: { id: string; name: string; label: string; value: string; min?: string; onChange: (v: string) => void }) {
+  const text = value ? new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`)) : label;
+  return (
+    <label htmlFor={id} className="relative block min-w-0 cursor-pointer py-3">
+      <span className={`block truncate text-[16px] ${value ? "font-medium text-ink" : "text-mute/70"}`}>{text}</span>
+      <input id={id} name={name} type="date" min={min} value={value} aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* non supportato */ } }}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+    </label>
+  );
+}
+
+/** Categorie del menu scorrevole in alto (stile Booking): la scelta vale per la ricerca sotto. */
+export const PILLS: { key: string; label: string }[] = [
+  { key: "", label: "Tutti" },
+  ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })),
+  { key: "lungo", label: "Lungo termine" },
+];
+
+/**
+ * Ricerca della home, stile Booking: menu categorie scorrevole, riquadro compatto e ben delimitato
+ * (Dove · Date · Cerca), scorciatoie sotto. La categoria scelta nel menu si applica alla ricerca.
+ */
 export function HomeSearch() {
-  const [mode, setMode] = useState<"breve" | "lungo">("breve");
+  const [pill, setPill] = useState("");
+  const lungo = pill === "lungo";
   const [dates, setDates] = useState<{ dal: string; al: string }>({ dal: "", al: "" });
   const [quick, setQuick] = useState<string | null>(null);
-  const [cat, setCat] = useState("");
   const [today, setToday] = useState<string | undefined>(undefined);
   const [longFrom, setLongFrom] = useState("");
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- date di oggi solo nel browser (fuso di Roma)
   useEffect(() => { setToday(addDays(0)); setLongFrom(addDays(7)); }, []);
+  const row = "flex min-h-14 items-center gap-3 px-4";
+  const bare = "w-full bg-transparent py-3 text-[16px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-mute/70";
 
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">Noleggia ora</h2>
-      <div role="tablist" aria-label="Durata del noleggio" className="mb-5 mt-3 inline-flex rounded-full bg-navy-50 p-1 text-sm font-semibold">
-        {([["breve", "Breve termine"], ["lungo", "Lungo termine"]] as const).map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
-            className={`rounded-full px-4 py-2 transition ${mode === k ? "bg-navy-900 text-white shadow-sm" : "text-mute hover:text-navy-900"}`}>
-            {l}
+      {/* menu scorrevole delle categorie */}
+      <div role="tablist" aria-label="Cosa vuoi noleggiare" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0">
+        {PILLS.map((p) => (
+          <button key={p.key || "all"} type="button" role="tab" aria-selected={pill === p.key} onClick={() => setPill(p.key)}
+            className={`flex-none rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              pill === p.key ? "border-white bg-white/15 text-white" : "border-transparent text-white/80 hover:bg-white/10"}`}>
+            {p.label}
           </button>
         ))}
       </div>
 
-      <form action="/cerca" method="get" className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div className="col-span-2 lg:col-span-1">
-            <label htmlFor="h-luogo" className="label">Dove</label>
-            <PlaceInput id="h-luogo" />
+      <form action="/cerca" method="get">
+        {pill && !lungo && <input type="hidden" name="cat" value={pill} />}
+        {/* riquadro ben delimitato, una riga per campo */}
+        <div className="overflow-visible rounded-2xl border-[3px] border-teal-500 bg-white shadow-xl shadow-navy-950/30 lg:flex lg:items-stretch">
+          <div className={`${row} border-b border-line lg:flex-[1.4] lg:border-b-0 lg:border-r`}>
+            <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Dove</span>
+            <div className="min-w-0 flex-1"><PlaceInput id="h-luogo" className={bare} /></div>
           </div>
-          {mode === "breve" ? (
-            <>
-              <div>
-                <label htmlFor="h-dal" className="label">Ritiro</label>
-                <DateField id="h-dal" name="dal" min={today} value={dates.dal} placeholder="Data"
+          {lungo ? (
+            <div className={`${row} border-b border-line lg:flex-1 lg:border-b-0 lg:border-r`}>
+              <input type="hidden" name="lungo" value="1" />
+              <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Da</span>
+              <div className="min-w-0 flex-1"><DatePill id="h-da" name="dal" label="Data di inizio" min={today} value={longFrom} onChange={setLongFrom} /></div>
+              <select name="durata" defaultValue="36" aria-label="Durata" className="flex-none rounded-xl bg-navy-50 px-3 py-2 text-sm font-semibold text-navy-900 outline-none">
+                {[12, 24, 36, 48].map((m) => <option key={m} value={m}>{m} mesi</option>)}
+              </select>
+            </div>
+          ) : (
+            <div className={`${row} border-b border-line lg:flex-1 lg:border-b-0 lg:border-r`}>
+              <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Quando</span>
+              <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-1">
+                <DatePill id="h-dal" name="dal" label="Ritiro" min={today} value={dates.dal}
                   onChange={(v) => { setQuick(null); setDates((d) => ({ dal: v, al: d.al && d.al >= v ? d.al : v })); }} />
-              </div>
-              <div>
-                <label htmlFor="h-al" className="label">Riconsegna</label>
-                <DateField id="h-al" name="al" min={dates.dal || today} value={dates.al} placeholder="Data"
+                <span aria-hidden className="text-mute">→</span>
+                <DatePill id="h-al" name="al" label="Riconsegna" min={dates.dal || today} value={dates.al}
                   onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, al: v })); }} />
               </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label htmlFor="h-da" className="label">Da quando</label>
-                <DateField id="h-da" name="dal" min={today} value={longFrom} onChange={setLongFrom} placeholder="Data" />
-              </div>
-              <div>
-                <label htmlFor="h-durata" className="label">Durata</label>
-                <input type="hidden" name="lungo" value="1" />
-                <select id="h-durata" name="durata" className="field" defaultValue="36">
-                  {[12, 24, 36, 48].map((m) => <option key={m} value={m}>{m} mesi</option>)}
-                </select>
-              </div>
-            </>
+            </div>
           )}
-        </div>
-
-        {mode === "breve" && (
-          <div className="flex flex-wrap gap-2">
-            {(["oggi", "domani", "weekend"] as const).map((k) => (
-              <button key={k} type="button" aria-pressed={quick === k}
-                onClick={() => { setQuick(k); setDates(shortcut(k)); }}
-                className={`chip ${quick === k ? "chip-on" : ""}`}>
-                {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : "Questo weekend"}
-              </button>
-            ))}
+          <div className="p-2 lg:flex lg:items-center">
+            <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy-900 px-8 text-base font-semibold text-white transition hover:bg-navy-800 lg:w-auto">Cerca</button>
           </div>
-        )}
-
-        {mode === "lungo" && (
-          <p className="text-sm text-mute">Noleggio da 12 a 48 mesi: vedi la rata mensile e scegli i servizi (bollo, assicurazione, gomme, tagliandi, auto sostitutiva).</p>
-        )}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="sm:w-80">
-            <label htmlFor="h-cat" className="label">Cosa</label>
-            <CategoryPicker id="h-cat" value={cat} onChange={setCat} />
-          </div>
-          <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-48">Cerca</button>
         </div>
       </form>
+
+      {/* scorciatoie */}
+      {!lungo && (
+        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          {(["oggi", "domani", "weekend"] as const).map((k) => {
+            const on = quick === k;
+            return (
+              <button key={k} type="button" onClick={() => { setQuick(k); setDates(shortcut(k)); }} aria-pressed={on}
+                className={`flex-none rounded-full px-4 py-2 text-sm font-semibold transition ${on ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : "Questo weekend"}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -140,7 +159,7 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
   return (
     <>
       <button type="button" onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 rounded-full border border-line bg-white px-4 py-2.5 text-left shadow-sm lg:hidden">
+        className="flex min-h-12 w-full items-center gap-3 rounded-xl border-[3px] border-teal-500 bg-white px-4 py-2 text-left lg:hidden">
         <svg viewBox="0 0 24 24" className="h-5 w-5 flex-none text-teal-600" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{summary || "Dove, quando, cosa"}</span>
         <span className="text-xs font-semibold text-teal-600">{open ? "Chiudi" : "Modifica"}</span>

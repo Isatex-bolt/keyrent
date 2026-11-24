@@ -41,3 +41,32 @@ export function DestinationCard({ d, wide = false }: { d: Destination; wide?: bo
     </Link>
   );
 }
+
+const NEED_FALLBACK: Collection[] = ([
+  { slug: "weekend", title: "Un'auto per il weekend", subtitle: "Dal venerdì alla domenica", query: "cat=auto" },
+  { slug: "trasloco", title: "Un furgone per il trasloco", subtitle: "Anche per un giorno solo", query: "cat=furgoni" },
+  { slug: "bici", title: "Una bici per oggi", subtitle: "E-bike e city bike", query: "cat=bici" },
+  { slug: "vacanza", title: "Un camper per le vacanze", subtitle: "Libertà su quattro ruote", query: "cat=camper" },
+  { slug: "mare", title: "Una barca per la giornata", subtitle: "Gommoni e barche senza patente", query: "cat=barche" },
+  { slug: "moto", title: "Una moto per un giro", subtitle: "Scooter e moto", query: "cat=moto" },
+] as Omit<Collection, "image">[]).map((c) => ({ ...c, image: null }));
+
+/** "Cosa ti serve oggi?": riga compatta scorrevole (stile Booking), senza icone. */
+export function NeedsRow({ items }: { items: Collection[] }) {
+  const list = items.length ? items : NEED_FALLBACK;
+  return (
+    <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+      {list.map((c) => (
+        <Link key={c.slug} href={`/cerca${c.query ? `?${c.query}` : ""}`} className="group w-[44%] flex-none snap-start sm:w-[30%] lg:w-[19%]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+            {c.image
+              ? <Image src={c.image} alt="" fill sizes="(min-width:1024px) 20vw, 45vw" className="object-cover transition duration-500 group-hover:scale-105" />
+              : <div className={`absolute inset-0 bg-gradient-to-br ${TILE_GRADIENT[c.slug] ?? "from-navy-900 to-teal-500"}`} />}
+          </div>
+          <p className="mt-2 text-[15px] font-semibold leading-snug">{c.title}</p>
+          <p className="line-clamp-1 text-sm text-mute">{c.subtitle}</p>
+        </Link>
+      ))}
+    </div>
+  );
+}

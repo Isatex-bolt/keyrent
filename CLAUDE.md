@@ -49,7 +49,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Guida KeyRent (23/11): /guida (scelta), /guida/noleggiare (6 slide), /guida/noleggiatori (10 slide), components/guide/*,
   checklist "Inizia con KeyRent" in /pro (ProChecklist, localStorage), Hint su /account/noleggi, footer a colonne, eventi lib/analytics.ts.
   Slide da aggiornare quando saranno live: ⚡ immediata, Apple/Google Pay, versamenti automatici al noleggiatore.
-- Home (23/11): Cosa = menu a tendina, solo giorni (stesso giorno = 1 giorno, nessun orario imposto).
+- Home stile Booking (24/11): menu categorie scorrevole in alto (Tutti…Lungo termine), riquadro ricerca compatto bordo turchese
+  (Dove · Quando con date "sab 28 nov" · Cerca), scorciatoie Oggi/Domani/Weekend, "Continua la ricerca" (localStorage),
+  "Cosa ti serve oggi?" riga compatta. /cerca: riepilogo bordo turchese + pillole categorie. Solo giorni, stesso giorno = 1 giorno.
 - Checkout V2: preview sul ramo preview-checkout (/preview/booking-v2, tutto simulato). Utente ok a pubblicarlo a tappe;
   consegna solo se il noleggiatore la attiva (raggio km + prezzo al km + eventuale fisso), prezzo calcolato dalla distanza.
 - Capacità separate (0019, 23/11): profiles.rents_personally = PRIVATO; organizations kind 'renter' = AZIENDA cliente;

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
-import { categoryName } from "@/lib/catalog";
+import { CATEGORIES, categoryName } from "@/lib/catalog";
+import { SaveSearch } from "@/components/RecentSearches";
 import { findPlace } from "@/lib/places";
 import { formatDateIt, romeToIso } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
@@ -109,6 +110,8 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
 
   const top = (
     <>
+      <SaveSearch title={[sp.luogo || "Tutta Italia", what !== "Mezzi" ? what : ""].filter(Boolean).join(" · ")}
+        sub={lungo ? `Lungo termine${sp.durata ? ` · ${sp.durata} mesi` : ""}` : when || "Date da scegliere"} />
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">{what} {where}</h1>
         <p className="text-sm text-mute">
@@ -211,6 +214,20 @@ function Shell({ sp, summary, children }: { sp: Record<string, string | undefine
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <SearchForm summary={summary}
             values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna }} />
+          {/* menu categorie scorrevole, come in home */}
+          <nav aria-label="Categorie" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
+            {[{ key: "", label: "Tutti" }, ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }].map((p) => {
+              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata"].includes(k)) as [string, string][]);
+              if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); } else if (p.key) q.set("cat", p.key);
+              const on = p.key === "lungo" ? sp.lungo === "1" : sp.lungo !== "1" && (sp.cat ?? "") === p.key;
+              return (
+                <Link key={p.key || "all"} href={`/cerca?${q.toString()}`} aria-current={on ? "page" : undefined}
+                  className={`flex-none rounded-full border px-4 py-1.5 text-sm font-semibold transition ${on ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-900/30"}`}>
+                  {p.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </div>
       {children}
