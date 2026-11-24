@@ -15,8 +15,7 @@ function customerSlides(v: Viewer): Slide[] {
   return [
     { title: "Trova il mezzo che ti serve", text: "Scegli dove, quando e cosa vuoi noleggiare. KeyRent ti mostra i mezzi disponibili per le tue date.", visual: <V.VSearch /> },
     { title: "Scegli il mezzo", text: "Confronta caratteristiche, prezzo, disponibilità e condizioni, e scegli quello più adatto a te.", visual: <V.VChoose /> },
-    // ⚡ prenotazione immediata: da aggiornare quando sarà attiva (oggi ogni prenotazione è una richiesta)
-    { title: "Prenota in pochi tocchi", text: "Invii la richiesta per le tue date e il noleggiatore conferma la disponibilità entro 24 ore. Presto, per alcuni mezzi, anche la prenotazione immediata.", visual: <V.VBook /> },
+    { title: "Prenota in pochi tocchi", text: "Invii la richiesta per le tue date e il noleggiatore conferma la disponibilità entro 24 ore.", visual: <V.VBook /> },
     // Apple Pay / Google Pay: da aggiungere quando i portafogli saranno attivi sul sito
     { title: "Paga in modo semplice", text: "Inserisci la carta una volta sola, al momento della richiesta. L'addebito parte solo quando il noleggiatore accetta.", visual: <V.VPay /> },
     { title: "Tutto nel tuo profilo", text: "Noleggi in corso, richieste in attesa, messaggi e prossimi ritiri: tutto in un unico posto.", visual: <V.VProfile />,

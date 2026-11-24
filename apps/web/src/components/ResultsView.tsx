@@ -142,7 +142,7 @@ function MiniCard({ r, onClose }: { r: ResultItem; onClose: () => void }) {
             : <div className="grid h-full place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-9 w-9" /></div>}
         </div>
         <div className="min-w-0 flex-1 space-y-0.5 p-3 pr-9">
-          <p className="line-clamp-2 font-semibold leading-snug">{r.instant_book && <span className="mr-1 text-teal-600">⚡</span>}{r.title}</p>
+          <p className="line-clamp-2 font-semibold leading-snug">{r.title}</p>
           <p className="truncate text-sm text-mute">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</p>
           <p className="pt-1 text-sm">
             {r.monthly_from_cents != null ? <>da <span className="text-base font-bold">{euro(r.monthly_from_cents)}</span> <span className="text-mute">/mese</span></> : r.total_cents != null

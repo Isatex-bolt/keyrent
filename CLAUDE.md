@@ -48,7 +48,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Manca: payout Connect, webhook.
 - Guida KeyRent (23/11): /guida (scelta), /guida/noleggiare (6 slide), /guida/noleggiatori (10 slide), components/guide/*,
   checklist "Inizia con KeyRent" in /pro (ProChecklist, localStorage), Hint su /account/noleggi, footer a colonne, eventi lib/analytics.ts.
-  Slide da aggiornare quando saranno live: ⚡ immediata, Apple/Google Pay, versamenti automatici al noleggiatore.
+  Slide da aggiornare quando saranno live: Apple/Google Pay, versamenti automatici al noleggiatore.
+- Decisione 24/11: niente prenotazione immediata (⚡). Serve sempre la conferma del noleggiatore; badge, filtro e testi rimossi
+  (la colonna listings.instant_book resta nel database, inutilizzata).
 - Home stile Booking (24/11): menu categorie scorrevole in alto (Tutti…Lungo termine), riquadro ricerca compatto bordo turchese
   (Dove · Quando con date "sab 28 nov" · Cerca), scorciatoie Oggi/Domani/Weekend, "Continua la ricerca" (localStorage),
   "Cosa ti serve oggi?" riga compatta. /cerca: riepilogo bordo turchese + pillole categorie. Solo giorni, stesso giorno = 1 giorno.
@@ -72,7 +74,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   prenotazione sotto il titolo, dettagli a scomparsa, lungo termine dietro un tasto. Consegna (0023 public.delivery_quote: linea d'aria,
   km arrotondati in su, fisso + km×prezzo): spunta "Consegna a casa"/"in azienda" (contesto kr_ctx) in BookingBox, /api/consegna;
   il link a /prenota porta consegna=1&c_lat&c_lng&c_ind. Da fare: /prenota deve ricalcolare e salvare la consegna.
-- Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
+- Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).
 - Nota operativa: l'utente applica le migrazioni incollando SQL nell'editor di Supabase. Blocchi corti (< ~150 righe),

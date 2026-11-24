@@ -77,7 +77,6 @@ async function Vehicle({ params, searchParams }: { params: Promise<{ id: string 
             </div>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="sm:col-span-2"><dt className="text-xs text-mute">Descrizione</dt><dd className="whitespace-pre-line">{detail.description || "—"}</dd></div>
-              <div><dt className="text-xs text-mute">Prenotazione immediata</dt><dd className="font-medium">{detail.instant ? "Sì" : "No"}</dd></div>
               <div><dt className="text-xs text-mute">Unità</dt><dd className="font-medium">{v.units}</dd></div>
             </dl>
           </div>

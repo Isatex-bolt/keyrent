@@ -73,10 +73,6 @@ export function VBook() {
         </div>
         <p className="mt-3 text-xs text-mute">Il noleggiatore risponde entro 24 ore.</p>
       </div>
-      <div {...rise(1)} className={`${rise(1).className} rounded-2xl border border-dashed border-line bg-white/70 p-4`}>
-        <p className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-mute">⚡ Prenotazione immediata <span className="rounded-full bg-navy-50 px-2 py-0.5 normal-case tracking-normal">In arrivo</span></p>
-        <p className="mt-1 text-sm text-mute">Per i mezzi che la attivano: confermata subito, senza attesa.</p>
-      </div>
     </div>
   );
 }

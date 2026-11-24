@@ -28,7 +28,7 @@ export function ListingCard({ r, href, active = false }: { r: CardData; href: st
       </div>
       <div className="space-y-1 p-4">
         <p className="line-clamp-1 font-semibold group-hover:text-navy-700">
-          {r.instant_book && <span title="Prenotazione immediata" className="mr-1 text-teal-600">⚡</span>}{r.title}
+          {r.title}
         </p>
         <p className="text-sm text-mute">
           {r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}

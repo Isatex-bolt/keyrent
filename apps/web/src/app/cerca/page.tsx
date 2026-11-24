@@ -87,11 +87,10 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const make = makes.find((m) => m.slug === sp.marca);
   const model = make?.models.find((m) => m.slug === sp.modello);
   const priceMax = Number(sp.prezzo_max) > 0 ? Math.round(Number(sp.prezzo_max) * 100) : undefined;
-  const instantOnly = sp.immediata === "1";
 
   const results = await searchMap({
     bbox, lat: bbox ? undefined : lat, lng: bbox ? undefined : lng, radiusKm: 40, pickup, ret,
-    category: cat, subcategory: cat && sp.sub && /^[a-z0-9-]{2,40}$/.test(sp.sub) ? sp.sub : undefined, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax, instantOnly,
+    category: cat, subcategory: cat && sp.sub && /^[a-z0-9-]{2,40}$/.test(sp.sub) ? sp.sub : undefined, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax,
     sort: sp.ordina,
   });
   // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
@@ -105,7 +104,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "Mezzi";
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
   const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, categoryName(cat)].filter(Boolean).join(" · ");
-  const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax)) + Number(instantOnly);
+  const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata"];
 
   const top = (
@@ -130,10 +129,6 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
           {baseKeys.map((k) => (sp[k] ? <input key={k} type="hidden" name={k} value={sp[k]} /> : null))}
           <AutoSubmit>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex items-center gap-2 rounded-xl border border-line px-3 py-2.5 text-sm font-medium sm:col-span-2">
-                <input type="checkbox" name="immediata" value="1" defaultChecked={instantOnly} className="h-4 w-4 accent-teal-600" />
-                ⚡ Solo prenotazione immediata
-              </label>
               {cat && makes.length > 0 && (
                 <div>
                   <label className="label" htmlFor="f-marca">Marca</label>
