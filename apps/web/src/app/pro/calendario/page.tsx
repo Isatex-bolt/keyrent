@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { MarkStep } from "@/components/guide/ProChecklist";
 import Link from "next/link";
 import { proFleet, keepSede as keep } from "@/lib/v2/pro";
 import { dayList, monthRange, shiftMonth } from "@/lib/v2/fleet";
@@ -11,7 +12,7 @@ export const metadata = { title: "Calendario" };
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
 export default function Page({ searchParams }: { searchParams: SP }) {
-  return <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-white" />}><Calendar searchParams={searchParams} /></Suspense>;
+  return <><MarkStep step="cal" /><Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-white" />}><Calendar searchParams={searchParams} /></Suspense></>;
 }
 
 async function Calendar({ searchParams }: { searchParams: SP }) {

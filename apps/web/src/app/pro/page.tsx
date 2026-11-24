@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { requireProvider } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
@@ -52,13 +53,15 @@ async function Dashboard({ searchParams }: { searchParams: SP }) {
   const addr = (o?.legal_address ?? {}) as Record<string, string>;
   const orgDone = !!(o?.vat_number && (o.business_phone || o.business_email) && addr.city);
   const published = all.vehicles.some((v) => v.status === "published");
+  // passi già visti (calendario aperto, guida guardata): li ricorda un cookie, così non ricompaiono
+  const seen = decodeURIComponent((await cookies()).get("kr_steps")?.value ?? "").split(",");
   const checklist: CheckItem[] = published
     ? [
       { key: "org", label: "Attività configurata", done: orgDone, href: "/pro/attivita", cta: "Completa" },
       { key: "sede", label: "Prima sede", done: !!sedi, href: "/pro/sedi", cta: "Aggiungi" },
       { key: "mezzo", label: "Primo mezzo pubblicato", done: true, href: "/pro/mezzi", cta: "Vedi" },
-      { key: "cal", label: "Controlla la disponibilità nel calendario", done: false, href: "/pro/calendario", cta: "Apri", doneOnClick: true },
-      { key: "guida", label: "Scopri come gestire una prenotazione", done: false, href: "/guida/noleggiatori", cta: "Guarda", doneOnClick: true },
+      { key: "cal", label: "Controlla la disponibilità nel calendario", done: seen.includes("cal"), href: "/pro/calendario", cta: "Apri", doneOnClick: true },
+      { key: "guida", label: "Scopri come gestire una prenotazione", done: seen.includes("guida"), href: "/guida/noleggiatori", cta: "Guarda", doneOnClick: true },
     ]
     : [
       { key: "account", label: "Account creato", done: true, href: "/pro/profilo", cta: "" },

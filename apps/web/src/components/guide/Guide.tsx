@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
+import { markStep } from "./ProChecklist";
 import * as V from "./visuals";
 
 export type Viewer = { loggedIn: boolean; provider: boolean; orgName?: string };
@@ -63,7 +64,10 @@ export function Guide({ path, viewer }: { path: "cliente" | "noleggiatore"; view
     el.scrollTo({ left: n * el.clientWidth, behavior: "smooth" });
   }, [last]);
 
-  useEffect(() => { track("guide_path_selected", { path }); }, [path]);
+  useEffect(() => {
+    track("guide_path_selected", { path });
+    if (path === "noleggiatore") markStep("guida"); // checklist "Scopri come gestire una prenotazione": fatto
+  }, [path]);
   useEffect(() => {
     if (seen.current.has(idx)) return;
     seen.current.add(idx);
