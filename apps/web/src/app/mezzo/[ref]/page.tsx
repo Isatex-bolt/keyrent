@@ -7,6 +7,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { euro, romeToIso, todayRome, formatDateIt } from "@/lib/format";
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
+import { getBookingContext } from "@/lib/auth";
 import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
@@ -37,14 +38,16 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);
-  const [attrs, rules, quote, busy, delivery, offers] = await Promise.all([
+  const [attrs, rules, quote, busy, delivery, offers, ctx] = await Promise.all([
     attributesForCategory(l.category_slug),
     getCancellationRules(l.cancellation_policy_id),
     pickup && ret ? quoteOrError(id, pickup, ret) : Promise.resolve(null),
     getBusyDays(id, from, to),
     getDelivery(id),
     getOffers([id]),
+    getBookingContext().catch(() => null),
   ]);
+  const forCompany = !!ctx?.current;
   const offer = offers.get(id) ?? null;
   const shortTerm = offer ? offer.short_term : true;
   const longTerm = !!offer?.long_term;
@@ -66,7 +69,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const sortedPrices = [...prices].sort((a, b) => ["hour", "half_day", "day", "week"].indexOf(a.unit) - ["hour", "half_day", "day", "week"].indexOf(b.unit));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-28 pt-0 sm:px-6 sm:py-8 lg:pb-8">
+    <div className="mx-auto max-w-6xl overflow-x-clip px-4 pb-28 pt-0 sm:px-6 sm:py-8 lg:pb-8">
       <nav className="mb-4 hidden text-sm text-mute sm:block">
         <Link href={`/cerca?cat=${l.category_slug}`} className="hover:text-navy-900">{l.category_name}</Link>
         {l.make_name && <> / <Link href={`/cerca?cat=${l.category_slug}&marca=${l.make_slug ?? ""}`} className="hover:text-navy-900">{l.make_name}</Link></>}
@@ -76,7 +79,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
       <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
 
       <div className="mt-5 grid gap-6 sm:mt-8 lg:grid-cols-[1fr_380px] lg:gap-8">
-        <div className="lg:col-start-1 lg:row-start-1">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <header>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{l.title}</h1>
             <p className="mt-2 text-mute">{[l.make_name, l.model_name, l.version_name].filter(Boolean).join(" · ")}</p>
@@ -92,13 +95,13 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
         </div>
 
         {/* prenotazione: subito sotto il titolo su telefono, a destra su computer */}
-        <aside id="prenota" className="scroll-mt-20 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <aside id="prenota" className="min-w-0 scroll-mt-20 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
           {shortTerm && !(lungo && longTerm) && <div className="card space-y-4 p-5 shadow-sm">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <p className="text-sm text-mute">Tariffe</p>
               <p className="text-sm">{sortedPrices.map((p) => `${euro(p.price_cents)} ${priceUnitShort[p.unit] ?? ""}${p.valid_from ? ` (dal ${formatDateIt(p.valid_from)})` : ""}`).join(" · ")}</p>
             </div>
-            <BookingBox id={id} from={from} busy={[...busy]} initial={{ dal, al, oraR, oraC }}
+            <BookingBox id={id} from={from} busy={[...busy]} delivery={delivery} forCompany={forCompany} fromPrice={fromPrice} initial={{ dal, al, oraR, oraC }}
               initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
             <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
           </div>}
@@ -122,7 +125,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
           <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>
         </aside>
 
-        <div className="space-y-6 lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
           {l.description && (
             <section>
               <h2 className="mb-3 text-lg font-semibold">Descrizione</h2>
@@ -177,37 +180,18 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
         </div>
       </div>
 
-      {/* telefono: prezzo sempre visibile in basso + Prenota (stile Booking) */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
-          {!shortTerm || (lungo && longTerm) ? (
-            <>
-              <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{offer?.lt_from_cents ? <>da {euro(offer.lt_from_cents)} <span className="text-sm font-medium text-mute">/ mese</span></> : "Lungo termine"}</p>
-                <p className="text-xs text-mute">Scegli durata e servizi</p>
-              </div>
-              <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Calcola la rata</a>
-            </>
-          ) : quote && !("error" in quote) && dal && al && ![...busy].some((d) => d >= dal && d <= al) ? (
-            <>
-              <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{euro(quote.total_cents)} <span className="text-sm font-medium text-mute">totale</span></p>
-                <p className="truncate text-xs text-mute">{formatDateIt(dal)}{dal !== al ? ` → ${formatDateIt(al)}` : ""}</p>
-              </div>
-              <Link href={`/prenota/${id}?${new URLSearchParams({ dal, al, ora_ritiro: oraR, ora_riconsegna: oraC })}`}
-                className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-7 font-semibold text-white">Prenota</Link>
-            </>
-          ) : (
-            <>
-              <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{fromPrice ? <>da {euro(fromPrice)} <span className="text-sm font-medium text-mute">/ giorno</span></> : "Prezzo su richiesta"}</p>
-                <p className="text-xs text-mute">Nessun addebito finché il noleggiatore non conferma</p>
-              </div>
-              <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Scegli le date</a>
-            </>
-          )}
+      {/* telefono, solo lungo termine: rata sempre visibile in basso (per il breve la barra è nel riquadro prenotazione) */}
+      {(!shortTerm || (lungo && longTerm)) && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur-xl lg:hidden">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+            <div className="min-w-0">
+              <p className="text-lg font-bold leading-tight">{offer?.lt_from_cents ? <>da {euro(offer.lt_from_cents)} <span className="text-sm font-medium text-mute">/ mese</span></> : "Lungo termine"}</p>
+              <p className="text-xs text-mute">Scegli durata e servizi</p>
+            </div>
+            <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Calcola la rata</a>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

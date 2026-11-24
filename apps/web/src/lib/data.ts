@@ -218,6 +218,12 @@ export async function getDelivery(id: string): Promise<{ radius_km: number; fee_
   return row?.enabled ? { radius_km: row.radius_km, fee_cents: row.fee_cents, per_km_cents: row.per_km_cents } : null;
 }
 
+/** Prezzo della consegna dalla posizione del cliente (calcolato dal database: distanza dalla sede). */
+export async function getDeliveryQuote(id: string, lat: number, lng: number): Promise<{ km: number; cents: number | null; in_range: boolean; radius_km: number } | null> {
+  const { data, error } = await publicDb().rpc("delivery_quote", { p_listing: id, p_lat: lat, p_lng: lng });
+  return !error && Array.isArray(data) && data[0] ? data[0] : null;
+}
+
 export type Offer = { listing_id: string; short_term: boolean; long_term: boolean; lt_prices: Record<string, number>;
   lt_services: Record<string, { offered: boolean; cents: number }>; lt_km_per_year: number | null; lt_extra_km_cents: number | null; lt_from_cents: number | null };
 /** Breve / lungo termine degli annunci pubblicati (mappa vuota se il database non è aggiornato). */

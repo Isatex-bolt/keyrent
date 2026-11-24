@@ -17,8 +17,10 @@ const API = "https://api.mapbox.com/search/searchbox/v1";
  * (indirizzi, aeroporti, stazioni, luoghi) se il token è configurato. Scrive nei campi nascosti
  * luogo/lat/lng, così il form resta un normale GET e funziona anche senza JavaScript.
  */
-export function PlaceInput({ name, lat, lng, id, className = "field" }: {
-  name?: string; lat?: string; lng?: string; id?: string; className?: string;
+export function PlaceInput({ name, lat, lng, id, className = "field", placeholder = "Città, indirizzo, aeroporto…", onPick }: {
+  name?: string; lat?: string; lng?: string; id?: string; className?: string; placeholder?: string;
+  /** chiamata quando il luogo scelto cambia (null = nessun luogo valido) */
+  onPick?: (p: { label: string; lat: number; lng: number } | null) => void;
 }) {
   const listId = useId();
   const [q, setQ] = useState(name ?? "");
@@ -30,6 +32,12 @@ export function PlaceInput({ name, lat, lng, id, className = "field" }: {
   const session = useRef<string>("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const pick = useRef(onPick);
+  useEffect(() => { pick.current = onPick; });
+  useEffect(() => {
+    pick.current?.(coords ? { label: q, lat: Number(coords.lat), lng: Number(coords.lng) } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo quando cambiano le coordinate
+  }, [coords]);
 
   useEffect(() => {
     const close = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
@@ -98,7 +106,7 @@ export function PlaceInput({ name, lat, lng, id, className = "field" }: {
   return (
     <div ref={box} className="relative">
       <input
-        id={id} name="luogo" value={q} autoComplete="off" placeholder="Città, indirizzo, aeroporto…"
+        id={id} name="luogo" value={q} autoComplete="off" placeholder={placeholder}
         className={className} role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list"
         onFocus={() => { search(q === "Vicino a me" ? "" : q); setOpen(true); }}
         onChange={(e) => { setQ(e.target.value); setCoords(null); search(e.target.value); setOpen(true); }}

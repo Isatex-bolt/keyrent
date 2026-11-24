@@ -68,6 +68,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   lib/longTerm.ts, components/LongTermFields (wizard + modifica, revisione su online), LongTermConfigurator (scheda: rata live,
   "Richiedi questo noleggio" → messaggio precompilato). Ricerca lungo=1&durata: solo annunci lungo termine, "da X €/mese".
   Manca: richiesta/contratto lungo termine strutturati (oggi via messaggio).
+- Scheda mezzo compatta (24/11): calendario KeyRent senza OK (components/RangePicker: DateRange/DateOne, giorni occupati barrati),
+  prenotazione sotto il titolo, dettagli a scomparsa, lungo termine dietro un tasto. Consegna (0023 public.delivery_quote: linea d'aria,
+  km arrotondati in su, fisso + km×prezzo): spunta "Consegna a casa"/"in azienda" (contesto kr_ctx) in BookingBox, /api/consegna;
+  il link a /prenota porta consegna=1&c_lat&c_lng&c_ind. Da fare: /prenota deve ricalcolare e salvare la consegna.
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, ⚡, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

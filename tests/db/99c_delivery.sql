@@ -40,3 +40,12 @@ exception when others then
   if sqlerrm like 'FORBIDDEN_TRANSITION%' then raise exception 'not ok - lo staff non può inviare in revisione';
   else raise notice 'ok - il team supera il controllo permessi (poi vale il controllo di completezza: %)', left(sqlerrm, 40); end if;
 end $$;
+
+-- 0023 · prezzo della consegna dalla distanza (raggio 25 km, 10 € + 0,80 €/km)
+select latitude as clat, longitude as clng from locations where id = (select location_id from listings where id = :'camper') \gset
+set role anon;
+select test.ok((select in_range and km = 0 and cents = 1000 from public.delivery_quote(:'camper', :clat, :clng)), 'consegna in sede: solo il fisso');
+select test.ok((select in_range and km between 10 and 12 and cents = 1000 + km * 80
+                  from public.delivery_quote(:'camper', :clat + 0.1, :clng)), 'circa 11 km: fisso + km × prezzo al km');
+select test.ok((select not in_range and cents is null from public.delivery_quote(:'camper', :clat + 1, :clng)), 'fuori raggio: nessun prezzo');
+reset role;
