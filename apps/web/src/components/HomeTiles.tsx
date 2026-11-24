@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { LoopRow } from "./LoopRow";
 import { type Collection, type Destination, TILE_EMOJI, TILE_GRADIENT } from "@/lib/content";
 
 /** Riquadri "per esigenza": il primo grande, gli altri in griglia. */
@@ -51,11 +52,11 @@ const NEED_FALLBACK: Collection[] = ([
   { slug: "moto", title: "Una moto per un giro", subtitle: "Scooter e moto", query: "cat=moto" },
 ] as Omit<Collection, "image">[]).map((c) => ({ ...c, image: null }));
 
-/** "Cosa ti serve oggi?": riga compatta scorrevole (stile Booking), senza icone. */
+/** "Cosa ti serve oggi?": riga compatta a scorrimento infinito (finita l'ultima idea riparte dalla prima). */
 export function NeedsRow({ items }: { items: Collection[] }) {
   const list = items.length ? items : NEED_FALLBACK;
   return (
-    <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+    <LoopRow className="-mx-4 snap-x snap-mandatory scroll-px-4 gap-3 px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
       {list.map((c) => (
         <Link key={c.slug} href={`/cerca${c.query ? `?${c.query}` : ""}`} className="group w-[44%] flex-none snap-start sm:w-[30%] lg:w-[19%]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -67,6 +68,6 @@ export function NeedsRow({ items }: { items: Collection[] }) {
           <p className="line-clamp-1 text-sm text-mute">{c.subtitle}</p>
         </Link>
       ))}
-    </div>
+    </LoopRow>
   );
 }
