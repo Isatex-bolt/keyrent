@@ -218,6 +218,14 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
         </dl>
         <p className="mt-3 text-xs text-mute">Per cambiare caratteristiche o condizioni di un annuncio pubblicato scrivi a KeyRent: la modifica guidata arriva con il prossimo aggiornamento.</p>
       </section>
+
+      {/* Invio anche in fondo alla pagina: lo trovi ovunque tu sia */}
+      {edit && draftLike && (
+        <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="text-sm text-mute">Hai finito? Controlliamo l&apos;annuncio e lo pubblichiamo, di solito entro 1 giorno lavorativo.</p>
+          <StateButton id={id} to="pending_review" label="Invia per approvazione" primary />
+        </div>
+      )}
     </div>
   );
 }
