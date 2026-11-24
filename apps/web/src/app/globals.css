@@ -94,3 +94,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; }
 @media (max-width: 1023px) {
   body:has([data-results-map]) .site-footer { display: none; }
 }
+
+/* iPhone: Safari ingrandisce la pagina quando si tocca un campo con testo sotto i 16px (e resta ingrandita).
+   Su telefono tutti i campi usano almeno 16px: niente zoom all'accesso o durante la compilazione. */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
+}
