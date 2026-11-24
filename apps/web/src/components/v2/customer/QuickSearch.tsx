@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PlaceInput } from "@/components/PlaceInput";
+import { DateRange } from "@/components/RangePicker";
 import { CATEGORIES } from "@/lib/catalog";
 
 /** Ricerca rapida: Dove, Quando, Cosa. Porta alla ricerca vera (/cerca). */
 export function QuickSearch({ steps = false }: { steps?: boolean }) {
   const [step, setStep] = useState(0);
   const [dal, setDal] = useState(""); const [al, setAl] = useState(""); const [cat, setCat] = useState("");
-  const [today, setToday] = useState("");
-  useEffect(() => { setToday(new Date().toISOString().slice(0, 10)); }, []);
   const show = (n: number) => !steps || step === n;
-  const date = "field text-base";
   return (
     <form action="/cerca" method="get" className="space-y-3 rounded-3xl border border-line bg-white p-4 shadow-sm">
       {steps && (
@@ -25,9 +23,8 @@ export function QuickSearch({ steps = false }: { steps?: boolean }) {
       </div>
       <div className={show(1) ? "" : "hidden"}>
         <label className="label">Quando</label>
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" name="dal" aria-label="Ritiro" value={dal} min={today} onChange={(e) => { setDal(e.target.value); if (!al || al < e.target.value) setAl(e.target.value); }} className={date} />
-          <input type="date" name="al" aria-label="Riconsegna" value={al} min={dal || today} onChange={(e) => setAl(e.target.value)} className={date} />
+        <div className="field flex items-center !py-0">
+          <DateRange dal={dal} al={al} className="!py-2.5" onChange={(v) => { setDal(v.dal); setAl(v.al); }} />
         </div>
       </div>
       <div className={show(2) ? "" : "hidden"}>

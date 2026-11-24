@@ -62,11 +62,12 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     })
     .filter(Boolean) as { label: string; value: string }[];
 
+  const fromPrice = prices.find((p) => p.unit === "day" && !p.valid_from)?.price_cents ?? (prices.length ? Math.min(...prices.map((p) => p.price_cents)) : 0);
   const sortedPrices = [...prices].sort((a, b) => ["hour", "half_day", "day", "week"].indexOf(a.unit) - ["hour", "half_day", "day", "week"].indexOf(b.unit));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-      <nav className="mb-4 text-sm text-mute">
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-0 sm:px-6 sm:py-8 lg:pb-8">
+      <nav className="mb-4 hidden text-sm text-mute sm:block">
         <Link href={`/cerca?cat=${l.category_slug}`} className="hover:text-navy-900">{l.category_name}</Link>
         {l.make_name && <> / <Link href={`/cerca?cat=${l.category_slug}&marca=${l.make_slug ?? ""}`} className="hover:text-navy-900">{l.make_name}</Link></>}
         {l.model_name && <> / {l.model_name}</>}
@@ -74,25 +75,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
       <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
 
-      {/* telefono: "Prenota ora" subito sotto le foto. Con date già scelte va alla prenotazione, altrimenti scende al riquadro date */}
-      <div className="mt-4 lg:hidden">
-        {!shortTerm || (lungo && longTerm) ? (
-          <a href="#prenota" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-teal-500 px-5 text-base font-semibold text-navy-950">
-            Calcola la rata mensile <span aria-hidden>↓</span>
-          </a>
-        ) : quote && !("error" in quote) && dal && al ? (
-          <Link href={`/prenota/${id}?${new URLSearchParams({ dal, al, ora_ritiro: oraR, ora_riconsegna: oraC })}`}
-            className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-teal-500 px-5 font-semibold text-navy-950">
-            <span>Prenota ora</span><span>{euro(quote.total_cents)} totale →</span>
-          </Link>
-        ) : (
-          <a href="#prenota" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-teal-500 px-5 text-base font-semibold text-navy-950">
-            Prenota ora <span aria-hidden>↓</span>
-          </a>
-        )}
-      </div>
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="mt-5 grid gap-8 sm:mt-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
           <header>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{l.title}</h1>
@@ -191,6 +174,38 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
           {!shortTerm && <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>}
         </aside>
       </div>
+
+      {/* telefono: prezzo sempre visibile in basso + Prenota (stile Booking) */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+          {!shortTerm || (lungo && longTerm) ? (
+            <>
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-tight">{offer?.lt_from_cents ? <>da {euro(offer.lt_from_cents)} <span className="text-sm font-medium text-mute">/ mese</span></> : "Lungo termine"}</p>
+                <p className="text-xs text-mute">Scegli durata e servizi</p>
+              </div>
+              <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Calcola la rata</a>
+            </>
+          ) : quote && !("error" in quote) && dal && al ? (
+            <>
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-tight">{euro(quote.total_cents)} <span className="text-sm font-medium text-mute">totale</span></p>
+                <p className="truncate text-xs text-mute">{formatDateIt(dal)}{dal !== al ? ` → ${formatDateIt(al)}` : ""}</p>
+              </div>
+              <Link href={`/prenota/${id}?${new URLSearchParams({ dal, al, ora_ritiro: oraR, ora_riconsegna: oraC })}`}
+                className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-7 font-semibold text-white">Prenota</Link>
+            </>
+          ) : (
+            <>
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-tight">{fromPrice ? <>da {euro(fromPrice)} <span className="text-sm font-medium text-mute">/ giorno</span></> : "Prezzo su richiesta"}</p>
+                <p className="text-xs text-mute">Nessun addebito finché il noleggiatore non conferma</p>
+              </div>
+              <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Scegli le date</a>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -215,7 +230,17 @@ function Gallery({ media, title, category, indicative }: { media: { url: string;
   }
   const [main, ...rest] = media;
   return (
-    <div className="grid gap-2 overflow-hidden rounded-2xl sm:grid-cols-4 sm:grid-rows-2">
+    <>
+    {/* telefono: foto a tutto schermo, si scorrono col dito */}
+    <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto sm:hidden">
+      {media.map((m, i) => (
+        <div key={i} className="relative aspect-[4/3] w-full flex-none snap-center">
+          <Image src={m.url} alt={m.alt ?? title} fill priority={i === 0} sizes="100vw" className="object-cover" />
+          <span className="absolute bottom-3 right-3 rounded-full bg-navy-950/70 px-2.5 py-1 text-xs font-semibold text-white">{i + 1} / {media.length}</span>
+        </div>
+      ))}
+    </div>
+    <div className="hidden gap-2 overflow-hidden rounded-2xl sm:grid sm:grid-cols-4 sm:grid-rows-2">
       <div className="relative aspect-[4/3] sm:col-span-2 sm:row-span-2 sm:aspect-auto sm:min-h-[380px]">
         <Image src={main.url} alt={main.alt ?? title} fill priority sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
       </div>
@@ -225,6 +250,7 @@ function Gallery({ media, title, category, indicative }: { media: { url: string;
         </div>
       ))}
     </div>
+    </>
   );
 }
 

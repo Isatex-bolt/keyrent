@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DateField } from "./DateField";
+import { DateRange } from "./RangePicker";
 import { durationLabel, euro } from "@/lib/format";
 
 type Quote = { total_cents: number; qty: number; unit: string } | { error: string } | null;
@@ -33,25 +33,19 @@ export function BookingBox({ id, from, initial, initialQuote }: {
     return () => ctrl.abort();
   }, [id, dal, al, oraR, oraC]);
 
-  function pickDal(v: string) {
-    setDal(v);
-    if (v && (!al || al < v)) { setAl(v); setOraC("18:00"); }
-  }
-
   const ok = quote && !("error" in quote);
   const href = `/prenota/${id}?${new URLSearchParams({ ...(dal ? { dal, ora_ritiro: oraR } : {}), ...(al ? { al, ora_riconsegna: oraC } : {}) })}`;
   return (
     <>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label" htmlFor="q-dal">Ritiro</label>
-          <DateField id="q-dal" name="dal" value={dal} onChange={pickDal} min={from} placeholder="Data" />
-          <select aria-label="Ora di ritiro" value={oraR} onChange={(e) => setOraR(e.target.value)} className="field mt-2">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
+      <div>
+        <span className="label">Ritiro → Riconsegna</span>
+        <div className="field flex items-center !py-0">
+          <DateRange dal={dal} al={al} min={from} placeholder={["Ritiro", "Riconsegna"]} names={["dal_v", "al_v"]} className="!py-2.5"
+            onChange={(v) => { setDal(v.dal); setAl(v.al); }} />
         </div>
-        <div>
-          <label className="label" htmlFor="q-al">Riconsegna</label>
-          <DateField id="q-al" name="al" value={al} onChange={setAl} min={dal || from} placeholder="Data" />
-          <select aria-label="Ora di riconsegna" value={oraC} onChange={(e) => setOraC(e.target.value)} className="field mt-2">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <select aria-label="Ora di ritiro" value={oraR} onChange={(e) => setOraR(e.target.value)} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
+          <select aria-label="Ora di riconsegna" value={oraC} onChange={(e) => setOraC(e.target.value)} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
         </div>
       </div>
       {ok ? (

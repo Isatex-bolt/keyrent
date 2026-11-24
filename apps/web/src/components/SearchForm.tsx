@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlaceInput } from "./PlaceInput";
-import { DateField } from "./DateField";
+import { DateRange, DateOne } from "./RangePicker";
 import { CategoryPicker } from "./CategoryPicker";
 import { CATEGORIES } from "@/lib/catalog";
 
@@ -23,20 +23,6 @@ function shortcut(kind: "oggi" | "domani" | "weekend") {
     new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Rome", weekday: "short" }).format(new Date()));
   const toSat = wd === 6 ? 0 : wd === 0 ? 6 : 6 - wd;
   return { dal: addDays(toSat), al: addDays(toSat + 1) };
-}
-
-/** Data compatta stile Booking: si legge "sab 28 nov", si tocca e si apre il calendario del telefono. */
-function DatePill({ id, name, label, value, min, onChange }: { id: string; name: string; label: string; value: string; min?: string; onChange: (v: string) => void }) {
-  const text = value ? new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`)) : label;
-  return (
-    <label htmlFor={id} className="relative block min-w-0 cursor-pointer py-3">
-      <span className={`block truncate text-[16px] ${value ? "font-medium text-ink" : "text-mute/70"}`}>{text}</span>
-      <input id={id} name={name} type="date" min={min} value={value} aria-label={label}
-        onChange={(e) => onChange(e.target.value)}
-        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* non supportato */ } }}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-    </label>
-  );
 }
 
 /** Categorie del menu scorrevole in alto (stile Booking): la scelta vale per la ricerca sotto. */
@@ -87,7 +73,7 @@ export function HomeSearch() {
             <div className={`${row} border-b border-line lg:flex-1 lg:border-b-0 lg:border-r`}>
               <input type="hidden" name="lungo" value="1" />
               <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Da</span>
-              <div className="min-w-0 flex-1"><DatePill id="h-da" name="dal" label="Data di inizio" min={today} value={longFrom} onChange={setLongFrom} /></div>
+              <div className="min-w-0 flex-1"><DateOne name="dal" placeholder="Data di inizio" title="Da quando" min={today} value={longFrom} onChange={setLongFrom} /></div>
               <select name="durata" defaultValue="36" aria-label="Durata" className="flex-none rounded-xl bg-navy-50 px-3 py-2 text-sm font-semibold text-navy-900 outline-none">
                 {[12, 24, 36, 48].map((m) => <option key={m} value={m}>{m} mesi</option>)}
               </select>
@@ -95,12 +81,8 @@ export function HomeSearch() {
           ) : (
             <div className={`${row} border-b border-line lg:flex-1 lg:border-b-0 lg:border-r`}>
               <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Quando</span>
-              <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-1">
-                <DatePill id="h-dal" name="dal" label="Ritiro" min={today} value={dates.dal}
-                  onChange={(v) => { setQuick(null); setDates((d) => ({ dal: v, al: d.al && d.al >= v ? d.al : v })); }} />
-                <span aria-hidden className="text-mute">→</span>
-                <DatePill id="h-al" name="al" label="Riconsegna" min={dates.dal || today} value={dates.al}
-                  onChange={(v) => { setQuick(null); setDates((d) => ({ ...d, al: v })); }} />
+              <div className="min-w-0 flex-1">
+                <DateRange dal={dates.dal} al={dates.al} min={today} onChange={(v) => { setQuick(null); setDates(v); }} />
               </div>
             </div>
           )}
@@ -131,19 +113,16 @@ export function HomeSearch() {
 /** Barra di ricerca compatta della pagina risultati. Su mobile si apre da un riepilogo. */
 export function SearchForm({ values = {}, summary }: { values?: SearchValues; summary?: string }) {
   const [open, setOpen] = useState(false);
+  const [dates, setDates] = useState({ dal: values.dal ?? "", al: values.al ?? "" });
   const form = (
-    <form action="/cerca" method="get" className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+    <form action="/cerca" method="get" className="grid gap-3 lg:grid-cols-[1.4fr_1.6fr_1fr_auto]">
       <div>
         <label htmlFor="s-luogo" className="label">Dove</label>
         <PlaceInput id="s-luogo" name={values.luogo} lat={values.lat} lng={values.lng} />
       </div>
       <div>
-        <label htmlFor="s-dal" className="label">Ritiro</label>
-        <DateField id="s-dal" name="dal" defaultValue={values.dal ?? ""} />
-      </div>
-      <div>
-        <label htmlFor="s-al" className="label">Riconsegna</label>
-        <DateField id="s-al" name="al" defaultValue={values.al ?? ""} />
+        <span className="label">Ritiro → Riconsegna</span>
+        <div className="field flex items-center !py-0"><DateRange dal={dates.dal} al={dates.al} onChange={setDates} className="!py-2.5" /></div>
       </div>
       {values.ora_ritiro && <input type="hidden" name="ora_ritiro" value={values.ora_ritiro} />}
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}
