@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { euro, priceUnitLabel, romeToIso, todayRome, formatDateIt } from "@/lib/format";
+import { euro, romeToIso, todayRome, formatDateIt } from "@/lib/format";
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, getOffers, quoteOrError } from "@/lib/data";
@@ -75,8 +75,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
       <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
 
-      <div className="mt-5 grid gap-8 sm:mt-8 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-8">
+      <div className="mt-5 grid gap-6 sm:mt-8 lg:grid-cols-[1fr_380px] lg:gap-8">
+        <div className="lg:col-start-1 lg:row-start-1">
           <header>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{l.title}</h1>
             <p className="mt-2 text-mute">{[l.make_name, l.model_name, l.version_name].filter(Boolean).join(" · ")}</p>
@@ -89,21 +89,40 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
               {l.units_count > 1 && <span className="rounded-full bg-white px-3 py-1.5 text-mute ring-1 ring-line">{l.units_count} mezzi identici</span>}
             </div>
           </header>
+        </div>
 
-          {specs.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-lg font-semibold">Caratteristiche</h2>
-              <dl className="card grid grid-cols-2 gap-px overflow-hidden bg-line sm:grid-cols-3">
-                {specs.map((s) => (
-                  <div key={s.label} className="bg-white p-4">
-                    <dt className="text-xs text-mute">{s.label}</dt>
-                    <dd className="mt-0.5 font-medium">{s.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
+        {/* prenotazione: subito sotto il titolo su telefono, a destra su computer */}
+        <aside id="prenota" className="scroll-mt-20 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+          {shortTerm && !(lungo && longTerm) && <div className="card space-y-4 p-5 shadow-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <p className="text-sm text-mute">Tariffe</p>
+              <p className="text-sm">{sortedPrices.map((p) => `${euro(p.price_cents)} ${priceUnitShort[p.unit] ?? ""}${p.valid_from ? ` (dal ${formatDateIt(p.valid_from)})` : ""}`).join(" · ")}</p>
+            </div>
+            <BookingBox id={id} from={from} busy={[...busy]} initial={{ dal, al, oraR, oraC }}
+              initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
+            <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
+          </div>}
+          {longTerm && offer && (shortTerm && !lungo ? (
+            <details className="group card mt-3 overflow-hidden shadow-sm">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
+                <span>
+                  <span className="block font-semibold">Disponibile anche a lungo termine</span>
+                  {offer.lt_from_cents ? <span className="text-sm text-mute">da {euro(offer.lt_from_cents)} / mese · vedi tariffe</span> : <span className="text-sm text-mute">vedi tariffe</span>}
+                </span>
+                <span aria-hidden className="text-xl text-mute transition group-open:rotate-45">+</span>
+              </summary>
+              <div className="border-t border-line p-5"><LongTermConfigurator listingId={id} title={l.title} offer={offer} initialMonths={durata} /></div>
+            </details>
+          ) : (
+            <div className="card p-5 shadow-sm"><LongTermConfigurator listingId={id} title={l.title} offer={offer} initialMonths={durata} /></div>
+          ))}
+          {lungo && longTerm && shortTerm && (
+            <Link href={`/mezzo/${ref}`} className="mt-3 block text-center text-sm font-semibold text-teal-700">Ti serve per pochi giorni? Vedi le tariffe a giornata</Link>
           )}
+          <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>
+        </aside>
 
+        <div className="space-y-6 lg:col-start-1 lg:row-start-2">
           {l.description && (
             <section>
               <h2 className="mb-3 text-lg font-semibold">Descrizione</h2>
@@ -111,9 +130,22 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
             </section>
           )}
 
-          <section>
-            <h2 className="mb-3 text-lg font-semibold">Condizioni di noleggio</h2>
-            <ul className="card divide-y divide-line text-sm">
+          {/* dettagli: si aprono solo se interessano */}
+          <div className="card divide-y divide-line overflow-hidden">
+            {specs.length > 0 && (
+              <More title="Caratteristiche" hint={specs.slice(0, 3).map((x) => x.value).join(" · ")}>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+                  {specs.map((x) => (
+                    <div key={x.label}>
+                      <dt className="text-xs text-mute">{x.label}</dt>
+                      <dd className="mt-0.5 font-medium">{x.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </More>
+            )}
+            <More title="Condizioni di noleggio" hint={[l.deposit_cents ? `Cauzione ${euro(l.deposit_cents)}` : "Nessuna cauzione", l.min_driver_age ? `età min. ${l.min_driver_age} anni` : "", delivery ? "consegna disponibile" : ""].filter(Boolean).join(" · ")}>
+              <ul className="-mx-4 divide-y divide-line text-sm">
               <Row k="Cauzione" v={l.deposit_cents ? `${euro(l.deposit_cents)} · gestita direttamente dal noleggiatore al momento del ritiro` : "Nessuna"} />
               {l.min_driver_age && <Row k="Età minima" v={`${l.min_driver_age} anni`} />}
               {l.min_license_years && <Row k="Patente da almeno" v={`${l.min_license_years} anni`} />}
@@ -125,12 +157,10 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
                 ? `Sì, entro ${delivery.radius_km} km dalla sede · ${[delivery.fee_cents ? euro(delivery.fee_cents) : "", delivery.per_km_cents ? `${euro(delivery.per_km_cents, true)}/km` : ""].filter(Boolean).join(" + ") || "gratuita"}`
                 : "No, ritiro presso la sede"} />
             </ul>
-          </section>
-
-          {rules?.tiers && (
-            <section>
-              <h2 className="mb-3 text-lg font-semibold">Cancellazione</h2>
-              <ul className="card divide-y divide-line text-sm">
+            </More>
+            {rules?.tiers && (
+              <More title="Cancellazione" hint="Gratuita finché il noleggiatore non conferma">
+                <ul className="-mx-4 divide-y divide-line text-sm">
                 <Row k="Prima della conferma" v="Gratuita" />
                 {rules.tiers.map((t, i) => {
                   const prev = rules.tiers![i - 1];
@@ -141,38 +171,10 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
                 })}
                 <Row k="Se cancella il noleggiatore" v="Rimborso completo" />
               </ul>
-            </section>
-          )}
-
-          <section>
-            <h2 className="mb-3 text-lg font-semibold">Disponibilità nei prossimi due mesi</h2>
-            <Calendar from={from} busy={busy} />
-          </section>
+              </More>
+            )}
+          </div>
         </div>
-
-        <aside id="prenota" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start">
-          {longTerm && offer && (
-            <div className="card mb-4 p-5 shadow-sm"><LongTermConfigurator listingId={id} title={l.title} offer={offer} initialMonths={durata} /></div>
-          )}
-          {shortTerm && <div className="card space-y-5 p-5 shadow-sm">
-            <div>
-              <p className="text-sm text-mute">Tariffe</p>
-              <ul className="mt-1 space-y-1">
-                {sortedPrices.map((p) => (
-                  <li key={`${p.unit}-${p.valid_from}`} className="flex justify-between text-sm">
-                    <span>{priceUnitLabel[p.unit]}{p.valid_from ? ` (dal ${formatDateIt(p.valid_from)})` : ""}</span>
-                    <span className="font-semibold">{euro(p.price_cents)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <BookingBox id={id} from={from} initial={{ dal, al, oraR, oraC }}
-              initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
-            <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
-            <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost w-full">Fai una domanda</Link>
-          </div>}
-          {!shortTerm && <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>}
-        </aside>
       </div>
 
       {/* telefono: prezzo sempre visibile in basso + Prenota (stile Booking) */}
@@ -186,7 +188,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
               </div>
               <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Calcola la rata</a>
             </>
-          ) : quote && !("error" in quote) && dal && al ? (
+          ) : quote && !("error" in quote) && dal && al && ![...busy].some((d) => d >= dal && d <= al) ? (
             <>
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-tight">{euro(quote.total_cents)} <span className="text-sm font-medium text-mute">totale</span></p>
@@ -207,6 +209,23 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
         </div>
       </div>
     </div>
+  );
+}
+
+const priceUnitShort: Record<string, string> = { hour: "/ ora", half_day: "/ mezza giornata", day: "/ giorno", week: "/ settimana" };
+
+function More({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <details className="group">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 [&::-webkit-details-marker]:hidden">
+        <span className="min-w-0">
+          <span className="block font-semibold">{title}</span>
+          {hint && <span className="block truncate text-sm text-mute">{hint}</span>}
+        </span>
+        <span aria-hidden className="flex-none text-xl text-mute transition group-open:rotate-45">+</span>
+      </summary>
+      <div className="px-4 pb-4">{children}</div>
+    </details>
   );
 }
 
@@ -251,45 +270,5 @@ function Gallery({ media, title, category, indicative }: { media: { url: string;
       ))}
     </div>
     </>
-  );
-}
-
-function Calendar({ from, busy }: { from: string; busy: Set<string> }) {
-  const [y, m] = from.split("-").map(Number);
-  const months = [0, 1].map((k) => {
-    const d = new Date(Date.UTC(y, m - 1 + k, 1));
-    return { year: d.getUTCFullYear(), month: d.getUTCMonth() };
-  });
-  const fmt = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric", timeZone: "UTC" });
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {months.map(({ year, month }) => {
-        const firstDow = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7;
-        const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-        return (
-          <div key={`${year}-${month}`} className="card p-4">
-            <p className="mb-3 text-sm font-semibold capitalize">{fmt.format(new Date(Date.UTC(year, month, 1)))}</p>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs">
-              {["L", "M", "M", "G", "V", "S", "D"].map((d, i) => <span key={i} className="pb-1 text-mute">{d}</span>)}
-              {Array.from({ length: firstDow }).map((_, i) => <span key={`e${i}`} />)}
-              {Array.from({ length: days }).map((_, i) => {
-                const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`;
-                const past = iso < from, taken = busy.has(iso);
-                return (
-                  <span key={iso} title={taken ? "Non disponibile" : undefined}
-                    className={`rounded-md py-1.5 ${past ? "text-mute/40" : taken ? "bg-navy-100 text-mute line-through" : "bg-teal-50 text-navy-900"}`}>
-                    {i + 1}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-      <p className="text-xs text-mute sm:col-span-2">
-        <span className="mr-1 inline-block h-3 w-3 rounded bg-teal-50 align-middle ring-1 ring-teal-500/30" /> libero
-        <span className="ml-4 mr-1 inline-block h-3 w-3 rounded bg-navy-100 align-middle" /> occupato
-      </p>
-    </div>
   );
 }

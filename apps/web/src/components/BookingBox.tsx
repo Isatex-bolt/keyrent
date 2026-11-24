@@ -9,8 +9,8 @@ type Quote = { total_cents: number; qty: number; unit: string } | { error: strin
 const HOURS = Array.from({ length: 31 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
 /** Date e orari del noleggio: il totale si aggiorna da solo, poi un solo pulsante per prenotare. */
-export function BookingBox({ id, from, initial, initialQuote }: {
-  id: string; from: string; initial: { dal?: string; al?: string; oraR: string; oraC: string }; initialQuote: Quote;
+export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [] }: {
+  id: string; from: string; busy?: string[]; initial: { dal?: string; al?: string; oraR: string; oraC: string }; initialQuote: Quote;
 }) {
   const [dal, setDal] = useState(initial.dal ?? "");
   const [al, setAl] = useState(initial.al ?? "");
@@ -33,14 +33,15 @@ export function BookingBox({ id, from, initial, initialQuote }: {
     return () => ctrl.abort();
   }, [id, dal, al, oraR, oraC]);
 
-  const ok = quote && !("error" in quote);
+  const taken = !!dal && !!al && busyDays.some((d) => d >= dal && d <= al);
+  const ok = quote && !("error" in quote) && !taken;
   const href = `/prenota/${id}?${new URLSearchParams({ ...(dal ? { dal, ora_ritiro: oraR } : {}), ...(al ? { al, ora_riconsegna: oraC } : {}) })}`;
   return (
     <>
       <div>
         <span className="label">Ritiro → Riconsegna</span>
         <div className="field flex items-center !py-0">
-          <DateRange dal={dal} al={al} min={from} placeholder={["Ritiro", "Riconsegna"]} names={["dal_v", "al_v"]} className="!py-2.5"
+          <DateRange dal={dal} al={al} min={from} busy={busyDays} placeholder={["Ritiro", "Riconsegna"]} names={["dal_v", "al_v"]} className="!py-2.5"
             onChange={(v) => { setDal(v.dal); setAl(v.al); }} />
         </div>
         <div className="mt-2 grid grid-cols-2 gap-3">
@@ -48,13 +49,19 @@ export function BookingBox({ id, from, initial, initialQuote }: {
           <select aria-label="Ora di riconsegna" value={oraC} onChange={(e) => setOraC(e.target.value)} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
         </div>
       </div>
-      {ok ? (
+      {taken ? (
+        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Il mezzo è già occupato in alcune di queste date: tocca le date e scegline altre (i giorni barrati sono occupati).</p>
+      ) : ok ? (
         <div className={`rounded-xl bg-navy-50 p-4 transition ${busy ? "opacity-60" : ""}`}>
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-mute">Totale noleggio</span>
             <span className="text-2xl font-bold">{euro(quote.total_cents)}</span>
           </div>
           <p className="mt-1 text-xs text-mute">{durationLabel(quote.qty, quote.unit)} · cauzione esclusa</p>
+          <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-teal-700">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden><path d="M8.6 13.2L5.8 10.4l1.1-1.1 1.7 1.7 4.5-4.5 1.1 1.1z"/></svg>
+            Libero nelle tue date
+          </p>
         </div>
       ) : quote && "error" in quote ? (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{quote.error}</p>

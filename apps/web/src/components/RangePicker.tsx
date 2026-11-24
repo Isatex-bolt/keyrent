@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /*
@@ -13,13 +13,20 @@ const parse = (s: string) => new Date(`${s}T12:00:00Z`);
 export const shortDate = (s: string) =>
   new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(parse(s));
 
-export function RangePicker({ open, onClose, start, end, min, single = false, onChange, title }: {
-  open: boolean; onClose: () => void; start: string; end: string; min?: string; single?: boolean;
+export function RangePicker({ open, onClose, start, end, min, single = false, onChange, title, busy }: {
+  open: boolean; onClose: () => void; start: string; end: string; min?: string; single?: boolean; busy?: string[];
   onChange: (v: { dal: string; al: string }) => void; title?: string;
 }) {
   const [a, setA] = useState(start);
   const [b, setB] = useState(end);
   const [picking, setPicking] = useState<"start" | "end">("start");
+  const scroller = useRef<HTMLDivElement>(null);
+  // si apre già sul mese delle date scelte
+  useEffect(() => {
+    if (!open || !start) return;
+    const el = scroller.current?.querySelector<HTMLElement>(`[data-month="${start.slice(0, 7)}"]`);
+    if (el && scroller.current) scroller.current.scrollTop = el.offsetTop - 8;
+  }, [open, start]);
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- all'apertura riparte dalle date attuali
@@ -37,10 +44,12 @@ export function RangePicker({ open, onClose, start, end, min, single = false, on
   }, [today]);
 
   if (!open) return null;
+  const busySet = new Set(busy ?? []);
+  const crossesBusy = (x: string, y: string) => [...busySet].some((d) => d >= x && d <= y);
 
   function tap(day: string) {
     if (single) { onChange({ dal: day, al: day }); onClose(); return; }
-    if (picking === "start" || (a && day < a)) { setA(day); setB(""); setPicking("end"); return; }
+    if (picking === "start" || (a && day < a) || crossesBusy(a, day)) { setA(day); setB(""); setPicking("end"); return; }
     setB(day);
     onChange({ dal: a, al: day });
     setTimeout(onClose, 180); // il tempo di vedere il periodo evidenziato
@@ -62,28 +71,30 @@ export function RangePicker({ open, onClose, start, end, min, single = false, on
             <button type="button" onClick={onClose} className="h-9 rounded-full px-3 text-sm font-semibold text-mute hover:bg-navy-50">Chiudi</button>
           </div>
           <p className="mt-1 text-[15px] font-medium text-teal-600">{head}</p>
+          {busy && <p className="mt-1 text-xs text-mute">I giorni barrati sono già occupati.</p>}
           <div className="mt-3 grid grid-cols-7 text-center text-xs font-semibold text-mute">
             {["L", "M", "M", "G", "V", "S", "D"].map((d, i) => <span key={i}>{d}</span>)}
           </div>
         </div>
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">
+        <div ref={scroller} className="relative min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">
           {months.map((m) => {
             const y = m.getUTCFullYear(), mo = m.getUTCMonth();
             const firstDow = (new Date(Date.UTC(y, mo, 1)).getUTCDay() + 6) % 7;
             const days = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
             return (
-              <section key={`${y}-${mo}`}>
+              <section key={`${y}-${mo}`} data-month={`${y}-${String(mo + 1).padStart(2, "0")}`}>
                 <h3 className="mb-2 font-semibold capitalize">{fmtMonth.format(m)}</h3>
                 <div className="grid grid-cols-7 gap-y-1">
                   {Array.from({ length: firstDow }).map((_, i) => <span key={`e${i}`} />)}
                   {Array.from({ length: days }, (_, i) => {
                     const day = ymd(new Date(Date.UTC(y, mo, i + 1)));
-                    const past = day < today;
+                    const taken = busySet.has(day);
+                    const past = day < today || taken;
                     const isA = day === a, isB = day === b;
                     const inRange = a && b && day > a && day < b;
                     return (
                       <button key={day} type="button" disabled={past} onClick={() => tap(day)} aria-pressed={isA || isB}
-                        className={`relative h-11 text-[15px] disabled:text-mute/40 ${inRange ? "bg-teal-50" : ""} ${isA && b && b !== a ? "rounded-l-full bg-teal-50" : ""} ${isB && a !== b ? "rounded-r-full bg-teal-50" : ""}`}>
+                        className={`relative h-11 text-[15px] disabled:text-mute/40 ${taken && day >= today ? "line-through" : ""} ${inRange ? "bg-teal-50" : ""} ${isA && b && b !== a ? "rounded-l-full bg-teal-50" : ""} ${isB && a !== b ? "rounded-r-full bg-teal-50" : ""}`}>
                         <span className={`mx-auto grid h-11 w-11 place-items-center rounded-full ${isA || isB ? "bg-navy-900 font-semibold text-white" : !past ? "hover:bg-navy-50" : ""}`}>{i + 1}</span>
                       </button>
                     );
@@ -100,8 +111,8 @@ export function RangePicker({ open, onClose, start, end, min, single = false, on
 }
 
 /** Due date compatte ("sab 28 nov → dom 29 nov") che aprono il calendario KeyRent. Invia i campi dal/al. */
-export function DateRange({ dal, al, min, onChange, names = ["dal", "al"], className = "", placeholder = ["Ritiro", "Riconsegna"] }: {
-  dal: string; al: string; min?: string; onChange: (v: { dal: string; al: string }) => void;
+export function DateRange({ dal, al, min, onChange, names = ["dal", "al"], className = "", placeholder = ["Ritiro", "Riconsegna"], busy }: {
+  dal: string; al: string; min?: string; busy?: string[]; onChange: (v: { dal: string; al: string }) => void;
   names?: [string, string]; className?: string; placeholder?: [string, string];
 }) {
   const [open, setOpen] = useState(false);
@@ -114,7 +125,7 @@ export function DateRange({ dal, al, min, onChange, names = ["dal", "al"], class
       </button>
       <input type="hidden" name={names[0]} value={dal} />
       <input type="hidden" name={names[1]} value={al} />
-      <RangePicker open={open} onClose={() => setOpen(false)} start={dal} end={al} min={min} onChange={onChange} />
+      <RangePicker open={open} onClose={() => setOpen(false)} start={dal} end={al} min={min} onChange={onChange} busy={busy} />
     </>
   );
 }
