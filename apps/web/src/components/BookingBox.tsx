@@ -136,7 +136,7 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
       </Link>
 
       {/* telefono: prezzo sempre visibile in basso + Prenota (stile Booking) */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur-xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white shadow-[0_-6px_20px_rgba(3,16,38,0.10)] lg:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
           {ok ? (
             <>

@@ -182,7 +182,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
       {/* telefono, solo lungo termine: rata sempre visibile in basso (per il breve la barra è nel riquadro prenotazione) */}
       {(!shortTerm || (lungo && longTerm)) && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white shadow-[0_-6px_20px_rgba(3,16,38,0.10)] lg:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
             <div className="min-w-0">
               <p className="text-lg font-bold leading-tight">{offer?.lt_from_cents ? <>da {euro(offer.lt_from_cents)} <span className="text-sm font-medium text-mute">/ mese</span></> : "Lungo termine"}</p>
