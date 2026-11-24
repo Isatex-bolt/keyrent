@@ -15,7 +15,7 @@ import { captureIntent } from "@/lib/stripe";
 import { releaseHold } from "@/lib/payments";
 import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
-import { deliveryOf, listingPayload } from "@/lib/listingForm";
+import { contactsError, contactsIn, deliveryOf, listingPayload } from "@/lib/listingForm";
 import { longTermOf } from "@/lib/longTerm";
 import type { PreviewRow } from "@/lib/importSheet";
 
@@ -148,6 +148,8 @@ export async function createListing(f: FormData) {
   const { membership } = await editor();
   const lt = longTermOf(f);
   if (lt.error) fail("/pro/mezzi/nuovo", lt.error);
+  const found = contactsIn(`${str(f, "title")} ${str(f, "description")}`);
+  if (found) fail("/pro/mezzi/nuovo", contactsError(found));
   const payload = await listingPayload(f, membership.organization_id);
   const db = await userDb();
   // doppio invio dello stesso modulo: riapri la bozza appena creata invece di farne un'altra
@@ -216,6 +218,8 @@ export async function updateListingDetails(f: FormData) {
   const { data: l } = await db.from("listings").select("status, title, description").eq("id", id).maybeSingle();
   if (!l) fail("/pro/mezzi", "Annuncio non trovato.");
   const title = str(f, "title"), description = str(f, "description");
+  const found = contactsIn(`${title} ${description}`);
+  if (found) fail(back, contactsError(found));
   // dirty-state lato server: se non è cambiato nulla, nessuna scrittura e nessun cambio di stato
   if (title === l!.title && description === (l!.description ?? "")) redirect(back);
   if (["draft", "changes_required"].includes(l!.status)) {
@@ -451,4 +455,26 @@ export async function confirmImport(input: PreviewRow[]): Promise<{ created: num
   }
   revalidatePath("/pro/mezzi");
   return { created, failed };
+}
+
+// ---------- Ciclo del noleggio: consegnato, rientrato, non presentato ----------
+export async function rentalStep(f: FormData) {
+  sendEmailsSoon();
+  const ctx = await requireProvider("/pro/prenotazioni");
+  if (!ctx.membership) redirect("/pro");
+  const id = str(f, "id");
+  const step = str(f, "step");
+  const fn = step === "consegnato" ? "svc_mark_picked_up" : step === "rientrato" ? "svc_mark_returned" : step === "assente" ? "svc_mark_no_show" : null;
+  if (!fn) fail("/pro/prenotazioni", "Azione non valida.");
+  const { error } = await serviceDb().rpc(fn as string, { p_booking: id, p_actor: ctx.user.id });
+  if (error) {
+    const msg = /TOO_EARLY/.test(error.message)
+      ? (step === "assente" ? "Puoi segnare il cliente come non presentato solo 2 ore dopo l'orario di ritiro." : "Puoi segnare la consegna al massimo 3 ore prima dell'orario di ritiro.")
+      : /schema cache|does not exist|Could not find/i.test(error.message) ? "Funzione non ancora attiva: serve aggiornare il database (blocco SQL 0024)."
+      : (await import("@/lib/bookings")).bookingError(error.message);
+    fail("/pro/prenotazioni", msg);
+  }
+  revalidatePath("/pro/prenotazioni");
+  revalidatePath("/pro");
+  redirect(`/pro/prenotazioni?ok=${step}`);
 }

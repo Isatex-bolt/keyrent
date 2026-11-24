@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getMemberships } from "@/lib/auth";
 import { headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
 import { completePendingOrg } from "@/lib/pendingOrg";
@@ -32,8 +33,9 @@ export async function signIn(formData: FormData) {
   const { data: staff } = await db.from("staff_members").select("active").eq("user_id", data.user!.id).maybeSingle();
   if (staff?.active) redirect("/admin");
   // senza destinazione: noleggiatori nella loro area, clienti nel loro account
-  const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
-  const isProvider = (count ?? 0) > 0 || !!data.user?.user_metadata?.pending_org;
+  // solo le attività di noleggio contano: un'azienda cliente (kind 'renter') resta nell'esperienza cliente
+  const memberships = await getMemberships();
+  const isProvider = memberships.length > 0 || !!data.user?.user_metadata?.pending_org;
   // senza destinazione: noleggiatori nella loro area, clienti restano sulla home
   redirect(isProvider ? "/pro" : "/");
 }
@@ -43,7 +45,7 @@ const field = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 export async function signUp(formData: FormData) {
   const tipo = tipoOf(formData);
   const come = field(formData, "come") === "azienda" ? "azienda" : "privato";
-  const next = safeNext(formData.get("next")) || (tipo === "noleggiatore" ? "/pro" : "/account");
+  const next = safeNext(formData.get("next")) || (tipo === "noleggiatore" ? "/pro" : "/");
   const email = field(formData, "email");
   const password = String(formData.get("password") ?? "");
   const firstName = field(formData, "first_name");

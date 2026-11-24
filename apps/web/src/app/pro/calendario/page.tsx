@@ -7,6 +7,9 @@ import { SedeChips } from "@/components/v2/SedeChips";
 import { FleetTimeline } from "@/components/v2/FleetTimeline";
 import { AvailabilityPanel } from "@/components/v2/AvailabilityPanel";
 import { Legend, monthLabel } from "@/components/v2/ui";
+import { Flash } from "@/components/ProPage";
+import { canEdit } from "@/lib/auth";
+import { Blocks } from "./Blocks";
 
 export const metadata = { title: "Calendario" };
 type SP = Promise<Record<string, string | string[] | undefined>>;
@@ -19,18 +22,19 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const { mese, from, to } = monthRange(typeof sp.mese === "string" ? sp.mese : undefined);
   const vista = sp.vista === "mezzo" ? "mezzo" : "flotta";
-  const { data, all, sede } = await proFleet(sp, from, to, "/pro/calendario");
+  const { data, all, sede, membership } = await proFleet(sp, from, to, "/pro/calendario");
   const days = dayList(from, to);
   const mezzo = data.vehicles.find((v) => v.id === sp.mezzo) ?? data.vehicles[0];
   const href = (extra: Record<string, string>) => `/pro/calendario${keep(sp, { vista, mese, ...(mezzo ? { mezzo: mezzo.id } : {}), ...extra })}`;
   const bookings = [...data.bookings, ...data.requests];
   return (
     <div className="space-y-6">
+      <Flash sp={sp} ok={typeof sp.ok === "string" ? { [sp.ok]: sp.ok } : undefined} />
       <SedeChips locations={all.locations} sede={sede} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendario</h1>
-          <p className="text-mute">Tocca un giorno per vedere la prenotazione.</p>
+          <p className="text-mute">Tocca un giorno per vedere la prenotazione. Per bloccare giorni scegli “Singolo mezzo”.</p>
         </div>
         <div className="flex rounded-xl border border-line bg-white p-1">
           {[["flotta", "Tutta la flotta"], ["mezzo", "Singolo mezzo"]].map(([k, l]) => (
@@ -61,9 +65,12 @@ async function Calendar({ searchParams }: { searchParams: SP }) {
               </Link>
             ))}
           </div>
+          <div className="min-w-0 space-y-4">
           <AvailabilityPanel showLegend={false} vehicle={mezzo} days={days} bookings={bookings} today={data.today} mese={mese} hrefFor={Object.fromEntries(
             [shiftMonth(mese, -12), shiftMonth(mese, 12), ...Array.from({ length: 6 }, (_, i) => `${mese.slice(0, 4)}-${String((Number(mese.slice(5)) <= 6 ? 1 : 7) + i).padStart(2, "0")}`)]
               .map((m) => [m, href({ mese: m })]))} />
+          <Blocks listingId={mezzo.id} units={mezzo.units} back={href({})} canEdit={canEdit(membership)} />
+          </div>
         </div>
       ) : <p className="text-mute">Nessun mezzo: aggiungine uno da “I miei mezzi”.</p>}
     </div>

@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DateRange } from "./RangePicker";
 import { PlaceInput } from "./PlaceInput";
-import { durationLabel, euro } from "@/lib/format";
+import { durationLabel, euro, fixTimes } from "@/lib/format";
 
 type Delivery = { radius_km: number; fee_cents: number; per_km_cents: number };
 type DQ = { km: number; cents: number | null; in_range: boolean; radius_km: number } | { error: string } | null;
 type Quote = { total_cents: number; qty: number; unit: string } | { error: string } | null;
-const HOURS = Array.from({ length: 31 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+const HOURS = Array.from({ length: 36 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
 const shortIt = (d: string) => new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
 
@@ -77,10 +77,10 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
         <span className="label">Ritiro → Riconsegna</span>
         <div className="field flex items-center !py-0">
           <DateRange dal={dal} al={al} min={from} busy={busyDays} placeholder={["Ritiro", "Riconsegna"]} names={["dal_v", "al_v"]} className="!py-2.5"
-            onChange={(v) => { setDal(v.dal); setAl(v.al); }} />
+            onChange={(v) => { const t = fixTimes(v.dal, v.al, oraR, oraC); setDal(v.dal); setAl(v.al); setOraR(t.oraR); setOraC(t.oraC); }} />
         </div>
         <div className="mt-2 grid grid-cols-2 gap-3">
-          <select aria-label="Ora di ritiro" value={oraR} onChange={(e) => setOraR(e.target.value)} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
+          <select aria-label="Ora di ritiro" value={oraR} onChange={(e) => { const t = dal && al ? fixTimes(dal, al, e.target.value, oraC) : { oraR: e.target.value, oraC }; setOraR(t.oraR); setOraC(t.oraC); }} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
           <select aria-label="Ora di riconsegna" value={oraC} onChange={(e) => setOraC(e.target.value)} className="field">{HOURS.map((h) => <option key={h}>{h}</option>)}</select>
         </div>
       </div>

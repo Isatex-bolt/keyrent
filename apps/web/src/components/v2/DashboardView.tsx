@@ -4,6 +4,8 @@ import { FleetTimeline } from "./FleetTimeline";
 import { SedeChips } from "./SedeChips";
 import { Kpi, Legend, euroShort, shortDate } from "./ui";
 
+/** giorno a Roma di un istante (le prenotazioni sono salvate in UTC) */
+const rd = (iso: string) => isoDay(new Date(iso));
 const plus = (d: string, n: number) => isoDay(new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000));
 
 /** Intervallo da caricare per la dashboard: dal primo del mese a oggi + 14 giorni (o fine mese). */
@@ -20,7 +22,7 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
   const { today, monthStart, monthEnd } = dashboardRange();
   const now = new Date().toISOString();
   const live = ["confirmed", "picked_up", "completed"];
-  const month = data.bookings.filter((b) => live.includes(b.status) && b.pickupAt.slice(0, 7) === today.slice(0, 7));
+  const month = data.bookings.filter((b) => live.includes(b.status) && rd(b.pickupAt).slice(0, 7) === today.slice(0, 7));
   const gross = month.reduce((s, b) => s + b.totalCents, 0), net = month.reduce((s, b) => s + b.netCents, 0);
   const futureNet = data.bookings.filter((b) => b.status === "confirmed" && b.pickupAt > now).reduce((s, b) => s + b.netCents, 0);
   const active = data.bookings.filter((b) => b.status === "picked_up" || (b.status === "confirmed" && b.pickupAt <= now && b.returnAt >= now));
@@ -33,15 +35,15 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
     cap += 1; used += c.state === "booked" ? 1 : c.state === "partial" ? 1 - c.free / Math.max(1, v.units) : 0;
   }
   const util = cap ? Math.round((used / cap) * 100) : 0;
-  const pickupsToday = data.bookings.filter((b) => b.pickupAt.slice(0, 10) === today && b.status !== "completed");
-  const returnsToday = data.bookings.filter((b) => b.returnAt.slice(0, 10) === today);
+  const pickupsToday = data.bookings.filter((b) => rd(b.pickupAt) === today && b.status !== "completed");
+  const returnsToday = data.bookings.filter((b) => rd(b.returnAt) === today);
   const week = plus(today, 7);
   const nextEvents = [
-    ...data.bookings.filter((b) => b.pickupAt.slice(0, 10) > today && b.pickupAt.slice(0, 10) <= week).map((b) => ({ b, kind: "Ritiro" as const, at: b.pickupAt })),
-    ...data.bookings.filter((b) => b.returnAt.slice(0, 10) > today && b.returnAt.slice(0, 10) <= week).map((b) => ({ b, kind: "Rientro" as const, at: b.returnAt })),
+    ...data.bookings.filter((b) => rd(b.pickupAt) > today && rd(b.pickupAt) <= week).map((b) => ({ b, kind: "Ritiro" as const, at: b.pickupAt })),
+    ...data.bookings.filter((b) => rd(b.returnAt) > today && rd(b.returnAt) <= week).map((b) => ({ b, kind: "Rientro" as const, at: b.returnAt })),
   ].sort((a, b) => a.at.localeCompare(b.at)).slice(0, 8);
   const title = (b: FleetBooking) => data.vehicles.find((v) => v.id === b.listingId)?.title ?? "Mezzo";
-  const daily = monthDays.map((d) => month.filter((b) => b.pickupAt.slice(0, 10) === d).reduce((s, b) => s + b.netCents, 0));
+  const daily = monthDays.map((d) => month.filter((b) => rd(b.pickupAt) === d).reduce((s, b) => s + b.netCents, 0));
   const maxDaily = Math.max(1, ...daily);
   const dateLabel = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Rome" }).format(new Date());
 

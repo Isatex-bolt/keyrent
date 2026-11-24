@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { euro, romeToIso, todayRome, formatDateIt } from "@/lib/format";
+import { euro, romeToIso, todayRome, formatDateIt, defaultTimes, fixTimes } from "@/lib/format";
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
@@ -33,8 +33,10 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const { listing: l, media, prices, extras, indicative } = data;
 
   const dal = first(sp.dal), al = first(sp.al);
-  const oraR = first(sp.ora_ritiro) ?? "10:00";
-  const oraC = first(sp.ora_riconsegna) ?? (dal && dal === al ? "18:00" : "10:00");
+  const def = defaultTimes(dal, al);
+  const { oraR, oraC } = dal && al
+    ? fixTimes(dal, al, first(sp.ora_ritiro) ?? def.oraR, first(sp.ora_riconsegna) ?? def.oraC)
+    : { oraR: first(sp.ora_ritiro) ?? def.oraR, oraC: first(sp.ora_riconsegna) ?? def.oraC };
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);

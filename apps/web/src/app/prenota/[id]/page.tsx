@@ -1,12 +1,13 @@
 import { DateField } from "@/components/DateField";
 import { Suspense } from "react";
+import { SubmitOnce } from "@/components/SubmitOnce";
 import Link from "next/link";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { notFound } from "next/navigation";
 import { getBookingContext, requireUser } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { getListing, getQuote, getCancellationRules } from "@/lib/data";
-import { euro, romeToIso, todayRome, durationLabel } from "@/lib/format";
+import { euro, romeToIso, todayRome, durationLabel, defaultTimes, fixTimes } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { paymentsEnabled } from "@/lib/stripe";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
@@ -14,7 +15,7 @@ import { requestBooking } from "@/app/account/bookingActions";
 
 export const metadata = { title: "Richiedi prenotazione" };
 
-const HOURS = Array.from({ length: 27 }, (_, i) => `${String(7 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+const HOURS = Array.from({ length: 34 }, (_, i) => `${String(7 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
 export default function Page({ params, searchParams }: PageProps<"/prenota/[id]">) {
   return (
@@ -29,8 +30,9 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
   const sp = await searchParams;
   const dal = typeof sp.dal === "string" ? sp.dal : "";
   const al = typeof sp.al === "string" ? sp.al : "";
-  const oraR = typeof sp.ora_ritiro === "string" ? sp.ora_ritiro : "10:00";
-  const oraC = typeof sp.ora_riconsegna === "string" ? sp.ora_riconsegna : dal && dal === al ? "18:00" : "10:00";
+  const def = defaultTimes(dal, al);
+  const pick = { oraR: typeof sp.ora_ritiro === "string" ? sp.ora_ritiro : def.oraR, oraC: typeof sp.ora_riconsegna === "string" ? sp.ora_riconsegna : def.oraC };
+  const { oraR, oraC } = dal && al ? fixTimes(dal, al, pick.oraR, pick.oraC) : pick;
   const user = await requireUser(`/prenota/${id}?dal=${dal}&al=${al}`);
   const data = await getListing(id);
   if (!data) notFound();
@@ -128,7 +130,7 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
             <div className="flex justify-between text-sm"><span className="text-mute">{durationLabel(quote.qty, quote.unit)}</span><span>{euro(quote.base_cents)}</span></div>
             <div className="flex items-baseline justify-between border-t border-line pt-3"><span className="text-sm text-mute">Totale noleggio</span><span className="text-2xl font-bold">{euro(quote.total_cents)}</span></div>
             {l.deposit_cents > 0 && <p className="text-xs text-mute">Cauzione {euro(l.deposit_cents)} gestita direttamente dal noleggiatore al ritiro.</p>}
-            <button className="btn-primary w-full">{paid ? "Continua: inserisci la carta" : "Invia richiesta"}</button>
+            <SubmitOnce>{paid ? "Continua: inserisci la carta" : "Invia richiesta"}</SubmitOnce>
             <p className="rounded-xl bg-teal-50 p-3 text-xs text-navy-900">
               {paid
                 ? "Al prossimo passo blocchiamo l'importo sulla carta: lo addebitiamo solo quando il noleggiatore accetta (ha 24 ore). Se rifiuta o non risponde, il blocco si annulla e non paghi nulla."

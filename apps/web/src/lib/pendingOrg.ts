@@ -22,7 +22,9 @@ export async function completePendingOrg(): Promise<boolean> {
   if (u.user) await completePendingRenter(db, u.user.user_metadata ?? {});
   const p = pendingOrgOf(u.user);
   if (!u.user || !p) return false;
-  const { count } = await db.from("organization_members").select("organization_id", { count: "exact", head: true }).eq("status", "active");
+  // conta solo le attività di noleggio (un'azienda cliente non impedisce di creare l'attività)
+  const { count } = await db.from("organization_members").select("organization_id, org:organizations!inner(kind)", { count: "exact", head: true })
+    .eq("status", "active").eq("org.kind", "provider");
   if ((count ?? 0) === 0) {
     const { data: orgId, error } = await db.rpc("create_organization", {
       p_legal_name: p.legal_name, p_vat: p.vat_number, p_trade_name: p.trade_name || null,

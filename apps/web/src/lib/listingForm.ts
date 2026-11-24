@@ -55,3 +55,18 @@ export function deliveryOf(f: FormData) {
     delivery_per_km_cents: enabled ? n("delivery_per_km") : 0,
   };
 }
+
+/**
+ * Contatti nel testo dell'annuncio (telefono, email, siti, social): prima della prenotazione il noleggiatore resta anonimo,
+ * quindi titolo e descrizione non possono contenerli. Stesse regole del filtro dei messaggi (private.filter_contacts).
+ */
+export function contactsIn(text: string): string | null {
+  const t = text ?? "";
+  if (/[A-Za-z0-9._%+-]+\s*(@|\(at\)|\[at\])\s*[A-Za-z0-9.-]+\.[A-Za-z]{2,}/i.test(t)) return "un indirizzo email";
+  if (/(https?:\/\/|www\.)\S+/i.test(t) || /\b[A-Za-z0-9-]+\.(it|com|net|org|eu|info|biz|me|io|app|shop|store)\b/i.test(t)) return "un sito web";
+  for (const m of t.match(/\+?\d[\d\s./()-]{6,}\d/g) ?? []) if (m.replace(/\D/g, "").length >= 8) return "un numero di telefono";
+  if (/\b(whats\s*app|telegram|instagram|facebook|tiktok|skype|messenger)\b/i.test(t) || /(^|\s)@[A-Za-z0-9_.]{3,}/.test(t)) return "un contatto social";
+  return null;
+}
+export const contactsError = (what: string) =>
+  `Il testo contiene ${what}: toglilo. Prima della prenotazione KeyRent non mostra i contatti del noleggiatore; il cliente li riceve dopo il pagamento.`;

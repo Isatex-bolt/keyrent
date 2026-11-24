@@ -81,7 +81,7 @@ export async function loadFleet(orgId: string, orgName: string, from: string, to
     db.from("bookings").select("id, code, status, listing_id, location_id, pickup_at, return_at, total_cents, provider_net_cents, driver, payment_required, payment_ready")
       .eq("organization_id", orgId).in("status", ["requested", "accepted", "confirmed", "picked_up", "completed"])
       .lte("pickup_at", `${to}T23:59:59Z`).gte("return_at", `${from}T00:00:00Z`),
-    db.from("payouts").select("amount_cents, status").eq("organization_id", orgId).in("status", ["pending_pickup", "scheduled", "pending"]),
+    db.from("payouts").select("amount_cents, status").eq("organization_id", orgId).in("status", ["pending_pickup", "scheduled"]),
   ]);
   const unitIds = (units ?? []).map((u) => u.id);
   const [{ data: res }, { data: media }] = await Promise.all([
