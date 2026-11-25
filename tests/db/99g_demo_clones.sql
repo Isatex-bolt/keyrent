@@ -19,6 +19,11 @@ select test.ok((select count(*) >= 3 from bookings where organization_id = :'c1'
 select test.ok(not exists (select 1 from public_listings p join listings l on l.id = p.id where l.organization_id in (:'c1', :'c2')),
   'le copie non compaiono sul sito pubblico');
 select test.ok(exists (select 1 from public_listings where id = :urus), 'l''originale resta pubblico');
+-- un annuncio nuovo creato in una demo (non di esempio) non va sul sito pubblico
+update listings set demo_keep = false where organization_id = :'c1';
+select test.ok(not exists (select 1 from public_listings p join listings l on l.id = p.id where l.organization_id = :'c1'),
+  'annunci creati provando la demo: non pubblici');
+update listings set demo_keep = true where organization_id = :'c1';
 
 -- isolamento: il visitatore 1 non vede nulla della copia del visitatore 2
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000001', false);

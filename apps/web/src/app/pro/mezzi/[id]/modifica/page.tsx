@@ -6,6 +6,7 @@ import { requireProvider, canEdit } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { mediaUrl } from "@/lib/supabase/public";
 import { Badge, listingStatus } from "@/lib/status";
+import { getIsDemo } from "@/lib/data";
 import { euro, priceUnitLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
@@ -24,7 +25,7 @@ export default function Page({ params, searchParams }: PageProps<"/pro/mezzi/[id
 const OK: Record<string, string> = {
   salvato: "Modifiche salvate.", revisione: "Modifica inviata a KeyRent: resta online la versione attuale finché non viene approvata.",
   prezzi: "Prezzi aggiornati.", pending_review: "Annuncio inviato in revisione. Ti avviseremo appena KeyRent lo avrà controllato.",
-  demo: "Account di prova: l'annuncio viene approvato in automatico tra 30 secondi e resta online 24 ore, poi si cancella. Ricarica la pagina tra poco per vederlo pubblicato.",
+  demo: "Account di prova: l'annuncio viene approvato in automatico tra 30 secondi. Lo vedi solo tu, nella tua area demo (non va sul sito pubblico), e si cancella dopo 24 ore. Ricarica la pagina tra poco per vederlo approvato.",
   unpublished: "Annuncio tolto dalla ricerca.", published: "Annuncio di nuovo online.",
 };
 
@@ -44,6 +45,8 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
     db.from("listing_units").select("vehicle_unit_id, vehicle_units(year, custom_make, custom_model)").eq("listing_id", id),
   ]);
   if (!l) notFound();
+  // Annuncio creato provando la demo: non va sul sito pubblico, quindi niente "Vedi come cliente".
+  const demoPrivate = !(l as { demo_keep?: boolean }).demo_keep && await getIsDemo(id);
   const edit = canEdit(membership);
   const editing = typeof sp.modifica === "string" ? sp.modifica : null;
   const draftLike = ["draft", "changes_required"].includes(l.status);
@@ -88,7 +91,9 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
             </form>
           )}
           {l.status === "published" && <>
-            <Link href={listingHref({ id: (l as { demo_source_id?: string | null }).demo_source_id ?? id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>
+            {demoPrivate
+              ? <p className="text-sm text-mute">Demo: questo annuncio lo vedi solo tu, qui nella tua area.</p>
+              : <Link href={listingHref({ id: (l as { demo_source_id?: string | null }).demo_source_id ?? id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>}
             <StateButton id={id} to="unpublished" label="Togli dalla ricerca" />
           </>}
           {l.status === "unpublished" && <StateButton id={id} to="published" label="Rimetti online" primary />}

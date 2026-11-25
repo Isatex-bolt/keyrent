@@ -16,7 +16,7 @@ const POINTS = [
   ["Dashboard", "Incassi del mese, noleggi in corso, ritiri e riconsegne di oggi."],
   ["Flotta e calendario", "10 mezzi di esempio su 3 sedi, con disponibilità giorno per giorno."],
   ["Richieste e prenotazioni", "Accetta una richiesta, segna la consegna e il rientro del mezzo."],
-  ["Il tuo primo annuncio", "Crealo in pochi minuti: in prova viene approvato in 30 secondi e resta online 24 ore."],
+  ["Il tuo primo annuncio", "Crealo in pochi minuti: in prova viene approvato in 30 secondi e lo vedi solo tu."],
 ];
 
 export default function DemoPage({ searchParams }: PageProps<"/demo">) {

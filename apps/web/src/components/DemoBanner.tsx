@@ -15,7 +15,7 @@ export async function DemoBanner() {
           <p className="text-xs font-semibold uppercase tracking-wider text-teal-300">Account di prova</p>
           <p className="mt-1 font-semibold">Così sarebbe la tua area noleggiatore su KeyRent.</p>
           <p className="mt-1 text-sm text-white/75">
-            Annunci di esempio e noleggi sono simulati. Prova a creare un annuncio: viene approvato in 30 secondi e resta online 24 ore, poi si cancella da solo.
+            Annunci di esempio e noleggi sono simulati. Prova a creare un annuncio: viene approvato in 30 secondi, lo vedi solo tu nella tua area e dopo 24 ore si cancella da solo.
           </p>
         </div>
         <form action={leaveDemoAndRegister} className="flex-none">

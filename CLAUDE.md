@@ -82,7 +82,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Account demo concessionari (25/11, 0025): link /demo (entra con un tocco), utente concessionario@keyrent.it / 123456
   (creato da Dashboard Supabase; lib/demo.ts, DEMO_PASSWORD opzionale su Vercel). organizations.is_demo, listings.demo_keep (10 esempi,
   protetti DEMO_PROTECTED), nessuna prenotazione vera (DEMO_LISTING), annunci creati in prova approvati dopo 30 s (svc_demo_autoapprove,
-  after()) e cancellati dopo 24 h; noleggi finti pi_demo_ rigenerati ogni notte (private.demo_reset, chiamato dal cron /api/email/flush).
+  after()), visibili solo nell'area demo di chi li crea (0028: fuori da public_listings) e cancellati dopo 24 h; noleggi finti pi_demo_ rigenerati ogni notte (private.demo_reset, chiamato dal cron /api/email/flush).
   Preparazione: supabase/demo/concessionario_setup.sql (cancella TUTTI gli annunci). Foto: /admin/demo → Carica foto (una per annuncio, fatte dall'utente con ChatGPT; sostituisce le precedenti).
   DemoBanner in /pro + DemoNudge (popup dopo 5 min o su ?demo=nonsalvato). demoStop(): nella demo attività/profili/azienda non si salvano → /pro?demo=nonsalvato. Accettare/rifiutare richieste finte non tocca Stripe (pi_demo_).
 - Demo personali (0027, 25/11): /demo → enterDemo crea un utente demo-xxx@prova.keyrent.it (auth admin) + private.demo_clone
