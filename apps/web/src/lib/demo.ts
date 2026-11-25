@@ -22,3 +22,14 @@ export function demoAutoapproveSoon(delayMs = 0) {
     await serviceDb().rpc("svc_demo_autoapprove");
   });
 }
+
+/**
+ * Nell'account di prova i dati di attività e profilo non si salvano: si torna alla dashboard demo con un avviso
+ * (e l'invito a registrarsi davvero). Da chiamare all'inizio delle azioni che creano o cambiano attività/profili.
+ */
+export async function demoStop(userId: string | undefined | null) {
+  if (await isDemoUser(userId)) {
+    const { redirect } = await import("next/navigation");
+    redirect("/pro?demo=nonsalvato");
+  }
+}

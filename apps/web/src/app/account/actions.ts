@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { userDb } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { demoStop } from "@/lib/demo";
 
 export async function updateProfile(formData: FormData) {
   const user = await requireUser();
+  await demoStop(user.id);
   const db = await userDb();
   const get = (k: string) => String(formData.get(k) ?? "").trim() || null;
   const patch: Record<string, string | null> = { first_name: get("first_name"), last_name: get("last_name"), phone: get("phone") };
@@ -20,7 +22,8 @@ export async function updateProfile(formData: FormData) {
 
 /** "Aggiungi profilo privato": attiva il noleggio come persona, per scelta esplicita dell'utente. */
 export async function addPrivateProfile(formData: FormData) {
-  await requireUser("/account/privato");
+  const user = await requireUser("/account/privato");
+  await demoStop(user.id);
   const get = (k: string) => String(formData.get(k) ?? "").trim();
   const { error } = await (await userDb()).rpc("enable_personal_renting", {
     p_first: get("first_name"), p_last: get("last_name"), p_phone: get("phone"), p_birth: get("birth_date") || null,

@@ -16,7 +16,7 @@ import { releaseHold } from "@/lib/payments";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import { contactsError, contactsIn, deliveryOf, listingPayload } from "@/lib/listingForm";
 import { longTermOf } from "@/lib/longTerm";
-import { demoAutoapproveSoon, isDemoUser } from "@/lib/demo";
+import { demoAutoapproveSoon, demoStop, isDemoUser } from "@/lib/demo";
 import type { PreviewRow } from "@/lib/importSheet";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -35,7 +35,8 @@ async function editor() {
 
 // ---------- Attività ----------
 export async function createOrganization(f: FormData) {
-  await requireProvider();
+  const { user } = await requireProvider();
+  await demoStop(user.id);
   const db = await userDb();
   const { data: orgId, error } = await db.rpc("create_organization", {
     p_legal_name: str(f, "legal_name"), p_vat: str(f, "vat_number").toUpperCase(), p_trade_name: str(f, "trade_name") || null,
@@ -52,7 +53,8 @@ export async function createOrganization(f: FormData) {
 }
 
 export async function updateOrganization(f: FormData) {
-  const { membership } = await editor();
+  const { membership, user } = await editor();
+  await demoStop(user.id);
   if (membership.role !== "owner") fail("/pro/attivita", "Solo il titolare può modificare l'anagrafica.");
   const db = await userDb();
   const { error } = await db.from("organizations").update({

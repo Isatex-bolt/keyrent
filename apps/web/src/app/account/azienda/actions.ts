@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { CTX_COOKIE, requireUser } from "@/lib/auth";
+import { demoStop } from "@/lib/demo";
 import { userDb } from "@/lib/supabase/server";
 import { serviceDb } from "@/lib/supabase/admin";
 
@@ -14,7 +15,7 @@ const address = (f: FormData) => ({ street: v(f, "street"), city: v(f, "city"), 
 
 /** Nuova azienda cliente (prenota e riceve fatture; non pubblica mezzi). */
 export async function createRenterOrg(f: FormData) {
-  await requireUser(back);
+  await demoStop((await requireUser(back)).id);
   if (!v(f, "legal_name") || !v(f, "vat_number")) fail("Servono ragione sociale e partita IVA.");
   // P.IVA già in anagrafica (come azienda cliente o come attività di noleggio): niente doppioni, si recuperano gli accessi
   const vat = v(f, "vat_number").toUpperCase().replace(/\s+/g, "");
@@ -33,7 +34,7 @@ export async function createRenterOrg(f: FormData) {
 
 /** Dati di fatturazione (ragione sociale e P.IVA restano quelli registrati). */
 export async function updateBilling(f: FormData) {
-  await requireUser(back);
+  await demoStop((await requireUser(back)).id);
   const db = await userDb();
   const { error } = await db.from("organizations").update({
     sdi_code: v(f, "sdi_code").toUpperCase() || null, pec: v(f, "pec") || null, tax_code: v(f, "tax_code") || null,
