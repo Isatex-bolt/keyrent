@@ -137,6 +137,8 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
 
       {/* telefono: prezzo sempre visibile in basso + Prenota (stile Booking) */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white shadow-[0_-6px_20px_rgba(3,16,38,0.10)] lg:hidden">
+        {/* fondo bianco che continua sotto la barra di Safari: niente pagina che si intravede sotto */}
+        <div aria-hidden className="absolute inset-x-0 top-full h-40 bg-white" />
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
           {ok ? (
             <>

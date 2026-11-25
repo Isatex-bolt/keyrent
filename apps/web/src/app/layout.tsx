@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Trova e prenota mezzi a noleggio da operatori professionali verificati: auto, moto, bici, camper, barche, furgoni.",
 };
 
-export const viewport: Viewport = { themeColor: "#011938", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#011938", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -31,6 +31,7 @@ export function BottomNav() {
     <>
       <div className="h-[calc(64px+env(safe-area-inset-bottom))] lg:hidden" aria-hidden />
       <nav aria-label="Navigazione" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+        <div aria-hidden className="absolute inset-x-0 top-full h-40 bg-white" />
         <ul className="mx-auto grid max-w-md grid-cols-5">
           {ITEMS.map((it) => {
             const on = best === it.k;
