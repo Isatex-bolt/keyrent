@@ -64,7 +64,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
         <Badge map={listingStatus} value={l.status} />
       </div>
       <Flash sp={sp} ok={OK} />
-      {sp.nuovo && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm">Bozza creata. Ora aggiungi almeno 4 foto, poi clicca <strong>Invia per approvazione</strong>.</p>}
+      {sp.nuovo && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm">Bozza creata. Ora aggiungi almeno una foto (meglio 3 o più), poi clicca <strong>Invia per approvazione</strong>.</p>}
       {lastReview && l.status !== "published" && (
         <div className="rounded-xl bg-orange-50 px-4 py-3 text-sm text-orange-900">
           <p className="font-semibold">Note di KeyRent</p>

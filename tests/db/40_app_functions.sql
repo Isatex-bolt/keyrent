@@ -35,7 +35,7 @@ reset role; reset request.jwt.claim.sub;
 -- Il server (service role) usa i ponti
 set role service_role;
 select test.fails(format($$select public.svc_listing_transition(%L, 'pending_review', %L)$$, :'draft', 'a0000000-0000-0000-0000-000000000001'),
-                  'almeno 4 foto', 'invio in revisione senza foto: elenco di cosa manca');
+                  'almeno una foto', 'invio in revisione senza foto: elenco di cosa manca');
 insert into listing_media (listing_id, storage_path, sort) select :'draft', 'x/' || g || '.jpg', g from generate_series(1, 4) g;
 select public.svc_listing_transition(:'draft', 'pending_review', 'a0000000-0000-0000-0000-000000000001');
 select public.svc_listing_transition(:'draft', 'approved', 'd0000000-0000-0000-0000-000000000001');

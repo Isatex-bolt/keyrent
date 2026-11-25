@@ -83,8 +83,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   (creato da Dashboard Supabase; lib/demo.ts, DEMO_PASSWORD opzionale su Vercel). organizations.is_demo, listings.demo_keep (10 esempi,
   protetti DEMO_PROTECTED), nessuna prenotazione vera (DEMO_LISTING), annunci creati in prova approvati dopo 30 s (svc_demo_autoapprove,
   after()) e cancellati dopo 24 h; noleggi finti pi_demo_ rigenerati ogni notte (private.demo_reset, chiamato dal cron /api/email/flush).
-  Preparazione: supabase/demo/concessionario_setup.sql (cancella TUTTI gli annunci). Foto: /admin/demo → Genera foto mancanti (Pollinations).
+  Preparazione: supabase/demo/concessionario_setup.sql (cancella TUTTI gli annunci). Foto: /admin/demo → Carica foto (una per annuncio, fatte dall'utente con ChatGPT; sostituisce le precedenti).
   DemoBanner in /pro. Accettare/rifiutare richieste finte non tocca Stripe (pi_demo_).
+- 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
   richieste/prenotazioni nell'area noleggiatore; chat; email (serve SMTP: oggi Supabase manda solo agli indirizzi del team).

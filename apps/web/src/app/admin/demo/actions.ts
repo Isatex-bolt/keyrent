@@ -100,3 +100,34 @@ export async function clearDemoPhotos(listingId: string) {
   revalidatePath("/admin/demo");
   revalidatePath("/", "layout");
 }
+
+/** Foto caricata a mano (es. creata con ChatGPT): l'URL firmato fa salire il file direttamente su Storage. */
+export async function createDemoUploadUrl(listingId: string, fileName: string): Promise<{ path: string; token: string } | { error: string }> {
+  await requireStaff();
+  const db = serviceDb();
+  const { data: l } = await db.from("listings").select("id, demo_keep, organizations!inner(is_demo)").eq("id", listingId).maybeSingle();
+  if (!l || !(l as unknown as { demo_keep: boolean }).demo_keep) return { error: "Annuncio non dimostrativo." };
+  const ext = (fileName.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
+  const path = `${listingId}/demo-up-${crypto.randomUUID()}.${ext}`;
+  const { data, error } = await db.storage.from("listings").createSignedUploadUrl(path);
+  if (error) return { error: `Storage: ${error.message}` };
+  return { path, token: data.token };
+}
+
+/** Dopo il caricamento: la foto nuova diventa l'unica dell'annuncio (le vecchie vengono tolte). */
+export async function saveDemoUpload(listingId: string, path: string): Promise<{ ok: true } | { error: string }> {
+  await requireStaff();
+  if (!path.startsWith(`${listingId}/demo-up-`)) return { error: "Percorso non valido." };
+  const db = serviceDb();
+  const { data: old } = await db.from("listing_media").select("id, storage_path").eq("listing_id", listingId);
+  const { data: l } = await db.from("listings").select("title").eq("id", listingId).maybeSingle();
+  const { error } = await db.from("listing_media").insert({ listing_id: listingId, storage_path: path, sort: 0, moderation_status: "approved", alt: l?.title ?? null });
+  if (error) return { error: error.message };
+  if (old?.length) {
+    await db.from("listing_media").delete().in("id", old.map((m) => m.id));
+    await db.storage.from("listings").remove(old.map((m) => m.storage_path));
+  }
+  revalidatePath("/admin/demo");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

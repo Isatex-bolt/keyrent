@@ -5,7 +5,7 @@ import { serviceDb } from "@/lib/supabase/admin";
 import { ProHeader, Skeleton } from "@/components/ProPage";
 import { mediaUrl } from "@/lib/supabase/public";
 import { DemoTools } from "./DemoTools";
-import { clearDemoPhotos } from "./actions";
+import { DemoUpload } from "./DemoUpload";
 
 export default function Page() {
   return <Suspense fallback={<Skeleton />}><Demo /></Suspense>;
@@ -26,6 +26,7 @@ async function Demo() {
       <section className="card space-y-3 p-5">
         <p className="text-sm">Link da mandare: <Link href="/demo" className="font-semibold text-teal-700">keyrent.it/demo</Link> · {rows.length} annunci di esempio · {bookings ?? 0} noleggi finti.</p>
         <p className="text-sm text-mute">Ogni notte la demo torna com&apos;era: noleggi rigenerati rispetto alla data di oggi, annunci creati provando la demo cancellati dopo 24 ore.</p>
+        <p className="text-sm text-mute">Foto: per ogni mezzo premi <strong>Carica foto</strong> e scegli l&apos;immagine (anche dal telefono). La nuova sostituisce quelle che ci sono.</p>
         <DemoTools />
       </section>
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -33,22 +34,14 @@ async function Demo() {
           const media = [...l.listing_media].sort((a, b) => a.sort - b.sort);
           return (
             <div key={l.id} className="card overflow-hidden">
-              <div className="grid grid-cols-3 gap-0.5 bg-navy-50">
-                {[0, 1, 2].map((i) => {
-                  const m = media.find((x) => x.sort === i);
-                  return m
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img key={i} src={mediaUrl(m.storage_path)} alt="" className="aspect-[4/3] w-full object-cover" />
-                    : <div key={i} className="grid aspect-[4/3] place-items-center text-xs text-mute">manca</div>;
-                })}
-              </div>
-              <div className="flex items-center justify-between gap-2 p-3">
+              {media[0]
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={mediaUrl(media[0].storage_path)} alt="" className="aspect-[4/3] w-full bg-navy-50 object-cover" />
+                : <div className="grid aspect-[4/3] place-items-center bg-navy-50 text-sm text-mute">Nessuna foto</div>}
+              <div className="space-y-2 p-3">
                 <p className="min-w-0 truncate text-sm font-semibold">{l.title}</p>
-                {media.length > 0 && (
-                  <form action={clearDemoPhotos.bind(null, l.id)}>
-                    <button className="flex-none text-xs font-semibold text-mute hover:text-red-700">Rifai foto</button>
-                  </form>
-                )}
+                <DemoUpload listingId={l.id} />
+                {media.length > 1 && <p className="text-xs text-mute">{media.length} foto: caricandone una nuova restano solo quella.</p>}
               </div>
             </div>
           );

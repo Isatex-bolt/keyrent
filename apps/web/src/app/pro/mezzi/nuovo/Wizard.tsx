@@ -292,7 +292,7 @@ export function Wizard({ cats, attrs, locations, action = createListing, orgId }
           <p className="text-base font-bold">{shownTitle || "—"}</p>
           <p className="text-mute">{catObj?.name}{subName ? ` · ${subName}` : ""} · {Number(qty) > 1 ? `${qty} mezzi` : "1 mezzo"} · {city}</p>
         </div>
-        <p className="rounded-xl bg-teal-50 p-3">Creiamo una <strong>bozza</strong>. Poi aggiungi le foto (almeno 4, oppure creale con l&apos;AI) e invia l&apos;annuncio in revisione.</p>
+        <p className="rounded-xl bg-teal-50 p-3">Creiamo una <strong>bozza</strong>. Poi aggiungi le foto (ne basta una, meglio 3 o più) e invia l&apos;annuncio in revisione.</p>
       </section>
 
       <div className="mt-6 flex justify-between gap-3">
