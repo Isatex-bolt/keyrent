@@ -17,6 +17,7 @@ import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import { contactsError, contactsIn, deliveryOf, listingPayload } from "@/lib/listingForm";
 import { longTermOf } from "@/lib/longTerm";
+import { demoAutoapproveSoon, isDemoUser } from "@/lib/demo";
 import type { PreviewRow } from "@/lib/importSheet";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -252,8 +253,11 @@ export async function transitionListing(f: FormData) {
   // il controllo di appartenenza lo fa la funzione nel DB (attore = utente della sessione)
   const { error } = await serviceDb().rpc("svc_listing_transition", { p_listing: id, p_to: to, p_actor: user.id });
   if (error) fail(`/pro/mezzi/${id}/modifica`, dbMessage(error.message));
+  // account di prova: approvazione automatica dopo 30 secondi
+  const demo = to === "pending_review" && await isDemoUser(user.id);
+  if (demo) demoAutoapproveSoon(31_000);
   revalidatePath("/pro/mezzi");
-  redirect(`/pro/mezzi/${id}/modifica?ok=${to}`);
+  redirect(`/pro/mezzi/${id}/modifica?ok=${demo ? "demo" : to}`);
 }
 
 // ---------- Foto ----------
@@ -332,10 +336,16 @@ export async function respondBooking(f: FormData) {
   const { data: pi, error } = await db.rpc("svc_accept_paid_booking", { p_booking: id, p_actor: ctx.user.id });
   if (error || !pi) fail("/pro/richieste", bookingError(error?.message ?? ""));
   let captured: { id: string; amount_received: number; status: string } | null = null;
-  try {
-    captured = await captureIntent(pi as string);
-  } catch (e) {
-    console.error("capture", id, e);
+  if (String(pi).startsWith("pi_demo_")) {
+    // noleggio finto dell'account di prova: nessuna carta vera da addebitare
+    const { data: t } = await db.from("bookings").select("total_cents").eq("id", id).maybeSingle();
+    captured = { id: String(pi), amount_received: t?.total_cents ?? 0, status: "succeeded" };
+  } else {
+    try {
+      captured = await captureIntent(pi as string);
+    } catch (e) {
+      console.error("capture", id, e);
+    }
   }
   if (!captured || captured.status !== "succeeded") {
     await db.rpc("svc_payment_failed", { p_booking: id });

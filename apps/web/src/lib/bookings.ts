@@ -12,6 +12,7 @@ export const bookingStatus: Record<string, { label: string; tone: string }> = {
 
 export function bookingError(msg: string) {
   const map: [string, string][] = [
+    ["DEMO_LISTING", "Questo è un annuncio dimostrativo: le prenotazioni apriranno al lancio di KeyRent."],
     ["NOT_AVAILABLE", "Il mezzo non è più disponibile in queste date: prova date diverse."],
     ["DURATION_OUT_OF_RANGE", "La durata scelta non rispetta il minimo o il massimo previsto dal noleggiatore."],
     ["PICKUP_IN_PAST", "La data di ritiro è già passata."],

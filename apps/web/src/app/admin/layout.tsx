@@ -16,6 +16,7 @@ const ADMIN: NavSection[] = [
   { section: "Sito", items: [
     { label: "Catalogo", href: "/admin/catalogo" },
     { label: "Contenuti home", href: "/admin/home" },
+    { label: "Account demo", href: "/admin/demo" },
     { label: "Prenotazioni" }, { label: "Utenti interni" },
   ] },
 ];

@@ -23,6 +23,7 @@ export function Badge({ map, value }: { map: Record<string, { label: string; ton
 
 /** Messaggi d'errore del database tradotti per l'utente */
 export function dbMessage(msg: string) {
+  if (msg.includes("DEMO_PROTECTED")) return "Account di prova: i 10 annunci di esempio non si modificano. Crea un annuncio nuovo per provare tutto il percorso.";
   if (msg.includes("LISTING_INCOMPLETE")) return "Per inviare l'annuncio manca: " + msg.split("LISTING_INCOMPLETE:")[1].trim();
   if (msg.includes("USE_REVISION")) return "Su un annuncio pubblicato questa modifica passa dalla revisione.";
   if (msg.includes("REVISION_ALREADY_PENDING")) return "C'è già una modifica in attesa di revisione.";

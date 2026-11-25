@@ -4,10 +4,12 @@ import { cancelIntent, getIntent, paymentsEnabled, refundIntent } from "./stripe
 
 /** Annulla il blocco sulla carta di una prenotazione (rifiutata, scaduta, annullata prima dell'addebito). */
 export async function releaseHold(bookingId: string) {
-  if (!paymentsEnabled()) return;
   const db = serviceDb();
   const { data: b } = await db.from("bookings").select("stripe_payment_intent_id").eq("id", bookingId).maybeSingle();
   if (!b?.stripe_payment_intent_id) return;
+  // noleggio finto dell'account di prova: nessuna carta vera da sbloccare
+  if (b.stripe_payment_intent_id.startsWith("pi_demo_")) { await db.rpc("svc_payment_canceled", { p_pi: b.stripe_payment_intent_id }); return; }
+  if (!paymentsEnabled()) return;
   try {
     const pi = await getIntent(b.stripe_payment_intent_id);
     if (["requires_capture", "requires_payment_method", "requires_confirmation", "requires_action"].includes(pi.status)) {

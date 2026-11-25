@@ -8,7 +8,7 @@ import { euro, romeToIso, todayRome, formatDateIt, defaultTimes, fixTimes } from
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
-import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getListing, getOffers, quoteOrError } from "@/lib/data";
+import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
 type Raw = Record<string, string | string[] | undefined>;
@@ -40,7 +40,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);
-  const [attrs, rules, quote, busy, delivery, offers, ctx] = await Promise.all([
+  const [attrs, rules, quote, busy, delivery, offers, ctx, isDemo] = await Promise.all([
     attributesForCategory(l.category_slug),
     getCancellationRules(l.cancellation_policy_id),
     pickup && ret ? quoteOrError(id, pickup, ret) : Promise.resolve(null),
@@ -48,6 +48,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     getDelivery(id),
     getOffers([id]),
     getBookingContext().catch(() => null),
+    getIsDemo(id),
   ]);
   const forCompany = !!ctx?.current;
   const offer = offers.get(id) ?? null;
@@ -98,6 +99,11 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
         {/* prenotazione: subito sotto il titolo su telefono, a destra su computer */}
         <aside id="prenota" className="min-w-0 scroll-mt-20 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+          {isDemo && (
+            <p className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <strong>Annuncio dimostrativo.</strong> Serve a mostrare come funziona KeyRent: le prenotazioni apriranno al lancio.
+            </p>
+          )}
           {shortTerm && !(lungo && longTerm) && <div className="card space-y-4 p-5 shadow-sm">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <p className="text-sm text-mute">Tariffe</p>

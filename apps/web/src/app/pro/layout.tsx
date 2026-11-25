@@ -3,10 +3,12 @@ import Link from "next/link";
 import { getBadges } from "@/lib/badges";
 import { getMemberships } from "@/lib/auth";
 import { ProNav } from "@/components/ProNav";
+import { DemoBanner } from "@/components/DemoBanner";
 
 export default function ProLayout({ children }: LayoutProps<"/pro">) {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
+      <Suspense fallback={null}><DemoBanner /></Suspense>
       {/* senza attività registrata: niente menu dell'area noleggiatore, solo il ritorno al profilo */}
       <div className="grid gap-6 lg:grid-cols-[230px_1fr] lg:[&:has([data-nonav])]:grid-cols-1">
         <Suspense fallback={<div className="hidden lg:block" />}><NavWithBadges /></Suspense>

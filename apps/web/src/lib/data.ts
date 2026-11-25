@@ -224,6 +224,12 @@ export async function getDeliveryQuote(id: string, lat: number, lng: number): Pr
   return !error && Array.isArray(data) && data[0] ? data[0] : null;
 }
 
+/** Annuncio dell'account di prova (nessuna prenotazione vera). Senza la migrazione 0025: false. */
+export async function getIsDemo(id: string): Promise<boolean> {
+  const { data, error } = await publicDb().rpc("listing_is_demo", { p_listing: id });
+  return !error && data === true;
+}
+
 export type Offer = { listing_id: string; short_term: boolean; long_term: boolean; lt_prices: Record<string, number>;
   lt_services: Record<string, { offered: boolean; cents: number }>; lt_km_per_year: number | null; lt_extra_km_cents: number | null; lt_from_cents: number | null };
 /** Breve / lungo termine degli annunci pubblicati (mappa vuota se il database non è aggiornato). */

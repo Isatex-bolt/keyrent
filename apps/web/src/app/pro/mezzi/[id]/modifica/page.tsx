@@ -26,6 +26,7 @@ export default function Page({ params, searchParams }: PageProps<"/pro/mezzi/[id
 const OK: Record<string, string> = {
   salvato: "Modifiche salvate.", revisione: "Modifica inviata a KeyRent: resta online la versione attuale finché non viene approvata.",
   prezzi: "Prezzi aggiornati.", pending_review: "Annuncio inviato in revisione. Ti avviseremo appena KeyRent lo avrà controllato.",
+  demo: "Account di prova: l'annuncio viene approvato in automatico tra 30 secondi e resta online 24 ore, poi si cancella. Ricarica la pagina tra poco per vederlo pubblicato.",
   unpublished: "Annuncio tolto dalla ricerca.", published: "Annuncio di nuovo online.",
 };
 

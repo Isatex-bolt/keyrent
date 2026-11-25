@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getMemberships } from "@/lib/auth";
+import { DEMO_EMAIL, DEMO_PASSWORD, isDemoUser } from "@/lib/demo";
 import { headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
 import { completePendingOrg } from "@/lib/pendingOrg";
@@ -126,7 +127,24 @@ export async function changePassword(formData: FormData) {
   const db = await userDb();
   const { data } = await db.auth.getUser();
   if (!data.user) redirect("/accedi?next=/account/password");
+  if (await isDemoUser(data.user.id)) back("Nell'account di prova la password non si può cambiare: serve a tutti quelli che provano KeyRent.");
   const { error } = await db.auth.updateUser({ password });
   if (error) back(error.message.includes("different from the old") ? "La nuova password deve essere diversa da quella attuale." : it(error.message));
   redirect("/account/password?ok=1");
+}
+
+/** Link /demo: entra nell'account di prova del concessionario con un tocco. */
+export async function enterDemo() {
+  const db = await userDb();
+  await db.auth.signOut();
+  const { error } = await db.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+  if (error) redirect(`/demo?errore=${encodeURIComponent("La demo non è disponibile in questo momento. Riprova tra poco.")}`);
+  redirect("/pro");
+}
+
+/** Dalla demo alla registrazione vera: esce dall'account di prova e apre la registrazione da noleggiatore. */
+export async function leaveDemoAndRegister() {
+  const db = await userDb();
+  await db.auth.signOut();
+  redirect("/registrati?tipo=noleggiatore");
 }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { flushEmails } from "@/lib/email";
+import { serviceDb } from "@/lib/supabase/admin";
 
 export const maxDuration = 60;
 
@@ -10,5 +11,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "non autorizzato" }, { status: 401 });
   }
   const result = await flushEmails(100);
-  return NextResponse.json(result);
+  // una volta al giorno: l'account di prova torna com'era (annunci di prova > 24 h via, noleggi finti rigenerati)
+  const { data: demo, error } = await serviceDb().rpc("svc_demo_reset");
+  return NextResponse.json({ ...result, demo: error ? `non attivo: ${error.message}` : demo });
 }
