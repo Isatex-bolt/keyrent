@@ -5,7 +5,7 @@ import type { FleetBooking, FleetVehicle } from "@/lib/v2/fleet";
 import { STATE, euroShort, shortDate } from "./ui";
 
 const BOOKING_LABEL: Record<string, string> = {
-  requested: "Da confermare", accepted: "Accettata", confirmed: "Confermata", picked_up: "In corso", completed: "Conclusa",
+  requested: "Da confermare", accepted: "Accettata", confirmed: "Confermata · da ritirare", picked_up: "In corso", completed: "Conclusa",
 };
 
 /** Dettaglio di un giorno: bottom sheet su telefono, riquadro laterale su computer. */

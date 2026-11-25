@@ -1,9 +1,9 @@
 export const bookingStatus: Record<string, { label: string; tone: string }> = {
   requested: { label: "In attesa del noleggiatore", tone: "bg-amber-50 text-amber-800" },
   accepted: { label: "Accettata · da confermare", tone: "bg-teal-50 text-teal-700" },
-  confirmed: { label: "Confermata", tone: "bg-teal-500 text-navy-950" },
+  confirmed: { label: "Confermata · da ritirare", tone: "bg-teal-50 text-teal-800" },
   picked_up: { label: "In corso", tone: "bg-teal-500 text-navy-950" },
-  completed: { label: "Completata", tone: "bg-navy-50 text-navy-800" },
+  completed: { label: "Conclusa", tone: "bg-navy-50 text-navy-800" },
   declined: { label: "Rifiutata", tone: "bg-red-50 text-red-800" },
   expired: { label: "Scaduta", tone: "bg-navy-50 text-mute" },
   cancelled: { label: "Cancellata", tone: "bg-navy-50 text-mute" },
