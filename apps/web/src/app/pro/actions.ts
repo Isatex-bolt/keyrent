@@ -13,7 +13,6 @@ import { findPlace } from "@/lib/places";
 import { PROVINCE } from "@/lib/province";
 import { captureIntent } from "@/lib/stripe";
 import { releaseHold } from "@/lib/payments";
-import { generateImage, vehiclePrompt } from "@/lib/aiImage";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import { contactsError, contactsIn, deliveryOf, listingPayload } from "@/lib/listingForm";
 import { longTermOf } from "@/lib/longTerm";
@@ -381,38 +380,6 @@ export async function switchOrganization(f: FormData) {
 }
 
 // ---------- Foto creata automaticamente con l'AI ----------
-export async function generateListingPhoto(listingId: string, input: { color: string; year: string; setting: string }) {
-  await assertListingAccess(listingId);
-  await ensureBucket();
-  const db = await userDb();
-  const { data: l } = await db.from("listings")
-    .select("id, title, categories(slug), makes(name), models(name), listing_units(vehicle_units(year, custom_make, custom_model))")
-    .eq("id", listingId).maybeSingle();
-  if (!l) throw new Error("FORBIDDEN");
-  const { count } = await db.from("listing_media").select("id", { count: "exact", head: true }).eq("listing_id", listingId);
-  if ((count ?? 0) >= 20) return { error: "Hai già 20 foto: eliminane qualcuna prima di crearne altre." };
-  type Row = { title: string; categories: { slug: string } | null; makes: { name: string } | null; models: { name: string } | null;
-    listing_units: { vehicle_units: { year: number | null; custom_make: string | null; custom_model: string | null } | null }[] };
-  const r = l as unknown as Row;
-  const vu = r.listing_units[0]?.vehicle_units;
-  const vehicle = [r.makes?.name ?? vu?.custom_make, r.models?.name ?? vu?.custom_model].filter(Boolean).join(" ") || r.title;
-  const year = /^\d{4}$/.test(input.year) ? input.year : vu?.year ?? null;
-  const prompt = vehiclePrompt({ category: r.categories?.slug ?? "", vehicle, year, color: input.color.slice(0, 40), setting: input.setting });
-  try {
-    const img = await generateImage(prompt);
-    const ext = img.type.includes("png") ? "png" : img.type.includes("webp") ? "webp" : "jpg";
-    const path = `${listingId}/ai-${crypto.randomUUID()}.${ext}`;
-    const { error: up } = await serviceDb().storage.from("listings").upload(path, img.bytes, { contentType: img.type });
-    if (up) throw new Error(up.message);
-    const reg = await registerMedia(listingId, path, true);
-    if ("error" in reg) return { error: reg.error };
-    return { ok: true };
-  } catch (e) {
-    console.error(e);
-    return { error: "Il servizio che crea le immagini è occupato in questo momento. Riprova tra un minuto." };
-  }
-}
-
 // ---------- Importazione da Excel ----------
 async function importContext() {
   const { membership } = await editor();

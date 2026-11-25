@@ -19,7 +19,7 @@ const benefits = [
 const tools = [
   ["Inserimento in 2 minuti", "Scrivi il modello (\"Ducato\", \"Kosmo\", \"Turbo Levo\") e categoria, tipologia e scheda si compilano da sole."],
   ["Importazione da Excel", "Hai 30 mezzi? Compili un file e li trovi tutti pronti come bozze."],
-  ["Foto con l'AI", "Non hai ancora le foto? Crei un'immagine ambientata del modello in un clic, poi la sostituisci con le tue."],
+  ["Basta una foto", "Per pubblicare un mezzo serve una sola foto: la scatti col telefono e la carichi subito."],
   ["Più sedi e collaboratori", "Ogni mezzo ha la sua sede di ritiro; il tuo team lavora con il proprio accesso."],
   ["Richieste da approvare", "Ogni richiesta arriva con un numero rosso nel menu: la accetti o la rifiuti entro 24 ore."],
   ["Prezzi flessibili", "Ora, mezza giornata, giorno, settimana: al cliente proponiamo sempre la combinazione più conveniente."],

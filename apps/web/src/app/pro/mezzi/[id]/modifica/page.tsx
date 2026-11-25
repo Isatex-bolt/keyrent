@@ -10,8 +10,6 @@ import { euro, priceUnitLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, Skeleton, type SP } from "@/components/ProPage";
 import { PhotoUploader } from "./PhotoUploader";
-import { AiPhotoHelper } from "./AiPhotoHelper";
-import { settingsFor } from "@/lib/aiImage";
 import { deleteDraftListing, deleteMedia, transitionListing, updateDelivery, updateListingDetails, updatePrices, updateRentalModes } from "../../../actions";
 import { LongTermFields } from "@/components/LongTermFields";
 import { DeliveryFields } from "@/components/DeliveryFields";
@@ -121,15 +119,6 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
           ))}
         </div>
       </section>
-
-      {edit && (
-        <AiPhotoHelper
-          listingId={id}
-          settings={settingsFor(l.categories?.slug ?? "").map(({ key, label }) => ({ key, label }))}
-          vehicle={[l.makes?.name ?? (units?.[0] as any)?.vehicle_units?.custom_make, l.models?.name ?? (units?.[0] as any)?.vehicle_units?.custom_model].filter(Boolean).join(" ") || l.title}
-          year={(units?.[0] as any)?.vehicle_units?.year ?? null}
-        />
-      )}
 
       {/* Dettagli */}
       <section className="card p-5">
