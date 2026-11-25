@@ -81,7 +81,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
       <Gallery media={media} title={l.title} category={l.category_slug} indicative={indicative} />
 
-      <div className="mt-5 grid gap-6 sm:mt-8 lg:grid-cols-[1fr_380px] lg:gap-8">
+      <div className="mt-5 grid gap-6 sm:mt-8 lg:grid-cols-[1fr_380px] lg:grid-rows-[auto_1fr] lg:gap-8">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <header>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{l.title}</h1>
@@ -133,7 +133,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
           <Link href={`/messaggi/nuovo?annuncio=${id}`} className="btn-ghost mt-3 w-full">Fai una domanda</Link>
         </aside>
 
-        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2 lg:self-start">
           {l.description && (
             <section>
               <h2 className="mb-3 text-lg font-semibold">Descrizione</h2>
