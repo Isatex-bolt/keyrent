@@ -2,7 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /** Rinnova la sessione Supabase (cookie) quando serve. Nessuna autorizzazione qui: la fa il server/DB. */
+// Chi sta provando la demo (cookie kr_demo) resta nella demo: registrazione, accesso e area cliente lo riportano alla sua area.
+const DEMO_BLOCKED = ["/registrati", "/account", "/prenota", "/diventa-partner", "/password-dimenticata", "/messaggi/nuovo", "/assistenza", "/admin"];
+
 export async function proxy(request: NextRequest) {
+  if (request.cookies.get("kr_demo")?.value === "1") {
+    const path = request.nextUrl.pathname;
+    // /accedi porta alla pagina demo (se la sessione è scaduta si rientra da lì, senza giri a vuoto)
+    if (path === "/accedi" || path.startsWith("/accedi/")) return NextResponse.redirect(new URL("/demo", request.url));
+    if (DEMO_BLOCKED.some((p) => path === p || path.startsWith(`${p}/`))) return NextResponse.redirect(new URL("/pro", request.url));
+  }
   let response = NextResponse.next({ request });
   if (!request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) return response;
 

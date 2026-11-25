@@ -88,6 +88,8 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Demo personali (0027, 25/11): /demo → enterDemo crea un utente demo-xxx@prova.keyrent.it (auth admin) + private.demo_clone
   (copia org/sedi/10 annunci con stesse foto/noleggi finti, organizations.demo_clone_of, listings.demo_source_id). Le copie non sono
   nella vista public_listings; private.demo_cleanup le cancella dopo 24 h (dal cron via svc_demo_reset). Max 300 copie, poi account condiviso.
+  Cookie kr_demo (enterDemo): proxy.ts rimanda registrati/account/prenota/diventa-partner/… a /pro e /accedi a /demo; DemoBar su tutto
+  il sito ("Demo · Torna alla tua area"), DemoNudge dopo 3 min e poi ogni 5; /esci e la registrazione tolgono il cookie.
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

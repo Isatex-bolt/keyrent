@@ -7,6 +7,8 @@ import { serviceDb } from "@/lib/supabase/admin";
  * l'account non può prenotare, non riceve soldi, non può cambiare password; ogni notte torna com'era.
  */
 export const DEMO_EMAIL = "concessionario@keyrent.it";
+/** Segna il browser che sta provando la demo: chi entra da /demo resta nella demo finché non si registra o esce. */
+export const DEMO_COOKIE = "kr_demo";
 export const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "123456";
 
 export async function isDemoUser(userId: string | undefined | null): Promise<boolean> {

@@ -1,7 +1,6 @@
 import { getUser } from "@/lib/auth";
 import { demoAutoapproveSoon, isDemoUser } from "@/lib/demo";
 import { leaveDemoAndRegister } from "@/app/accedi/actions";
-import { DemoNudge } from "./DemoNudge";
 
 /** Nell'account di prova: cosa è simulato, quanto restano online gli annunci, e il passo per registrarsi davvero. */
 export async function DemoBanner() {
@@ -10,7 +9,6 @@ export async function DemoBanner() {
   demoAutoapproveSoon(); // approva gli annunci in verifica da più di 30 secondi
   return (
     <>
-    <DemoNudge register={leaveDemoAndRegister} />
     <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-navy-900 to-navy-800 text-white shadow-sm">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="min-w-0">

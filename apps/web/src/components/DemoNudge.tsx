@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const START = "kr-demo-start";
-const DONE = "kr-demo-nudged";
-const AFTER_MS = 5 * 60_000;
+const LAST = "kr-demo-last-nudge";
+const FIRST_MS = 3 * 60_000;   // primo invito dopo 3 minuti di demo
+const EVERY_MS = 5 * 60_000;   // poi ogni 5 minuti
 
 /**
- * Account di prova: dopo 5 minuti di uso (una volta per sessione) o quando si prova a salvare i dati dell'attività,
+ * Account di prova: dopo 3 minuti e poi ogni 5 (in tutto il sito) o quando si prova a salvare i dati dell'attività,
  * invito a registrarsi davvero. "Continua a provare" chiude e lascia proseguire la demo.
  */
 export function DemoNudge({ register }: { register: () => Promise<void> }) {
@@ -20,14 +21,16 @@ export function DemoNudge({ register }: { register: () => Promise<void> }) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- apertura dovuta al ritorno da un salvataggio bloccato
-      if (blocked) { setOpen("save"); return; }
-      if (sessionStorage.getItem(DONE)) return;
-      const start = Number(sessionStorage.getItem(START)) || Date.now();
+      if (blocked) { setOpen("save"); sessionStorage.setItem(LAST, String(Date.now())); return; }
+      const now = Date.now();
+      const start = Number(sessionStorage.getItem(START)) || now;
       sessionStorage.setItem(START, String(start));
-      timer = setTimeout(() => { sessionStorage.setItem(DONE, "1"); setOpen("time"); }, Math.max(0, start + AFTER_MS - Date.now()));
+      const last = Number(sessionStorage.getItem(LAST)) || 0;
+      const due = last ? last + EVERY_MS : start + FIRST_MS;
+      timer = setTimeout(() => { sessionStorage.setItem(LAST, String(Date.now())); setOpen("time"); }, Math.max(0, due - now));
     } catch { /* storage non disponibile: nessun promemoria */ }
     return () => clearTimeout(timer);
-  }, [blocked]);
+  }, [blocked, open]);
 
   if (!open) return null;
   const save = open === "save";

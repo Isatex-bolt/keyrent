@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { getMemberships } from "@/lib/auth";
-import { DEMO_EMAIL, DEMO_PASSWORD, isDemoUser } from "@/lib/demo";
-import { headers } from "next/headers";
+import { DEMO_COOKIE, DEMO_EMAIL, DEMO_PASSWORD, isDemoUser } from "@/lib/demo";
+import { cookies, headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
 import { serviceDb } from "@/lib/supabase/admin";
 import { completePendingOrg } from "@/lib/pendingOrg";
@@ -155,7 +155,7 @@ export async function enterDemo() {
       const { error: kErr } = await admin.rpc("svc_demo_clone", { p_user: created.user.id });
       if (!kErr) {
         const { error } = await db.auth.signInWithPassword({ email, password });
-        if (!error) redirect("/pro");
+        if (!error) { await markDemo(true); redirect("/pro"); }
       } else {
         console.error("demo clone", kErr.message);
         await admin.auth.admin.deleteUser(created.user.id);
@@ -164,12 +164,20 @@ export async function enterDemo() {
   }
   const { error } = await db.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   if (error) redirect(`/demo?errore=${encodeURIComponent("La demo non è disponibile in questo momento. Riprova tra poco.")}`);
+  await markDemo(true);
   redirect("/pro");
+}
+
+async function markDemo(on: boolean) {
+  const jar = await cookies();
+  if (on) jar.set(DEMO_COOKIE, "1", { path: "/", maxAge: 60 * 60 * 24, sameSite: "lax", httpOnly: true });
+  else jar.delete(DEMO_COOKIE);
 }
 
 /** Dalla demo alla registrazione vera: esce dall'account di prova e apre la registrazione da noleggiatore. */
 export async function leaveDemoAndRegister() {
   const db = await userDb();
   await db.auth.signOut();
+  await markDemo(false);
   redirect("/registrati?tipo=noleggiatore");
 }

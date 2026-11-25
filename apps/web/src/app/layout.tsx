@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { DemoBar } from "@/components/DemoBar";
 import { BottomNav } from "@/components/v2/customer/BottomNav";
 import "./globals.css";
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="it" className={`${GeistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <SiteHeader />
+        <Suspense fallback={null}><DemoBar /></Suspense>
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <Suspense><BottomNav /></Suspense>

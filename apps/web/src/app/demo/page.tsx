@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { enterDemo } from "@/app/accedi/actions";
+import { redirect } from "next/navigation";
 import { SubmitOnce } from "@/components/SubmitOnce";
+import { getUser } from "@/lib/auth";
+import { isDemoUser } from "@/lib/demo";
 
 export const metadata: Metadata = {
   title: "Prova KeyRent come noleggiatore",
@@ -49,6 +52,9 @@ export default function DemoPage({ searchParams }: PageProps<"/demo">) {
 
 async function DemoError({ searchParams }: { searchParams: PageProps<"/demo">["searchParams"] }) {
   const sp = await searchParams;
+  // già dentro una demo: si torna lì invece di crearne un'altra
+  const user = await getUser().catch(() => null);
+  if (user && (await isDemoUser(user.id))) redirect("/pro");
   const e = typeof sp.errore === "string" ? sp.errore : null;
   return e ? <p className="mt-3 rounded-xl bg-red-500/15 p-3 text-sm text-red-100">{e}</p> : null;
 }
