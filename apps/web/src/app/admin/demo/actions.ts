@@ -31,7 +31,7 @@ export async function demoPhotoJobs() {
   await requireStaff();
   const db = serviceDb();
   const { data: ls } = await db.from("listings").select("id, slug, title, listing_media(sort), organizations!inner(is_demo)")
-    .eq("organizations.is_demo", true).eq("demo_keep", true).order("created_at");
+    .eq("organizations.is_demo", true).is("organizations.demo_clone_of", null).eq("demo_keep", true).order("created_at");
   const jobs: { id: string; title: string; idx: number }[] = [];
   for (const l of (ls ?? []) as unknown as { id: string; slug: string; title: string; listing_media: { sort: number }[] }[]) {
     const have = new Set(l.listing_media.map((m) => m.sort));

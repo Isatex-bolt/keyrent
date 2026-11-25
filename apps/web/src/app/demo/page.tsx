@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { enterDemo } from "@/app/accedi/actions";
 import { SubmitOnce } from "@/components/SubmitOnce";
-import { DEMO_PASSWORD } from "@/lib/demo";
 
 export const metadata: Metadata = {
   title: "Prova KeyRent come noleggiatore",
@@ -34,10 +33,7 @@ export default function DemoPage({ searchParams }: PageProps<"/demo">) {
             </SubmitOnce>
           </form>
           <Suspense fallback={null}><DemoError searchParams={searchParams} /></Suspense>
-          <p className="mt-4 text-sm text-white/60">
-            Oppure accedi da <Link href="/accedi" className="font-semibold text-white underline">Accedi</Link> con
-            <span className="font-semibold text-white"> concessionario@keyrent.it</span> · password <span className="font-semibold text-white">{DEMO_PASSWORD}</span>
-          </p>
+          <p className="mt-4 text-sm text-white/60">La demo è solo tua: quello che provi non lo vede nessun altro. Dopo 24 ore si cancella da sola.</p>
           <p className="mt-2 text-sm text-white/60">
             Vuoi vedere cosa vedono i tuoi clienti? <Link href="/" className="font-semibold text-white underline">Apri il sito come cliente</Link>
           </p>

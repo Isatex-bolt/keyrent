@@ -88,7 +88,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
             </form>
           )}
           {l.status === "published" && <>
-            <Link href={listingHref({ id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>
+            <Link href={listingHref({ id: (l as { demo_source_id?: string | null }).demo_source_id ?? id, slug: l.slug })} className="btn-ghost" target="_blank">Vedi come cliente ↗</Link>
             <StateButton id={id} to="unpublished" label="Togli dalla ricerca" />
           </>}
           {l.status === "unpublished" && <StateButton id={id} to="published" label="Rimetti online" primary />}

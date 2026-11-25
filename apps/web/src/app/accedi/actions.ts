@@ -5,6 +5,7 @@ import { getMemberships } from "@/lib/auth";
 import { DEMO_EMAIL, DEMO_PASSWORD, isDemoUser } from "@/lib/demo";
 import { headers } from "next/headers";
 import { userDb } from "@/lib/supabase/server";
+import { serviceDb } from "@/lib/supabase/admin";
 import { completePendingOrg } from "@/lib/pendingOrg";
 
 function safeNext(v: FormDataEntryValue | null) {
@@ -133,10 +134,34 @@ export async function changePassword(formData: FormData) {
   redirect("/account/password?ok=1");
 }
 
-/** Link /demo: entra nell'account di prova del concessionario con un tocco. */
+/**
+ * Link /demo: ogni visitatore riceve una demo tutta sua (copia dell'attività dimostrativa con un utente nuovo),
+ * così chi prova nello stesso momento non vede le modifiche degli altri. Le copie si cancellano dopo 24 ore.
+ * Se la copia non si può creare (database non aggiornato, troppe demo attive) si entra nell'account demo condiviso.
+ */
 export async function enterDemo() {
   const db = await userDb();
   await db.auth.signOut();
+  const admin = serviceDb();
+  const { data: active } = await admin.rpc("svc_demo_clones_active");
+  if (typeof active === "number" && active < 300) {
+    const email = `demo-${crypto.randomUUID().slice(0, 12)}@prova.keyrent.it`;
+    const password = crypto.randomUUID() + crypto.randomUUID();
+    const { data: created, error: cErr } = await admin.auth.admin.createUser({
+      email, password, email_confirm: true,
+      user_metadata: { first_name: "Concessionario", last_name: "Demo", account_type: "provider" },
+    });
+    if (!cErr && created.user) {
+      const { error: kErr } = await admin.rpc("svc_demo_clone", { p_user: created.user.id });
+      if (!kErr) {
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (!error) redirect("/pro");
+      } else {
+        console.error("demo clone", kErr.message);
+        await admin.auth.admin.deleteUser(created.user.id);
+      }
+    }
+  }
   const { error } = await db.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   if (error) redirect(`/demo?errore=${encodeURIComponent("La demo non è disponibile in questo momento. Riprova tra poco.")}`);
   redirect("/pro");

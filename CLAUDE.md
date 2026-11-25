@@ -85,6 +85,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   after()) e cancellati dopo 24 h; noleggi finti pi_demo_ rigenerati ogni notte (private.demo_reset, chiamato dal cron /api/email/flush).
   Preparazione: supabase/demo/concessionario_setup.sql (cancella TUTTI gli annunci). Foto: /admin/demo → Carica foto (una per annuncio, fatte dall'utente con ChatGPT; sostituisce le precedenti).
   DemoBanner in /pro + DemoNudge (popup dopo 5 min o su ?demo=nonsalvato). demoStop(): nella demo attività/profili/azienda non si salvano → /pro?demo=nonsalvato. Accettare/rifiutare richieste finte non tocca Stripe (pi_demo_).
+- Demo personali (0027, 25/11): /demo → enterDemo crea un utente demo-xxx@prova.keyrent.it (auth admin) + private.demo_clone
+  (copia org/sedi/10 annunci con stesse foto/noleggi finti, organizations.demo_clone_of, listings.demo_source_id). Le copie non sono
+  nella vista public_listings; private.demo_cleanup le cancella dopo 24 h (dal cron via svc_demo_reset). Max 300 copie, poi account condiviso.
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

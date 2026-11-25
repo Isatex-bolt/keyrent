@@ -16,7 +16,8 @@ async function Demo() {
   const db = serviceDb();
   const { data: ls, error } = await db.from("listings")
     .select("id, title, status, listing_media(storage_path, sort), organizations!inner(is_demo)")
-    .eq("organizations.is_demo", true).eq("demo_keep", true).order("created_at");
+    .eq("organizations.is_demo", true).is("organizations.demo_clone_of", null).eq("demo_keep", true).order("created_at");
+  const { data: clones } = await db.rpc("svc_demo_clones_active");
   const { count: bookings } = await db.from("bookings").select("id", { count: "exact", head: true }).like("stripe_payment_intent_id", "pi_demo_%");
   const rows = (ls ?? []) as unknown as { id: string; title: string; status: string; listing_media: { storage_path: string; sort: number }[] }[];
   return (
@@ -24,8 +25,8 @@ async function Demo() {
       <ProHeader title="Account demo" subtitle="L'account di prova per i concessionari: link /demo, utente concessionario@keyrent.it." />
       {error && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Manca la migrazione 0025 nel database.</p>}
       <section className="card space-y-3 p-5">
-        <p className="text-sm">Link da mandare: <Link href="/demo" className="font-semibold text-teal-700">keyrent.it/demo</Link> · {rows.length} annunci di esempio · {bookings ?? 0} noleggi finti.</p>
-        <p className="text-sm text-mute">Ogni notte la demo torna com&apos;era: noleggi rigenerati rispetto alla data di oggi, annunci creati provando la demo cancellati dopo 24 ore.</p>
+        <p className="text-sm">Link da mandare: <Link href="/demo" className="font-semibold text-teal-700">keyrent.it/demo</Link> · {rows.length} annunci di esempio · {bookings ?? 0} noleggi finti · {typeof clones === "number" ? clones : 0} demo personali attive.</p>
+        <p className="text-sm text-mute">Ogni visitatore riceve una copia tutta sua (con le foto caricate qui), cancellata dopo 24 ore. Ogni notte la demo torna com&apos;era: noleggi rigenerati rispetto alla data di oggi, annunci creati provando la demo cancellati dopo 24 ore.</p>
         <p className="text-sm text-mute">Foto: per ogni mezzo premi <strong>Carica foto</strong> e scegli l&apos;immagine (anche dal telefono). La nuova sostituisce quelle che ci sono.</p>
         <DemoTools />
       </section>
