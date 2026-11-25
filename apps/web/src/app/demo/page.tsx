@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { enterDemo } from "@/app/accedi/actions";
 import { SubmitOnce } from "@/components/SubmitOnce";
@@ -19,7 +18,7 @@ const POINTS = [
 
 export default function DemoPage({ searchParams }: PageProps<"/demo">) {
   return (
-    <div className="bg-navy-950 text-white">
+    <div data-demo-focus className="min-h-[calc(100dvh-4rem)] bg-navy-950 text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:items-center">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-teal-300">Per noleggiatori e concessionari</p>
@@ -34,9 +33,6 @@ export default function DemoPage({ searchParams }: PageProps<"/demo">) {
           </form>
           <Suspense fallback={null}><DemoError searchParams={searchParams} /></Suspense>
           <p className="mt-4 text-sm text-white/60">La demo è solo tua: quello che provi non lo vede nessun altro. Dopo 24 ore si cancella da sola.</p>
-          <p className="mt-2 text-sm text-white/60">
-            Vuoi vedere cosa vedono i tuoi clienti? <Link href="/" className="font-semibold text-white underline">Apri il sito come cliente</Link>
-          </p>
         </div>
         <ul className="grid gap-3">
           {POINTS.map(([t, d], i) => (
