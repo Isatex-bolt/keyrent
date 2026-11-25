@@ -146,7 +146,7 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
                 <p className="text-lg font-bold leading-tight">{euro(total)} <span className="text-sm font-medium text-mute">totale</span></p>
                 <p className="truncate text-xs text-mute">{shortIt(dal)}{dal !== al ? ` → ${shortIt(al)}` : ""}{wants ? ` · consegna ${where}` : ""}</p>
               </div>
-              <Link href={href} className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-7 font-semibold text-white">Prenota</Link>
+              <Link href={href} className="btn-primary min-h-12 flex-none px-7">Prenota</Link>
             </>
           ) : (
             <>
@@ -154,7 +154,7 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
                 <p className="text-lg font-bold leading-tight">{fromPrice ? <>da {euro(fromPrice)} <span className="text-sm font-medium text-mute">/ giorno</span></> : "Prezzo su richiesta"}</p>
                 <p className="truncate text-xs text-mute">{deliveryPending && quote && !("error" in quote) ? "Indica dove consegnare" : "Nessun addebito finché il noleggiatore non conferma"}</p>
               </div>
-              <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">{dal && al ? "Completa" : "Scegli le date"}</a>
+              <a href="#prenota" className="btn-primary min-h-12 flex-none px-6">{dal && al ? "Completa" : "Scegli le date"}</a>
             </>
           )}
         </div>

@@ -8,7 +8,8 @@ import { euro, romeToIso, todayRome, formatDateIt, defaultTimes, fixTimes } from
 import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
-import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getOffers, quoteOrError } from "@/lib/data";
+import type { ProviderReviews } from "@/lib/data";
+import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getProviderReviews, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
 type Raw = Record<string, string | string[] | undefined>;
@@ -40,7 +41,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
   const pickup = dal ? romeToIso(dal, oraR) : null;
   const ret = al ? romeToIso(al, oraC) : null;
   const from = todayRome(), to = todayRome(62);
-  const [attrs, rules, quote, busy, delivery, offers, ctx, isDemo] = await Promise.all([
+  const [attrs, rules, quote, busy, delivery, offers, ctx, isDemo, reviews] = await Promise.all([
     attributesForCategory(l.category_slug),
     getCancellationRules(l.cancellation_policy_id),
     pickup && ret ? quoteOrError(id, pickup, ret) : Promise.resolve(null),
@@ -49,6 +50,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     getOffers([id]),
     getBookingContext().catch(() => null),
     getIsDemo(id),
+    getProviderReviews(id),
   ]);
   const forCompany = !!ctx?.current;
   const offer = offers.get(id) ?? null;
@@ -141,6 +143,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
             </section>
           )}
 
+          {reviews.items.length > 0 && <Reviews r={reviews} demo={isDemo} />}
+
           {/* dettagli: si aprono solo se interessano */}
           <div className="card divide-y divide-line overflow-hidden">
             {specs.length > 0 && (
@@ -191,16 +195,57 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
       {/* telefono, solo lungo termine: rata sempre visibile in basso (per il breve la barra è nel riquadro prenotazione) */}
       {(!shortTerm || (lungo && longTerm)) && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white shadow-[0_-6px_20px_rgba(3,16,38,0.10)] lg:hidden">
+          <div aria-hidden className="absolute inset-x-0 top-full h-40 bg-white" />
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
             <div className="min-w-0">
               <p className="text-lg font-bold leading-tight">{offer?.lt_from_cents ? <>da {euro(offer.lt_from_cents)} <span className="text-sm font-medium text-mute">/ mese</span></> : "Lungo termine"}</p>
               <p className="text-xs text-mute">Scegli durata e servizi</p>
             </div>
-            <a href="#prenota" className="flex min-h-12 flex-none items-center rounded-xl bg-navy-900 px-6 font-semibold text-white">Calcola la rata</a>
+            <a href="#prenota" className="btn-primary min-h-12 flex-none px-6">Calcola la rata</a>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+const avatarTones = ["bg-amber-400", "bg-navy-700", "bg-teal-600", "bg-rose-500", "bg-indigo-500"];
+
+/** Cosa dicono i clienti del noleggiatore (stile Booking): voto medio e ultimi commenti, scorrevoli su telefono. */
+function Reviews({ r, demo }: { r: ProviderReviews; demo: boolean }) {
+  const avg = r.avg != null ? Number(r.avg) : null;
+  const label = avg == null ? "" : avg >= 4.7 ? "Eccellente" : avg >= 4.3 ? "Ottimo" : avg >= 3.8 ? "Buono" : "Nella media";
+  return (
+    <section>
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="text-lg font-semibold">I clienti di questo noleggiatore dicono</h2>
+        {avg != null && (
+          <p className="flex items-center gap-2 text-sm">
+            <span className="rounded-lg bg-navy-900 px-2 py-1 font-bold text-white">{avg.toLocaleString("it-IT", { minimumFractionDigits: 1 })}</span>
+            <span className="font-semibold">{label}</span>
+            <span className="text-mute">· {r.count} {r.count === 1 ? "recensione" : "recensioni"}</span>
+          </p>
+        )}
+      </div>
+      {demo && <p className="mb-3 text-xs text-mute">Recensioni di esempio, come appariranno sugli annunci reali.</p>}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
+        {r.items.map((x, i) => (
+          <figure key={i} className="card w-[85%] flex-none snap-start space-y-3 p-4 sm:w-auto">
+            <div className="flex items-center gap-3">
+              <span className={`grid h-10 w-10 flex-none place-items-center rounded-full font-semibold text-white ${avatarTones[x.author.charCodeAt(0) % avatarTones.length]}`}>
+                {x.author.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{x.author}</p>
+                <p className="truncate text-xs text-mute">{x.title} · {new Date(x.created_at).toLocaleDateString("it-IT", { month: "long", year: "numeric", timeZone: "Europe/Rome" })}</p>
+              </div>
+              <span className="ml-auto flex-none text-sm text-amber-500" aria-label={`${x.rating} su 5`}>{"★".repeat(x.rating)}<span className="text-line">{"★".repeat(5 - x.rating)}</span></span>
+            </div>
+            <blockquote className="leading-relaxed text-ink/90">&ldquo;{x.body}&rdquo;</blockquote>
+          </figure>
+        ))}
+      </div>
+    </section>
   );
 }
 

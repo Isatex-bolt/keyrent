@@ -58,9 +58,9 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
   const sub = [r.make_name, r.model_name].filter(Boolean).join(" · ");
   return (
     <Link href={href} className={`card group flex overflow-hidden transition hover:shadow-lg sm:block sm:hover:-translate-y-0.5 ${active ? "ring-2 ring-navy-900" : ""}`}>
-      <div className="relative w-[38%] flex-none bg-navy-50 sm:aspect-[4/3] sm:w-full">
+      <div className="relative min-h-36 w-[48%] flex-none bg-navy-50 sm:aspect-[4/3] sm:min-h-0 sm:w-full">
         {r.cover ? (
-          <Image src={r.cover} alt={r.title} fill sizes="(max-width: 640px) 40vw, 33vw" className="object-cover" />
+          <Image src={r.cover} alt={r.title} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
         ) : (
           <div className="grid h-full min-h-32 place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-10 w-10 sm:h-14 sm:w-14" /></div>
         )}
@@ -70,18 +70,18 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
           </span>
         )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1 p-3 sm:p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 p-3 text-[13px] sm:p-4 sm:text-sm">
         <p className="line-clamp-2 font-semibold leading-snug group-hover:text-navy-700 sm:line-clamp-1">{r.title}</p>
-        {sub && <p className="truncate text-sm text-mute">{sub}</p>}
-        <p className="flex items-center gap-1.5 text-sm text-ink">
+        {sub && <p className="hidden truncate text-sm text-mute sm:block">{sub}</p>}
+        <p className="flex items-center gap-1.5 text-ink">
           <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none text-mute" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
           <span className="truncate">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</span>
         </p>
-        <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+        <p className="flex items-center gap-1.5 font-medium text-emerald-700">
           <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12l5 5L20 7" /></svg>
-          Nessun addebito fino alla conferma
+          Paghi solo se confermato
         </p>
-        <p className="mt-auto pt-2 text-right text-sm sm:text-left"><Price r={r} /></p>
+        <p className="mt-auto pt-1 text-right sm:text-left"><Price r={r} /></p>
       </div>
     </Link>
   );

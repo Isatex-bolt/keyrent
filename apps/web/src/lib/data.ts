@@ -239,3 +239,11 @@ export async function getOffers(ids: string[]): Promise<Map<string, Offer>> {
   if (error || !Array.isArray(data)) return new Map();
   return new Map((data as Offer[]).map((o) => [o.listing_id, o]));
 }
+
+export type ProviderReviews = { count: number; avg: number | null; items: { rating: number; body: string; created_at: string; title: string; author: string }[] };
+/** Recensioni dei clienti sul noleggiatore (su tutti i suoi annunci pubblici); il noleggiatore resta anonimo. */
+export async function getProviderReviews(id: string): Promise<ProviderReviews> {
+  const { data, error } = await publicDb().rpc("provider_reviews", { p_listing: id, p_limit: 6 });
+  if (error || !data) return { count: 0, avg: null, items: [] };
+  return data as ProviderReviews;
+}

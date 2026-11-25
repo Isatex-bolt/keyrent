@@ -45,14 +45,18 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
     if (!el) return;
     const measure = () => setTop0(Math.round(el.getBoundingClientRect().top + window.scrollY));
     measure();
+    const mapEl = el.firstElementChild as HTMLElement | null;
     const onScroll = () => {
-      const mapH = window.innerHeight - top0 - 64;
+      const mapH = mapEl?.offsetHeight ?? window.innerHeight - top0 - 64;
       setCovered(window.scrollY > mapH * PEEK + 40);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", measure);
-    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", measure); };
+    // solo cambi di larghezza (rotazione): l'altezza cambia di continuo con la barra di Safari e farebbe saltare la pagina
+    let w = window.innerWidth;
+    const onResize = () => { if (window.innerWidth !== w) { w = window.innerWidth; measure(); } };
+    window.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); };
   }, [top0]);
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -98,9 +102,9 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
 
   return (
     <div ref={boxRef} data-results-map style={{ "--top": `${top0}px` } as React.CSSProperties}
-      className="relative max-lg:overflow-clip [--maph:calc(100dvh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
+      className="relative max-lg:overflow-clip [--maph:calc(100svh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
       {/* mappa: ferma dietro l'elenco su telefono, colonna fissa a destra su computer */}
-      <div className="sticky top-[var(--top)] z-0 mb-[calc(var(--maph)*-1)] h-[var(--maph)] lg:top-16 lg:order-2 lg:mb-0 lg:h-[calc(100dvh-4rem)]">
+      <div className="sticky top-[var(--top)] z-0 mb-[calc(var(--maph)*-1)] h-[var(--maph)] lg:top-16 lg:order-2 lg:mb-0 lg:h-[calc(100svh-4rem)]">
         <ResultsMap pins={pins} hovered={hovered} selected={selected} onHover={setHovered}
           onSelect={(id) => { setSelected(id); if (id && !isDesktop()) showMap(); }}
           center={center} bbox={bbox} onSearchArea={searchArea} />
@@ -114,7 +118,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
       {/* elenco: su telefono parte sotto la mappa e sale scorrendo la pagina */}
       <div className="relative z-10 mt-[calc(var(--maph)*0.55)] rounded-t-3xl bg-canvas shadow-[0_-8px_30px_rgba(1,25,56,0.15)]
         lg:order-1 lg:mt-0 lg:min-h-0 lg:rounded-none lg:shadow-none">
-        <button type="button" aria-label="Scorri l'elenco" onClick={() => window.scrollTo({ top: (window.innerHeight - top0 - 64) * PEEK, behavior: "smooth" })}
+        <button type="button" aria-label="Scorri l'elenco" onClick={() => window.scrollTo({ top: ((boxRef.current?.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0) * PEEK, behavior: "smooth" })}
           className="flex w-full justify-center py-3 lg:hidden">
           <span className="h-1.5 w-10 rounded-full bg-navy-900/20" />
         </button>

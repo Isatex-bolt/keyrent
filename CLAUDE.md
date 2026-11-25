@@ -90,6 +90,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   nella vista public_listings; private.demo_cleanup le cancella dopo 24 h (dal cron via svc_demo_reset). Max 300 copie, poi account condiviso.
   Cookie kr_demo (enterDemo): proxy.ts rimanda registrati/account/prenota/diventa-partner/… a /pro e /accedi a /demo; DemoBar su tutto
   il sito ("Demo · Torna alla tua area"), DemoNudge dopo 3 min e poi ogni 5; /esci e la registrazione tolgono il cookie.
+- 25/11 sera: 0029 public.provider_reviews (recensioni clienti sul noleggiatore, anonimo, in scheda mezzo; sui demo "di esempio"),
+  risultati su telefono a schede orizzontali (ListingCard row), pulsanti prenota tutti turchesi (btn-primary), barre fisse in basso
+  con fondo bianco fino al bordo, mappa /cerca alta 100svh (niente rimbalzi con la barra di Safari).
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
