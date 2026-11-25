@@ -36,7 +36,7 @@ begin
   if u is null then
     raise exception 'Manca l''utente concessionario@keyrent.it: crealo da Authentication → Users → Add user → Create new user (spunta Auto Confirm User).';
   end if;
-  update profiles set first_name = 'Marco', last_name = 'Demo', phone = '+39 000 0000000' where id = u;
+  update profiles set first_name = 'Concessionario', last_name = 'Demo', phone = '+39 000 0000000' where id = u;
 
   insert into organizations (id, kind, legal_name, trade_name, vat_number, verification_status, stripe_onboarding_status,
                              business_email, legal_address, inventory_source_id, response_window_minutes, created_by, is_demo)
