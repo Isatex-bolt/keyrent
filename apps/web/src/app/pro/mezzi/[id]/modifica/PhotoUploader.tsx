@@ -26,7 +26,8 @@ export function PhotoUploader({ listingId, indicative = false, label = "+ Aggiun
         const { path, token } = await createUploadUrl(listingId, file.name);
         const { error: upErr } = await storage.from("listings").uploadToSignedUrl(path, token, file, { contentType: file.type });
         if (upErr) throw upErr;
-        await registerMedia(listingId, path, indicative);
+        const reg = await registerMedia(listingId, path, indicative);
+        if ("error" in reg) throw new Error(reg.error);
       } catch (e) {
         setError(`${picked.name}: caricamento non riuscito (${errorText(e)}).`);
         console.error(e);

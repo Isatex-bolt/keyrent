@@ -290,8 +290,13 @@ export async function registerMedia(listingId: string, path: string, indicative 
   const db = await userDb();
   const { count } = await db.from("listing_media").select("id", { count: "exact", head: true }).eq("listing_id", listingId);
   const { error } = await db.from("listing_media").insert({ listing_id: listingId, storage_path: path, sort: count ?? 0, ...(indicative ? { is_indicative: true } : {}) });
-  if (error) throw new Error(dbMessage(error.message));
+  if (error) {
+    // il file era già salito: non lasciarlo orfano su Storage
+    await serviceDb().storage.from("listings").remove([path]);
+    return { error: dbMessage(error.message) };   // restituito, non lanciato: in produzione un errore lanciato diventa illeggibile
+  }
   revalidatePath(`/pro/mezzi/${listingId}/modifica`);
+  return { ok: true as const };
 }
 
 export async function deleteMedia(f: FormData) {
@@ -399,7 +404,8 @@ export async function generateListingPhoto(listingId: string, input: { color: st
     const path = `${listingId}/ai-${crypto.randomUUID()}.${ext}`;
     const { error: up } = await serviceDb().storage.from("listings").upload(path, img.bytes, { contentType: img.type });
     if (up) throw new Error(up.message);
-    await registerMedia(listingId, path, true);
+    const reg = await registerMedia(listingId, path, true);
+    if ("error" in reg) return { error: reg.error };
     return { ok: true };
   } catch (e) {
     console.error(e);

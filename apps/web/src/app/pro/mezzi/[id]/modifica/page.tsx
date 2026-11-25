@@ -64,6 +64,12 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
         <Badge map={listingStatus} value={l.status} />
       </div>
       <Flash sp={sp} ok={OK} />
+      {(l as { demo_keep?: boolean }).demo_keep && (
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Annuncio di esempio dell&apos;account di prova:</strong> puoi guardare tutto, ma foto e dati non si modificano.
+          Per provare il percorso completo crea un annuncio nuovo da <Link href="/pro/mezzi/nuovo" className="font-semibold underline">Aggiungi mezzo</Link>.
+        </p>
+      )}
       {sp.nuovo && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm">Bozza creata. Ora aggiungi almeno una foto (meglio 3 o più), poi clicca <strong>Invia per approvazione</strong>.</p>}
       {lastReview && l.status !== "published" && (
         <div className="rounded-xl bg-orange-50 px-4 py-3 text-sm text-orange-900">
@@ -96,7 +102,7 @@ async function Scheda({ params, searchParams }: { params: Promise<{ id: string }
       {/* Foto */}
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-semibold">Foto <span className="text-sm font-normal text-mute">({media?.length ?? 0}, minimo 4)</span></h2>
+          <h2 className="font-semibold">Foto <span className="text-sm font-normal text-mute">({media?.length ?? 0}, almeno 1)</span></h2>
           {edit && <PhotoUploader listingId={id} />}
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
