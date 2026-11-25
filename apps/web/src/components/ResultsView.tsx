@@ -86,7 +86,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
           {items.map((r) => (
             <div key={r.id} data-id={r.id} onMouseEnter={() => setHovered(r.id)} onMouseLeave={() => setHovered(null)}>
-              <ListingCard r={r} href={r.href} active={r.id === selected} />
+              <ListingCard r={r} href={r.href} active={r.id === selected} row />
             </div>
           ))}
         </div>
