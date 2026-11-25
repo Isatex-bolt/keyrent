@@ -23,7 +23,8 @@ const PEEK = 0.55; // su telefono l'elenco parte dal 55% della mappa; scorrendo 
 /**
  * Risultati: lista + mappa sincronizzate. Desktop: lista a sinistra, mappa fissa a destra.
  * Telefono: mappa ferma dietro, l'elenco scorre con la pagina e sale sopra la mappa (un solo gesto, una mano).
- * Tornando in cima ricompare la mappa. Pulsante "Apri mappa" fisso in alto quando l'elenco la copre.
+ * Tornando in cima ricompare la mappa. Finiti i mezzi la pagina si ferma: sotto l'ultimo non si vede la mappa
+ * (overflow-clip: la mappa resta dentro il riquadro dei risultati, senza rompere lo sticky). Pulsante "Apri mappa" fisso in alto quando l'elenco la copre.
  * Senza token Mapbox: solo lista.
  */
 export function ResultsView({ items, top, center, bbox, hasMap }: {
@@ -97,7 +98,7 @@ export function ResultsView({ items, top, center, bbox, hasMap }: {
 
   return (
     <div ref={boxRef} data-results-map style={{ "--top": `${top0}px` } as React.CSSProperties}
-      className="relative [--maph:calc(100dvh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
+      className="relative max-lg:overflow-clip [--maph:calc(100dvh-var(--top)-64px-env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_44%]">
       {/* mappa: ferma dietro l'elenco su telefono, colonna fissa a destra su computer */}
       <div className="sticky top-[var(--top)] z-0 mb-[calc(var(--maph)*-1)] h-[var(--maph)] lg:top-16 lg:order-2 lg:mb-0 lg:h-[calc(100dvh-4rem)]">
         <ResultsMap pins={pins} hovered={hovered} selected={selected} onHover={setHovered}
