@@ -17,10 +17,10 @@ export default function Home() {
       <Suspense><HomeStatus /></Suspense>
       {/* in alto, stile Booking: menu categorie scorrevole + ricerca compatta */}
       <section className="bg-navy-900">
-        <div className="mx-auto max-w-6xl px-4 pb-7 pt-4 sm:px-6 sm:pb-10 sm:pt-8">
+        <div className="mx-auto max-w-6xl px-4 pb-4 pt-3 sm:px-6 sm:pb-10 sm:pt-8">
           <h1 className="sr-only">KeyRent: noleggia auto, moto, bici, camper, barche e furgoni</h1>
           <div id="cerca" className="scroll-mt-24"><HomeSearch /></div>
-          <p className="mt-4 text-sm text-white/60">Solo noleggiatori professionali verificati · prezzo chiaro · pagamento protetto</p>
+          <p className="mt-4 hidden text-sm text-white/60 sm:block">Solo noleggiatori professionali verificati · prezzo chiaro · pagamento protetto</p>
         </div>
       </section>
 
@@ -100,9 +100,9 @@ function RowSkeleton() {
 async function Ideas() {
   const items = isSupabaseConfigured() ? await getCollections().catch(() => []) : [];
   return (
-    <section className="mx-auto max-w-6xl px-4 pt-8 sm:px-6 sm:pt-12">
+    <section className="mx-auto max-w-6xl px-4 pt-5 sm:px-6 sm:pt-12">
       <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Cosa ti serve oggi?</h2>
-      <div className="mt-4"><NeedsRow items={items} /></div>
+      <div className="mt-3 sm:mt-4"><NeedsRow items={items} /></div>
     </section>
   );
 }

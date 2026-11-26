@@ -46,16 +46,16 @@ export function HomeSearch() {
   const [longFrom, setLongFrom] = useState("");
   // eslint-disable-next-line react-hooks/set-state-in-effect -- date di oggi solo nel browser (fuso di Roma)
   useEffect(() => { setToday(addDays(0)); setLongFrom(addDays(7)); }, []);
-  const row = "flex min-h-14 items-center gap-3 px-4";
-  const bare = "w-full bg-transparent py-3 text-[16px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-mute/70";
+  const row = "flex min-h-12 items-center gap-3 px-4 sm:min-h-14";
+  const bare = "w-full bg-transparent py-2.5 text-[16px] sm:py-3 font-medium text-ink outline-none placeholder:font-normal placeholder:text-mute/70";
 
   return (
     <div>
       {/* menu scorrevole delle categorie */}
-      <div role="tablist" aria-label="Cosa vuoi noleggiare" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0">
+      <div role="tablist" aria-label="Cosa vuoi noleggiare" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0 sm:pb-4">
         {PILLS.map((p) => (
           <button key={p.key || "all"} type="button" role="tab" aria-selected={pill === p.key} onClick={() => setPill(p.key)}
-            className={`flex-none rounded-full border px-4 py-2 text-sm font-semibold transition ${
+            className={`flex-none rounded-full border px-4 py-1.5 text-sm sm:py-2 font-semibold transition ${
               pill === p.key ? (p.key === "select" ? "border-amber-300 bg-white/15 text-amber-300" : "border-white bg-white/15 text-white") : p.key === "select" ? "border-transparent text-amber-300 hover:bg-white/10" : "border-transparent text-white/80 hover:bg-white/10"}`}>
             {p.label}
           </button>
@@ -84,24 +84,24 @@ export function HomeSearch() {
             <div className={`${row} border-b border-line lg:flex-1 lg:border-b-0 lg:border-r`}>
               <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Quando</span>
               <div className="min-w-0 flex-1">
-                <DateRange dal={dates.dal} al={dates.al} min={today} onChange={(v) => { setQuick(null); setDates(v); }} />
+                <DateRange dal={dates.dal} al={dates.al} min={today} onChange={(v) => { setQuick(null); setDates(v); }} className="!py-2.5 sm:!py-3" />
               </div>
             </div>
           )}
-          <div className="p-2 lg:flex lg:items-center">
-            <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy-900 px-8 text-base font-semibold text-white transition hover:bg-navy-800 lg:w-auto">Cerca</button>
+          <div className="p-1.5 sm:p-2 lg:flex lg:items-center">
+            <button type="submit" className="flex min-h-11 w-full items-center justify-center rounded-xl bg-navy-900 sm:min-h-12 px-8 text-base font-semibold text-white transition hover:bg-navy-800 lg:w-auto">Cerca</button>
           </div>
         </div>
       </form>
 
       {/* scorciatoie */}
       {!lungo && (
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:mt-3 sm:px-0">
           {(["oggi", "domani", "weekend"] as const).map((k) => {
             const on = quick === k;
             return (
               <button key={k} type="button" onClick={() => { setQuick(k); setDates(shortcut(k)); }} aria-pressed={on}
-                className={`flex-none rounded-full px-4 py-2 text-sm font-semibold transition ${on ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                className={`flex-none rounded-full px-4 py-1.5 text-sm font-semibold transition sm:py-2 ${on ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
                 {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : "Questo weekend"}
               </button>
             );
