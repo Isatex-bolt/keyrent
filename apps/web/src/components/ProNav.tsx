@@ -18,6 +18,7 @@ const NAV: NavSection[] = [
     { label: "Calendario", href: "/pro/calendario" },
     { label: "Richieste", href: "/pro/richieste", badge: "requests" },
     { label: "Prenotazioni", href: "/pro/prenotazioni", badge: "provider_bookings" },
+    { label: "Richieste lungo termine", href: "/pro/lungo-termine" },
     { label: "Messaggi", href: "/pro/messaggi", badge: "messages" },
   ] },
   { section: "Flotta", items: [

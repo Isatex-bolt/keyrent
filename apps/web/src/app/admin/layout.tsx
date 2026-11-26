@@ -9,6 +9,7 @@ const ADMIN: NavSection[] = [
     { label: "Dashboard", href: "/admin", exact: true },
     { label: "Messaggi", href: "/admin/messaggi", badge: "admin_support" },
     { label: "Revisione annunci", href: "/admin/revisione", badge: "admin_reviews" },
+    { label: "Contatti lungo termine", href: "/admin/lungo-termine" },
   ] },
   { section: "Clienti", items: [
     { label: "Anagrafiche", href: "/admin/anagrafiche", badge: "admin_orgs" },

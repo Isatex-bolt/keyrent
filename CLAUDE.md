@@ -112,6 +112,12 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   matchKeyword: parole comuni (auto, gommone, autista→ncc, jet, lungo termine…) poi modelli e marche del catalogo; redirect con
   cat/marca/modello/select/lungo (Ferrari → Select). Nessuna corrispondenza → nonfound + avviso. Chip "Lungo termine" accanto a Oggi/Domani.
   Nei risultati il campo "Cosa" è la stessa parola libera (q), precompilato con kw (parola cercata) o marca/categoria.
+- LUNGO TERMINE A CONTATTO (0033, 26/11, decisione utente): niente pagamento su KeyRent per il lungo termine; il cliente invia
+  una richiesta (/lungo-termine/[id]: durata, km, servizi, privato/azienda, telefono) → public.lt_requests, rata ricalcolata da
+  private.lt_monthly_cents, fee = 5% della prima rata; stesso cliente+mezzo entro 30 gg = un solo contatto. Il noleggiatore vede subito
+  i contatti in /pro/lungo-termine (contattato/chiusa, "segnala non valida" entro 7 gg); staff /admin/lungo-termine: decide le
+  segnalazioni e riepilogo mensile per noleggiatore da fatturare. Email lt_request. Demo: richieste d'esempio statiche. Chiuso in pre-lancio.
+  Breve termine: resta la commissione sul pagato. Documenti NLT (bilanci, buste paga…) li gestisce il noleggiatore fuori da KeyRent.
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).

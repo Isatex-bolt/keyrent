@@ -71,6 +71,13 @@ function compose(type: string, p: Payload, side: "provider" | "customer"): Mail 
         intro: side === "provider" ? "Un cliente ti ha scritto. Rispondere in fretta aumenta le prenotazioni." : "Il noleggiatore ti ha risposto.",
         cta: { label: "Leggi e rispondi", href: `${SITE}/${side === "provider" ? "pro/messaggi" : "messaggi"}/${p.conversation_id}` },
       };
+    case "lt_request":
+      return {
+        subject: `Nuova richiesta di lungo termine: ${p.title ?? ""}`.trim(),
+        title: "Un cliente vuole un noleggio a lungo termine",
+        intro: "Hai ricevuto una richiesta di preventivo con durata, km e servizi scelti. Trovi nome, telefono ed email del cliente nella tua area: contattalo presto, chi risponde per primo chiude il contratto.",
+        cta: { label: "Vedi la richiesta", href: `${SITE}/pro/lungo-termine` },
+      };
     case "support_to_staff":
       return {
         subject: `Nuovo messaggio al team: ${p.subject ?? ""}`.trim(),
