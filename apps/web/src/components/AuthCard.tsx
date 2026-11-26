@@ -1,4 +1,6 @@
-export function AuthCard({ title, subtitle, children, wide = false }: { title: string; subtitle?: string; children: React.ReactNode; wide?: boolean }) {
+import Link from "next/link";
+
+export function AuthCard({ title, subtitle, children, wide = false, backHome = false }: { title: string; subtitle?: string; children: React.ReactNode; wide?: boolean; backHome?: boolean }) {
   return (
     <div className={`mx-auto ${wide ? "max-w-2xl" : "max-w-md"} px-4 py-12 sm:py-16`}>
       <div className="card p-6 sm:p-8">
@@ -6,6 +8,11 @@ export function AuthCard({ title, subtitle, children, wide = false }: { title: s
         {subtitle && <p className="mt-1 text-sm text-mute">{subtitle}</p>}
         <div className="mt-6">{children}</div>
       </div>
+      {backHome && (
+        <p className="mt-5 text-center">
+          <Link href="/" className="text-sm font-medium text-mute hover:text-navy-900 hover:underline">← Torna al sito</Link>
+        </p>
+      )}
     </div>
   );
 }

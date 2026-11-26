@@ -18,7 +18,7 @@ async function LoginForm({ searchParams }: { searchParams: Promise<Record<string
   const email = typeof sp.email === "string" ? sp.email : "";
   const esistente = sp.esistente === "1" && email;
   return (
-    <AuthCard title="Accedi al tuo account KeyRent" subtitle="Un solo accesso per clienti e noleggiatori.">
+    <AuthCard backHome title="Accedi al tuo account KeyRent" subtitle="Un solo accesso per clienti e noleggiatori.">
       <FormNotice message={typeof sp.ok === "string" ? sp.ok : undefined} />
       <FormError message={errore} />
       {esistente && (

@@ -81,7 +81,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   if (v.loggedIn) {
     if (v.provider) {
       return (
-        <AuthCard title="La tua azienda è già registrata"
+        <AuthCard backHome title="La tua azienda è già registrata"
           subtitle={`${v.orgName ? `${v.orgName} è` : "La tua attività è"} già su KeyRent con questo account.`}>
           <Link href="/pro" className="btn-primary w-full py-3.5 text-base">Vai all&apos;area noleggiatore</Link>
           <p className="mt-4 text-center text-sm text-mute">Vuoi un altro account? Prima <Link href="/esci" className="font-semibold text-teal-600">esci</Link>.</p>
@@ -89,7 +89,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
       );
     }
     return (
-      <AuthCard title="Hai già un account KeyRent" subtitle={tipo === "noleggiatore"
+      <AuthCard backHome title="Hai già un account KeyRent" subtitle={tipo === "noleggiatore"
         ? "Puoi aggiungere la tua attività al tuo account, senza una nuova registrazione."
         : "Sei già dentro: puoi cercare e prenotare subito."}>
         <Link href={tipo === "noleggiatore" ? "/pro" : "/"} className="btn-primary w-full py-3.5 text-base">
@@ -108,7 +108,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   // 1 · cosa vuoi fare
   if (!tipo) {
     return (
-      <AuthCard wide title="Cosa vuoi fare su KeyRent?" subtitle="Un solo account: potrai fare anche l'altra cosa in seguito.">
+      <AuthCard backHome wide title="Cosa vuoi fare su KeyRent?" subtitle="Un solo account: potrai fare anche l'altra cosa in seguito.">
         <FormError message={errore} />
         <Choices items={[
           { href: `/registrati?tipo=cliente${n}`, icon: "🔑", title: "Voglio noleggiare", text: "Cerca e prenota auto, moto, bici, camper, barche, furgoni e altri mezzi." },
@@ -122,7 +122,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   // 2a · cliente: privato o azienda
   if (tipo === "cliente" && !come) {
     return (
-      <AuthCard wide title="Come vuoi utilizzare KeyRent?" subtitle="Così ti chiediamo solo i dati che servono.">
+      <AuthCard backHome wide title="Come vuoi utilizzare KeyRent?" subtitle="Così ti chiediamo solo i dati che servono.">
         <Back href={`/registrati${next ? `?next=${encodeURIComponent(next)}` : ""}`} />
         <Choices items={[
           { href: `/registrati?tipo=cliente&come=privato${n}`, icon: "🙋", title: "Privato", text: "Noleggio per me, per una vacanza o un'uscita." },
@@ -136,7 +136,7 @@ async function SignUp({ searchParams }: { searchParams: Promise<Record<string, s
   // 3 · i moduli
   const pro = tipo === "noleggiatore";
   return (
-    <AuthCard wide={pro || come === "azienda"}
+    <AuthCard backHome wide={pro || come === "azienda"}
       title={pro ? "Registra la tua attività" : come === "azienda" ? "Account aziendale" : "Account privato"}
       subtitle={pro
         ? "Per noleggiatori professionali con P.IVA. Verifichiamo i dati prima di pubblicare i tuoi mezzi."
