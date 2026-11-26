@@ -11,8 +11,7 @@ import { cookies } from "next/headers";
 import { dbMessage } from "@/lib/status";
 import { findPlace } from "@/lib/places";
 import { PROVINCE } from "@/lib/province";
-import { captureIntent } from "@/lib/stripe";
-import { releaseHold } from "@/lib/payments";
+import { releaseHold, settleCapture } from "@/lib/payments";
 import { ensureCatalogEntry } from "@/lib/catalogSync";
 import { contactsError, contactsIn, deliveryOf, listingPayload } from "@/lib/listingForm";
 import { longTermOf } from "@/lib/longTerm";
@@ -341,30 +340,24 @@ export async function respondBooking(f: FormData) {
   // con pagamento: verifica → addebito sulla carta → conferma (cliente e noleggiatore avvisati)
   const { data: pi, error } = await db.rpc("svc_accept_paid_booking", { p_booking: id, p_actor: ctx.user.id });
   if (error || !pi) fail("/pro/richieste", bookingError(error?.message ?? ""));
-  let captured: { id: string; amount_received: number; status: string } | null = null;
   if (String(pi).startsWith("pi_demo_")) {
     // noleggio finto dell'account di prova: nessuna carta vera da addebitare
     const { data: t } = await db.from("bookings").select("total_cents").eq("id", id).maybeSingle();
-    captured = { id: String(pi), amount_received: t?.total_cents ?? 0, status: "succeeded" };
+    const { error: cErr } = await db.rpc("svc_confirm_paid_booking", {
+      p_booking: id, p_actor: ctx.user.id, p_pi: String(pi), p_captured: t?.total_cents ?? 0,
+    });
+    if (cErr) fail("/pro/richieste", bookingError(cErr.message));
   } else {
-    try {
-      captured = await captureIntent(pi as string);
-    } catch (e) {
-      console.error("capture", id, e);
-    }
-  }
-  if (!captured || captured.status !== "succeeded") {
-    await db.rpc("svc_payment_failed", { p_booking: id });
-    await releaseHold(id);
+    const outcome = await settleCapture(id, String(pi), ctx.user.id, "first");
     revalidatePath("/pro/richieste");
-    fail("/pro/richieste", "Addebito non riuscito sulla carta del cliente: la prenotazione è stata annullata e il cliente avvisato.");
-  }
-  const { error: cErr } = await db.rpc("svc_confirm_paid_booking", {
-    p_booking: id, p_actor: ctx.user.id, p_pi: captured!.id, p_captured: captured!.amount_received,
-  });
-  if (cErr) {
-    console.error("confirm after capture", id, cErr.message);
-    fail("/pro/richieste", "Pagamento incassato ma conferma non registrata: avvisa l'assistenza KeyRent.");
+    revalidatePath("/pro/prenotazioni");
+    if (outcome === "failed") {
+      fail("/pro/richieste", "La carta del cliente ha rifiutato l'addebito: la prenotazione è stata annullata e il cliente avvisato.");
+    }
+    if (outcome === "pending") {
+      // esito non ancora certo: niente annullamento, il mezzo resta bloccato e il sistema verifica da solo su Stripe
+      redirect("/pro/prenotazioni?ok=" + encodeURIComponent("Pagamento in verifica: Stripe non ha ancora dato l'esito. Il mezzo resta bloccato e la prenotazione si conferma da sola appena arriva la risposta."));
+    }
   }
   revalidatePath("/pro/richieste");
   redirect("/pro/richieste?ok=confermata");

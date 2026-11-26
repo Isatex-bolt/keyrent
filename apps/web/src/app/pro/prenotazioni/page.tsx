@@ -47,6 +47,9 @@ async function Bookings({ searchParams }: { searchParams: Promise<Record<string,
     .select("id, code, status, pickup_at, return_at, total_cents, provider_net_cents, provider_response_due_at, driver, listings(title), locations(name)")
     .neq("status", "requested").eq("organization_id", membership.organization_id).order("pickup_at", { ascending: false }).limit(100);
   const rows = (data ?? []) as unknown as ProBooking[];
+  const { data: pend } = await db.from("bookings").select("id").eq("organization_id", membership.organization_id).not("capture_pending_since", "is", null);
+  const verifying = new Set((pend ?? []).map((x) => x.id as string));
+  for (const r of rows) r.verifying = verifying.has(r.id);
   // prenotazioni manuali (telefono / banco): future e degli ultimi 30 giorni
   const since = new Date(new Date().getTime() - 30 * 86400_000).toISOString();
   const { data: man } = await db.from("manual_bookings")

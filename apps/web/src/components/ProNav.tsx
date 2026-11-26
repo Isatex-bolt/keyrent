@@ -29,7 +29,7 @@ const NAV: NavSection[] = [
     { label: "La mia attività", href: "/pro/attivita" },
     { label: "Assistenza KeyRent", href: "/pro/assistenza", badge: "support" },
     { label: "Guida KeyRent", href: "/guida/noleggiatori" },
-    { label: "Pagamenti e incassi" }, { label: "Statistiche" }, { label: "Team" },
+    { label: "Pagamenti e incassi", href: "/pro/pagamenti" }, { label: "Statistiche" }, { label: "Team" },
   ] },
 ];
 

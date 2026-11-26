@@ -45,7 +45,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   /account = Il mio KeyRent, /account/noleggi (schede), /account/profilo, /account/dati, /account/azienda (+ /dati fatturazione).
   0018: organizations.kind 'provider'|'renter' (azienda cliente: prenota, non pubblica), bookings.billing_organization_id,
   contesto Personale/Azienda nel cookie kr_ctx; prenota: "Prenotazione per" e patente/età solo per mezzi a motore.
-- Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Manca: payout Connect, webhook.
+- Pagamenti carta (0017, Stripe test): blocco alla richiesta, addebito all'accettazione del noleggiatore. Affidabilità/payout/webhook: vedi 0036.
 - Guida KeyRent (23/11): /guida (scelta), /guida/noleggiare (6 slide), /guida/noleggiatori (10 slide), components/guide/*,
   checklist "Inizia con KeyRent" in /pro (ProChecklist, localStorage), Hint su /account/noleggi, footer a colonne, eventi lib/analytics.ts.
   Slide da aggiornare quando saranno live: Apple/Google Pay, versamenti automatici al noleggiatore.
@@ -129,6 +129,19 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   Modifica atomica (se conflitto resta l'originale). Nessun pagamento/commissione. UI: BookingSheet (giorno libero → "+ Prenotazione
   manuale", "Blocca giorno", "Manutenzione" via blockDays), /pro/prenotazioni/manuale/nuova e /[id], sezione in /pro/prenotazioni;
   fleet.ts le mostra con status "manual". Ricavi dashboard: solo KeyRent.
+- PAGAMENTI AFFIDABILI (0036, 26/11, da brief di revisione esterna): bookings.capture_pending_since = "addebito in corso"
+  (segnato prima di chiamare Stripe; le scadenze lo saltano, il mezzo resta bloccato). lib/payments settleCapture: esito
+  confirmed / failed (solo se Stripe dice canceled o requires_payment_method) / pending (timeout, 5xx, salvataggio fallito → UI
+  "Pagamento in verifica" per cliente e noleggiatore). lib/stripe StripeError.definitive. Recupero: recoverCaptures (verifica, poi
+  nuovo tentativo con chiave a finestre di 10 min), releaseStaleHolds (svc_holds_to_release). Webhook: svc_stripe_event_claim
+  process/done/busy, done solo dopo l'elaborazione, 500 se errore (Stripe riprova), eventi succeeded/canceled/refund.*/dispute/account.updated.
+  Rimborsi: refunds.stripe_status, svc_refund_update (succeeded/pending/failed, idempotente), processRefunds ritrova rimborsi già fatti
+  (metadata refund_row). Versamenti: /pro/pagamenti (Connect Express: connectStripe, account link, syncStripeAccount), svc_claim_due_payouts
+  (senza conto → on_hold CONTO_NON_COLLEGATO, riparte da solo a conto pronto), runPayouts (transfer con chiave transfer-{payout} +
+  ricerca per transfer_group, timeout = riprova, rifiuto = failed), svc_payouts_unstick. "Trasferito sul conto Stripe" ≠ bonifico in banca.
+  Lavori: lib/jobs runJobs, /api/jobs/tick (CRON_SECRET), anche dentro il cron giornaliero /api/email/flush. supabase/jobs/schedule.sql:
+  pg_cron ogni minuto svc_expire_all + ogni 5 min pg_net → tick (segreto nel Vault 'keyrent_cron_secret').
+  Test: tests/db/99m_payments_reliability.sql, tests/app/run.sh (Stripe e DB simulati, 13 casi).
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).

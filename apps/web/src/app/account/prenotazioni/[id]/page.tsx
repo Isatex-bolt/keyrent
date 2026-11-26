@@ -30,6 +30,8 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
     db.from("booking_events").select("to_status, created_at, reason").eq("booking_id", id).order("created_at"),
   ]);
   const { data: pay } = await db.from("bookings").select("payment_required, payment_ready").eq("id", id).maybeSingle();
+  const { data: pend } = await db.from("bookings").select("id").eq("id", id).not("capture_pending_since", "is", null).maybeSingle();
+  const verifying = !!pend;
   const b = rows?.[0];
   if (!b) notFound();
   await db.rpc("mark_booking_updates_seen", { p_booking: id, p_as: "customer" });
@@ -41,7 +43,7 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
         <Link href="/account" className="text-sm text-mute hover:text-navy-900">← Il mio account</Link>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-tight">{b.listing_title}</h1>
-          <Badge map={bookingStatus} value={b.status} />
+          <Badge map={bookingStatus} value={verifying ? "verifying" : b.status} />
         </div>
         <p className="text-sm text-mute">Prenotazione {b.code} · {b.city} ({b.province})</p>
       </div>
@@ -77,7 +79,14 @@ async function Detail({ params, searchParams }: { params: Promise<{ id: string }
         </section>
       )}
 
-      {b.status === "accepted" && (
+      {verifying && (
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm">
+          Il noleggiatore ha accettato e stiamo verificando l&apos;addebito con la banca. Le date restano bloccate per te:
+          ti avvisiamo appena è confermato. Non serve fare nulla e non verrà addebitato due volte.
+        </p>
+      )}
+
+      {b.status === "accepted" && !verifying && !pay?.payment_required && (
         <section className="card space-y-3 p-5">
           <h2 className="font-semibold">Conferma e paga</h2>
           <p className="text-sm">Il noleggiatore ha accettato. {b.customer_confirm_due_at ? `Hai tempo fino a ${fmtDateTime(b.customer_confirm_due_at)} per confermare.` : ""}</p>

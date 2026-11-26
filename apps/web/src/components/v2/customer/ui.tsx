@@ -14,6 +14,7 @@ export function relDay(iso: string) {
 export const STATUS: Record<string, { label: string; tone: string }> = {
   requested: { label: "In attesa di conferma", tone: "bg-amber-50 text-amber-800" },
   accepted: { label: "Disponibilità confermata", tone: "bg-teal-50 text-teal-700" },
+  verifying: { label: "Pagamento in verifica", tone: "bg-amber-50 text-amber-800" },
   confirmed: { label: "Confermata · da ritirare", tone: "bg-emerald-50 text-emerald-800" },
   picked_up: { label: "In corso", tone: "bg-navy-900 text-white" },
   completed: { label: "Conclusa", tone: "bg-slate-100 text-slate-600" },

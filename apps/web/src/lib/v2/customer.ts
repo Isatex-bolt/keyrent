@@ -24,7 +24,7 @@ const catName = (slug: string) => CATEGORIES.find((c) => c.slug === slug)?.name 
 
 export function bucketOf(status: string, pickupAt: string, returnAt: string, now = Date.now()): Bucket {
   if (["cancelled", "declined", "expired"].includes(status)) return "cancellati";
-  if (["requested", "accepted"].includes(status)) return "attesa";
+  if (["requested", "accepted", "verifying"].includes(status)) return "attesa";
   if (status === "completed" || Date.parse(returnAt) < now) return "completati";
   if (status === "picked_up" || Date.parse(pickupAt) <= now) return "attivi";
   return "futuri";
@@ -43,6 +43,8 @@ export async function loadCustomer(): Promise<CustomerData | null> {
     db.rpc("my_conversations", {}),
     db.from("bookings").select("id, billing_organization_id").eq("customer_id", user.id),
   ]);
+  const { data: pend } = await db.from("bookings").select("id").eq("customer_id", user.id).not("capture_pending_since", "is", null);
+  const verifying = new Set((pend ?? []).map((x) => x.id as string));
   const billTo = new Map(((billing.error ? [] : billing.data) ?? []).map((b) => [b.id as string, (b.billing_organization_id ?? null) as string | null]));
   const bookings = (rows ?? []) as { id: string; code: string; status: string; pickup_at: string; return_at: string; total_cents: number;
     provider_response_due_at: string | null; listing_id: string; listing_title: string; category_slug: string; city: string; province: string }[];
@@ -58,7 +60,7 @@ export async function loadCustomer(): Promise<CustomerData | null> {
     businessId: cur?.id ?? null, orgs: ctx.orgs,
     context: cur ? "azienda" : "personale",
     rentals: bookings.map((b) => ({
-      id: b.id, code: b.code, status: b.status, pickupAt: b.pickup_at, returnAt: b.return_at, totalCents: b.total_cents,
+      id: b.id, code: b.code, status: verifying.has(b.id) ? "verifying" : b.status, pickupAt: b.pickup_at, returnAt: b.return_at, totalCents: b.total_cents,
       title: b.listing_title, category: catName(b.category_slug), city: b.city, province: b.province, cover: cov.get(b.listing_id)?.url ?? null,
       dueAt: b.provider_response_due_at, bucket: bucketOf(b.status, b.pickup_at, b.return_at),
       forBusiness: !!billTo.get(b.id), billTo: billTo.get(b.id) ?? null,
