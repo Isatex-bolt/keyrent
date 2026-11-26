@@ -8,7 +8,7 @@ import { CATEGORIES, isSelectCategory } from "@/lib/catalog";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
-  ora_ritiro?: string; ora_riconsegna?: string; mesi?: string; select?: string;
+  ora_ritiro?: string; ora_riconsegna?: string; mesi?: string; select?: string; cosa?: string;
 };
 
 function ymd(d: Date) {
@@ -123,8 +123,10 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
       {values.ora_ritiro && <input type="hidden" name="ora_ritiro" value={values.ora_ritiro} />}
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}
       <div>
-        <label htmlFor="s-cat" className="label">Cosa</label>
-        <CategoryPicker id="s-cat" defaultValue={values.cat ?? ""} allLabel="Tutto" />
+        <label htmlFor="s-cosa" className="label">Cosa</label>
+        {/* parola libera come in home: la interpreta /cerca (Ferrari → Select, gommone → barche…); vuoto = tutto */}
+        <input id="s-cosa" name="q" type="search" enterKeyHint="search" autoComplete="off" defaultValue={values.cosa ?? ""}
+          placeholder="Es. Ferrari, gommone, furgone…" className="field" />
       </div>
       <div className="flex items-end">
         <button type="submit" className="btn-primary w-full">Cerca</button>

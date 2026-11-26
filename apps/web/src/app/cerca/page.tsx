@@ -48,13 +48,14 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   // "Cosa cerchi?" della home: la parola diventa categoria / marca / modello / Select / lungo termine
   if (sp.q !== undefined) {
     const m = await matchKeyword(sp.q);
-    const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["q", "cat", "marca", "modello", "select", "nonfound"].includes(k)) as [string, string][]);
+    const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["q", "kw", "cat", "marca", "modello", "select", "nonfound"].includes(k)) as [string, string][]);
     if (m?.cat) q.set("cat", m.cat);
     if (m?.marca) q.set("marca", m.marca);
     if (m?.modello) q.set("modello", m.modello);
     if (m?.select) q.set("select", "1");
     if (m?.lungo && !q.get("lungo")) { q.set("lungo", "1"); q.delete("al"); }
     if (!m && sp.q.trim()) q.set("nonfound", sp.q.trim().slice(0, 40));
+    if (m && sp.q.trim()) q.set("kw", sp.q.trim().slice(0, 40)); // la parola resta visibile nel campo "Cosa"
     redirect(`/cerca?${q.toString()}`);
   }
   if (sp.nonfound) notes.push(`Non abbiamo trovato «${sp.nonfound}»: ecco tutti i mezzi disponibili. Prova con una marca, un modello o un tipo di mezzo.`);
@@ -130,7 +131,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? (select ? "Mezzi esclusivi" : "Mezzi");
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
-  const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, categoryName(cat)].filter(Boolean).join(" · ");
+  const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, sp.kw ?? make?.name ?? categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
   const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
@@ -240,19 +241,21 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   );
 
   return (
-    <Shell sp={sp} summary={summary}>
+    <Shell sp={sp} summary={summary} cosa={sp.kw ?? (model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "")}>
       <ResultsView items={items} top={top} center={center} bbox={bbox} hasMap={hasMap} />
     </Shell>
   );
 }
 
-function Shell({ sp, summary, children }: { sp: Record<string, string | undefined>; summary: string; children: React.ReactNode }) {
+function Shell({ sp, summary, cosa, children }: { sp: Record<string, string | undefined>; summary: string; cosa?: string; children: React.ReactNode }) {
   return (
     <div>
       <div className="sticky top-16 z-20 border-b border-line bg-white lg:relative lg:top-0">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <SearchForm summary={summary}
-            values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna, select: sp.select }} />
+            values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna, select: sp.select,
+              // nel campo "Cosa": la parola cercata, altrimenti modello / marca / categoria in uso
+              cosa: cosa ?? sp.kw ?? categoryName(sp.cat) ?? "" }} />
           {/* menu categorie scorrevole, come in home */}
           <nav aria-label="Categorie" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
             {(sp.select === "1"
@@ -260,7 +263,7 @@ function Shell({ sp, summary, children }: { sp: Record<string, string | undefine
               ? [{ key: "select", label: "✦ Tutte le Select" }, ...CATEGORIES.filter((c) => ["auto", "moto", "barche"].includes(c.slug) || isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "", label: "Esci da Select" }]
               : [{ key: "", label: "Tutti" }, ...CATEGORIES.filter((c) => !isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }, { key: "select", label: "✦ Select" }]
             ).map((p) => {
-              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "select"].includes(k)) as [string, string][]);
+              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "select", "kw", "nonfound"].includes(k)) as [string, string][]);
               const inSelect = sp.select === "1";
               if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); }
               else if (p.key === "select") q.set("select", "1");

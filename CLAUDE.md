@@ -111,6 +111,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Home 26/11: tolto il menu categorie in alto; nel riquadro c'è "Cosa" (parola libera, name=q). /cerca?q= → lib/keyword
   matchKeyword: parole comuni (auto, gommone, autista→ncc, jet, lungo termine…) poi modelli e marche del catalogo; redirect con
   cat/marca/modello/select/lungo (Ferrari → Select). Nessuna corrispondenza → nonfound + avviso. Chip "Lungo termine" accanto a Oggi/Domani.
+  Nei risultati il campo "Cosa" è la stessa parola libera (q), precompilato con kw (parola cercata) o marca/categoria.
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).
