@@ -34,12 +34,11 @@ export const PILLS: { key: string; label: string }[] = [
 ];
 
 /**
- * Ricerca della home, stile Booking: menu categorie scorrevole, riquadro compatto e ben delimitato
- * (Dove · Date · Cerca), scorciatoie sotto. La categoria scelta nel menu si applica alla ricerca.
+ * Ricerca della home: riquadro ben delimitato (Cosa · Dove · Date · Cerca), scorciatoie sotto.
+ * "Cosa" è una parola libera (Ferrari, gommone, autista…): la interpreta /cerca (lib/keyword).
  */
 export function HomeSearch() {
-  const [pill, setPill] = useState("");
-  const lungo = pill === "lungo";
+  const [lungo, setLungo] = useState(false);
   const [dates, setDates] = useState<{ dal: string; al: string }>({ dal: "", al: "" });
   const [quick, setQuick] = useState<string | null>(null);
   const [today, setToday] = useState<string | undefined>(undefined);
@@ -51,22 +50,14 @@ export function HomeSearch() {
 
   return (
     <div>
-      {/* menu scorrevole delle categorie */}
-      <div role="tablist" aria-label="Cosa vuoi noleggiare" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0 sm:pb-4">
-        {PILLS.map((p) => (
-          <button key={p.key || "all"} type="button" role="tab" aria-selected={pill === p.key} onClick={() => setPill(p.key)}
-            className={`flex-none rounded-full border px-4 py-1.5 text-sm sm:py-2 font-semibold transition ${
-              pill === p.key ? (p.key === "select" ? "border-amber-300 bg-white/15 text-amber-300" : "border-white bg-white/15 text-white") : p.key === "select" ? "border-transparent text-amber-300 hover:bg-white/10" : "border-transparent text-white/80 hover:bg-white/10"}`}>
-            {p.label}
-          </button>
-        ))}
-      </div>
-
       <form action="/cerca" method="get">
-        {pill && !lungo && pill !== "select" && <input type="hidden" name="cat" value={pill} />}
-        {pill === "select" && <input type="hidden" name="select" value="1" />}
         {/* riquadro ben delimitato, una riga per campo */}
         <div className="overflow-visible rounded-2xl border-[3px] border-teal-500 bg-white shadow-xl shadow-navy-950/30 lg:flex lg:items-stretch">
+          <div className={`${row} border-b border-line lg:flex-[1.2] lg:border-b-0 lg:border-r`}>
+            <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Cosa</span>
+            <input name="q" type="search" enterKeyHint="search" autoComplete="off" aria-label="Cosa cerchi"
+              placeholder="Es. Ferrari, gommone, furgone…" className={bare} />
+          </div>
           <div className={`${row} border-b border-line lg:flex-[1.4] lg:border-b-0 lg:border-r`}>
             <span className="w-20 flex-none text-xs font-semibold uppercase tracking-wide text-mute">Dove</span>
             <div className="min-w-0 flex-1"><PlaceInput id="h-luogo" className={bare} /></div>
@@ -94,10 +85,9 @@ export function HomeSearch() {
         </div>
       </form>
 
-      {/* scorciatoie */}
-      {!lungo && (
-        <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:mt-3 sm:px-0">
-          {(["oggi", "domani", "weekend"] as const).map((k) => {
+      {/* scorciatoie + passaggio a giorni / lungo termine */}
+      <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:mt-3 sm:px-0">
+          {!lungo && (["oggi", "domani", "weekend"] as const).map((k) => {
             const on = quick === k;
             return (
               <button key={k} type="button" onClick={() => { setQuick(k); setDates(shortcut(k)); }} aria-pressed={on}
@@ -106,8 +96,11 @@ export function HomeSearch() {
               </button>
             );
           })}
-        </div>
-      )}
+          <button type="button" onClick={() => setLungo((v) => !v)} aria-pressed={lungo}
+            className={`flex-none rounded-full px-4 py-1.5 text-sm font-semibold transition sm:py-2 ${lungo ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+            {lungo ? "← A giorni" : "Lungo termine"}
+          </button>
+      </div>
     </div>
   );
 }

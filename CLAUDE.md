@@ -108,6 +108,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   ancora letto da lib/longTerm ratesFor/kmFor). Fasce LT_KM 10–40 mila; il noleggiatore sceglie le fasce e compila la griglia
   (LongTermFields), lt_km_per_year = fascia più bassa; il cliente sceglie durata + km nel LongTermConfigurator. listing_offers e
   vincolo rental_terms_modes_check leggono anche il formato annidato. Esempi demo 1, 2, 8 con griglia (fondo di select_setup.sql).
+- Home 26/11: tolto il menu categorie in alto; nel riquadro c'è "Cosa" (parola libera, name=q). /cerca?q= → lib/keyword
+  matchKeyword: parole comuni (auto, gommone, autista→ncc, jet, lungo termine…) poi modelli e marche del catalogo; redirect con
+  cat/marca/modello/select/lungo (Ferrari → Select). Nessuna corrispondenza → nonfound + avviso. Chip "Lungo termine" accanto a Oggi/Domani.
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).

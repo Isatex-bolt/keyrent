@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSelectMake } from "@/lib/select";
+import { matchKeyword } from "@/lib/keyword";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
@@ -44,6 +45,19 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const sp: Record<string, string | undefined> = Object.fromEntries(Object.keys(raw).map((k) => [k, first(raw[k])]));
   const cat = categoryName(sp.cat) ? sp.cat : undefined;
   const notes: string[] = [];
+  // "Cosa cerchi?" della home: la parola diventa categoria / marca / modello / Select / lungo termine
+  if (sp.q !== undefined) {
+    const m = await matchKeyword(sp.q);
+    const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["q", "cat", "marca", "modello", "select", "nonfound"].includes(k)) as [string, string][]);
+    if (m?.cat) q.set("cat", m.cat);
+    if (m?.marca) q.set("marca", m.marca);
+    if (m?.modello) q.set("modello", m.modello);
+    if (m?.select) q.set("select", "1");
+    if (m?.lungo && !q.get("lungo")) { q.set("lungo", "1"); q.delete("al"); }
+    if (!m && sp.q.trim()) q.set("nonfound", sp.q.trim().slice(0, 40));
+    redirect(`/cerca?${q.toString()}`);
+  }
+  if (sp.nonfound) notes.push(`Non abbiamo trovato «${sp.nonfound}»: ecco tutti i mezzi disponibili. Prova con una marca, un modello o un tipo di mezzo.`);
   // KeyRent Select: chi cerca una marca esclusiva (es. Ferrari) va direttamente nella sezione Select
   const select = sp.select === "1";
   if (!select && (isSelectMake(sp.marca) || isSelectCategory(sp.cat))) {
