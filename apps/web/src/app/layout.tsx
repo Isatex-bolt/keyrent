@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DemoBar } from "@/components/DemoBar";
+import { DemoInvite } from "@/components/DemoInvite";
 import { BottomNav } from "@/components/v2/customer/BottomNav";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <SiteHeader />
         <Suspense fallback={null}><DemoBar /></Suspense>
+        <Suspense fallback={null}><DemoInvite /></Suspense>
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <Suspense><BottomNav /></Suspense>

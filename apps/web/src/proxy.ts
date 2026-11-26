@@ -6,6 +6,10 @@ import { createServerClient } from "@supabase/ssr";
 const DEMO_BLOCKED = ["/registrati", "/account", "/prenota", "/diventa-partner", "/password-dimenticata", "/messaggi/nuovo", "/assistenza", "/admin"];
 
 export async function proxy(request: NextRequest) {
+  // link della demo nelle email: prima si vede il sito come un cliente, dopo 30 s l'invito a entrare (DemoInvite)
+  if (request.nextUrl.pathname === "/demo" && !request.nextUrl.search && request.cookies.get("kr_demo")?.value !== "1") {
+    return NextResponse.redirect(new URL("/?demo=invito", request.url));
+  }
   if (request.cookies.get("kr_demo")?.value === "1") {
     const path = request.nextUrl.pathname;
     // /accedi porta alla pagina demo (se la sessione è scaduta si rientra da lì, senza giri a vuoto)

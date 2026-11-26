@@ -90,6 +90,9 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   nella vista public_listings; private.demo_cleanup le cancella dopo 24 h (dal cron via svc_demo_reset). Max 300 copie, poi account condiviso.
   Cookie kr_demo (enterDemo): proxy.ts rimanda registrati/account/prenota/diventa-partner/… a /pro e /accedi a /demo; DemoBar su tutto
   il sito ("Demo · Torna alla tua area"), DemoNudge dopo 3 min e poi ogni 5; /esci e la registrazione tolgono il cookie.
+- Link demo 26/11: proxy rimanda /demo (senza parametri, senza cookie kr_demo) a /?demo=invito: si gira il sito come cliente,
+  dopo 30 s DemoInvite (layout, sessionStorage) mostra "Guarda come sarebbe la tua area riservata" → enterDemo; se chiuso resta
+  il pulsante "Prova la tua area noleggiatore". La pagina /demo resta raggiungibile con parametri (es. ?errore=).
 - 25/11 sera: 0029 public.provider_reviews (recensioni clienti sul noleggiatore, anonimo, in scheda mezzo; sui demo "di esempio"),
   risultati su telefono a schede orizzontali (ListingCard row), pulsanti prenota tutti turchesi (btn-primary), barre fisse in basso
   con fondo bianco fino al bordo, mappa /cerca alta 100svh (niente rimbalzi con la barra di Safari).
