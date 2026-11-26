@@ -86,18 +86,18 @@ export function HomeSearch() {
       </form>
 
       {/* scorciatoie + passaggio a giorni / lungo termine */}
-      <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:mt-3 sm:px-0">
+      <div className="mt-2.5 flex gap-1.5 sm:mt-3 sm:gap-2">
           {!lungo && (["oggi", "domani", "weekend"] as const).map((k) => {
             const on = quick === k;
             return (
               <button key={k} type="button" onClick={() => { setQuick(k); setDates(shortcut(k)); }} aria-pressed={on}
-                className={`flex-none rounded-full px-4 py-1.5 text-sm font-semibold transition sm:py-2 ${on ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
-                {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : "Questo weekend"}
+                className={`flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] font-semibold transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${on ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                {k === "oggi" ? "Oggi" : k === "domani" ? "Domani" : <><span className="sm:hidden">Weekend</span><span className="hidden sm:inline">Questo weekend</span></>}
               </button>
             );
           })}
           <button type="button" onClick={() => setLungo((v) => !v)} aria-pressed={lungo}
-            className={`flex-none rounded-full px-4 py-1.5 text-sm font-semibold transition sm:py-2 ${lungo ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+            className={`whitespace-nowrap rounded-full px-2.5 py-1.5 text-[13px] font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${lungo ? "flex-none" : "flex-[1.4] sm:flex-none"} ${lungo ? "bg-teal-500 text-navy-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
             {lungo ? "← A giorni" : "Lungo termine"}
           </button>
       </div>
