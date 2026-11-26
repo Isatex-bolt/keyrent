@@ -28,6 +28,9 @@ select test.ok((select status = 'accepted' from bookings where id = :'bk')
   and exists (select 1 from unit_reservations where booking_id = :'bk' and active), 'scadenza saltata: addebito in corso, mezzo ancora bloccato');
 select test.ok((select count(*) = 1 from public.svc_pending_captures() where booking_id = :'bk'), 'compare tra gli addebiti da verificare');
 
+select test.fails(format('select public.svc_cancel_booking(%L, %L, %L)', :'bk', 'c0000000-0000-0000-0000-000000000001', 'customer'),
+  'CAPTURE_PENDING', 'non si cancella mentre l''addebito è in verifica');
+
 -- 3) recupero automatico: Stripe dice "riuscito" → conferma di sistema, una volta sola
 select public.svc_confirm_paid_booking(:'bk', null, 'pi_rel_1', (select total_cents from bookings where id = :'bk'));
 select public.svc_confirm_paid_booking(:'bk', null, 'pi_rel_1', (select total_cents from bookings where id = :'bk'));

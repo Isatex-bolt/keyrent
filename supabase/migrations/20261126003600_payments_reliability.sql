@@ -85,6 +85,16 @@ returns table (booking_id uuid) language sql stable security invoker set search_
    where p.status = 'authorized' and b.status in ('expired', 'declined', 'cancelled') limit 50;
 $$;
 
+-- Niente cancellazioni mentre l'addebito è in corso: prima si aspetta l'esito certo di Stripe (poi si cancella con rimborso)
+create or replace function public.svc_cancel_booking(p_booking uuid, p_actor uuid, p_side text, p_reason text default null)
+returns integer language plpgsql security invoker set search_path = public as $$
+begin
+  if exists (select 1 from bookings where id = p_booking and capture_pending_since is not null) then
+    raise exception 'CAPTURE_PENDING' using errcode = 'P0001';
+  end if;
+  return private.cancel_booking(p_booking, p_actor, p_side, p_reason);
+end $$;
+
 -- 2) SCADENZE: non toccano mai una prenotazione con addebito in corso --------------------------------------------
 create or replace function private.expire_stale_bookings()
 returns setof uuid language plpgsql security definer set search_path = public as $$
@@ -217,7 +227,7 @@ declare f text;
 begin
   foreach f in array array[
     'public.svc_accept_paid_booking(uuid, uuid)', 'public.svc_confirm_paid_booking(uuid, uuid, text, integer)',
-    'public.svc_payment_failed(uuid)', 'public.svc_pending_captures()', 'public.svc_holds_to_release()',
+    'public.svc_payment_failed(uuid)', 'public.svc_cancel_booking(uuid, uuid, text, text)', 'public.svc_pending_captures()', 'public.svc_holds_to_release()',
     'public.svc_stripe_event_claim(text, text, jsonb)', 'public.svc_stripe_event_done(text)', 'public.svc_stripe_event_failed(text, text)',
     'public.svc_refund_update(uuid, text, text, text)', 'public.svc_refund_by_stripe_id(text)', 'public.svc_refunds_open()',
     'public.svc_org_stripe_account(uuid, text, boolean, boolean)', 'public.svc_claim_due_payouts(integer)',
