@@ -37,3 +37,6 @@ delete from bookings where listing_id = :urus and stripe_payment_intent_id like 
 select set_config('keyrent.demo_seed', '', false);
 update listings set demo_keep = false where id = :urus;
 update organizations set is_demo = false where id = :orgB;
+-- categorie Select
+select test.ok(exists (select 1 from categories where slug = 'jet'), 'categoria Jet privati presente');
+select test.ok(position('v_total::numeric * c.rate_bps' in pg_get_functiondef('private.create_booking_request'::regproc)) > 0, 'commissione su importi alti: niente overflow');

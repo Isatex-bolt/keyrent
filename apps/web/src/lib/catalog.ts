@@ -7,7 +7,16 @@ export const CATEGORIES = [
   { slug: "barche", name: "Barche" },
   { slug: "furgoni", name: "Furgoni" },
   { slug: "quad-motoslitte", name: "Quad e motoslitte" },
+  { slug: "ncc", name: "NCC con autista" },
+  { slug: "jet", name: "Jet privati" },
+  { slug: "elicotteri", name: "Elicotteri" },
 ] as const;
+
+/** Categorie solo KeyRent Select: non compaiono nella ricerca normale. */
+export const SELECT_CATEGORIES = ["ncc", "jet", "elicotteri"];
+export const isSelectCategory = (slug?: string | null) => !!slug && SELECT_CATEGORIES.includes(slug);
+/** Categorie di servizi a ore (con equipaggio/autista): prezzo "da X / ora" e niente patente. */
+export const isHourlyCategory = (slug?: string | null) => isSelectCategory(slug);
 
 export function categoryName(slug?: string | null) {
   return CATEGORIES.find((c) => c.slug === slug)?.name;

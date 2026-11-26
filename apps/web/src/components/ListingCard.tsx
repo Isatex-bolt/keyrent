@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isHourlyCategory } from "@/lib/catalog";
 import Image from "next/image";
 import { CategoryIcon } from "./CategoryIcon";
 import { euro } from "@/lib/format";
@@ -51,7 +52,7 @@ export function ListingCard({ r, href, active = false, row = false }: { r: CardD
 function Price({ r }: { r: CardData }) {
   if (r.monthly_from_cents != null) return <>da <span className="text-lg font-bold">{euro(r.monthly_from_cents)}</span> <span className="text-mute">/mese</span></>;
   if (r.total_cents != null) return <><span className="text-lg font-bold">{euro(r.total_cents)}</span> <span className="text-mute">totale</span></>;
-  if (r.price_from_cents != null) return <>da <span className="text-lg font-bold">{euro(r.price_from_cents)}</span> <span className="text-mute">/giorno</span></>;
+  if (r.price_from_cents != null) return <>da <span className="text-lg font-bold">{euro(r.price_from_cents)}</span> <span className="text-mute">/{isHourlyCategory(r.category_slug) ? "ora" : "giorno"}</span></>;
   return <>Prezzo su richiesta</>;
 }
 

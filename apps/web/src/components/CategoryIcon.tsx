@@ -5,6 +5,9 @@ const paths: Record<string, string> = {
   camper: "M3 17V8a1 1 0 011-1h11l4 4v6zM3 13h16M7 17.5a1.5 1.5 0 103 0M14 17.5a1.5 1.5 0 103 0M6 9h4v3H6z",
   barche: "M4 15l1.5 3h13l1.5-3zM12 4v11M12 5l5 8h-5",
   furgoni: "M3 7h11v9H3zM14 10h4l3 3v3h-7M6 17.5a1.5 1.5 0 103 0M16 17.5a1.5 1.5 0 103 0",
+  ncc: "M4 15l1.5-4.5A2 2 0 017.4 9h9.2a2 2 0 011.9 1.5L20 15M3 15h18v3H3zM6 18v1.5M18 18v1.5M9 6h6",
+  jet: "M2 13l8-1 4-7h2l-2 7 6 .5 2-2.5h1l-1 4 1 4h-1l-2-2.5-6 .5 2 7h-2l-4-7-8-1z",
+  elicotteri: "M3 5h18M12 5v3M6 11a6 4 0 0012 0 6 4 0 00-12 0zM18 11h4M22 9v4M9 15l-1 3M15 15l1 3M6 18h12",
   "quad-motoslitte": "M4 17a2 2 0 104 0 2 2 0 00-4 0zM16 17a2 2 0 104 0 2 2 0 00-4 0zM6 15l2-4h8l2 4M10 11l1-3h3",
 };
 

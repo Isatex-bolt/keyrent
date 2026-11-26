@@ -99,6 +99,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   marche di lusso automatiche via trigger private.auto_select_listing, lista anche in lib/select.ts). Ricerca /cerca?select=1 = sezione
   Select (banda blu notte/oro); nella ricerca normale i Select sono esclusi e compare l'invito "N mezzi esclusivi →".
   marca=ferrari & co. reindirizza a select=1. Pillola "✦ Select" in home e /cerca. Prossimo: preventivi per jet/elicotteri/NCC.
+- 0031 (26/11): categorie solo Select ncc / jet / elicotteri (lib/catalog SELECT_CATEGORIES, prezzo "/ ora", fuori dalle pillole normali,
+  cat=jet → select=1), trigger auto Select anche per categoria, fix overflow commissione (v_total::numeric) in create_booking_request
+  e demo_seed_bookings. Demo: supabase/demo/select_setup.sql = 6 annunci Select n. 11–16 (Vito NCC, Ferrari 296, Huracán, GT3 RS,
+  Phenom 300E a Linate, AW109 a Cortina) + sedi Milano e Linate.
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

@@ -6,7 +6,7 @@ import { isSelectMake } from "@/lib/select";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
-import { CATEGORIES, categoryName } from "@/lib/catalog";
+import { CATEGORIES, categoryName, isSelectCategory } from "@/lib/catalog";
 import { SaveSearch } from "@/components/RecentSearches";
 import { findPlace } from "@/lib/places";
 import { formatDateIt, romeToIso } from "@/lib/format";
@@ -46,7 +46,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const notes: string[] = [];
   // KeyRent Select: chi cerca una marca esclusiva (es. Ferrari) va direttamente nella sezione Select
   const select = sp.select === "1";
-  if (!select && isSelectMake(sp.marca)) {
+  if (!select && (isSelectMake(sp.marca) || isSelectCategory(sp.cat))) {
     const q = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
     q.set("select", "1");
     redirect(`/cerca?${q.toString()}`);
@@ -241,7 +241,11 @@ function Shell({ sp, summary, children }: { sp: Record<string, string | undefine
             values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna, select: sp.select }} />
           {/* menu categorie scorrevole, come in home */}
           <nav aria-label="Categorie" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-            {[{ key: "", label: "Tutti" }, ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }, { key: "select", label: "✦ Select" }].map((p) => {
+            {(sp.select === "1"
+              // in Select: tutte le Select, le categorie dove ci sono mezzi esclusivi, "Tutti" riporta alla ricerca normale
+              ? [{ key: "select", label: "✦ Tutte le Select" }, ...CATEGORIES.filter((c) => ["auto", "moto", "barche"].includes(c.slug) || isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "", label: "Esci da Select" }]
+              : [{ key: "", label: "Tutti" }, ...CATEGORIES.filter((c) => !isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }, { key: "select", label: "✦ Select" }]
+            ).map((p) => {
               const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "select"].includes(k)) as [string, string][]);
               const inSelect = sp.select === "1";
               if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); }

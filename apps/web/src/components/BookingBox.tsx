@@ -14,8 +14,8 @@ const HOURS = Array.from({ length: 36 }, (_, i) => `${String(6 + Math.floor(i / 
 const shortIt = (d: string) => new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
 
 /** Date e orari del noleggio: il totale si aggiorna da solo, poi un solo pulsante per prenotare. */
-export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [], delivery = null, forCompany = false, fromPrice = 0 }: {
-  id: string; from: string; busy?: string[]; delivery?: Delivery | null; forCompany?: boolean; fromPrice?: number; initial: { dal?: string; al?: string; oraR: string; oraC: string }; initialQuote: Quote;
+export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [], delivery = null, forCompany = false, fromPrice = 0, unit = "giorno" }: {
+  id: string; from: string; busy?: string[]; delivery?: Delivery | null; forCompany?: boolean; fromPrice?: number; unit?: string; initial: { dal?: string; al?: string; oraR: string; oraC: string }; initialQuote: Quote;
 }) {
   const [dal, setDal] = useState(initial.dal ?? "");
   const [al, setAl] = useState(initial.al ?? "");
@@ -151,7 +151,7 @@ export function BookingBox({ id, from, initial, initialQuote, busy: busyDays = [
           ) : (
             <>
               <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{fromPrice ? <>da {euro(fromPrice)} <span className="text-sm font-medium text-mute">/ giorno</span></> : "Prezzo su richiesta"}</p>
+                <p className="text-lg font-bold leading-tight">{fromPrice ? <>da {euro(fromPrice)} <span className="text-sm font-medium text-mute">/ {unit}</span></> : "Prezzo su richiesta"}</p>
                 <p className="truncate text-xs text-mute">{deliveryPending && quote && !("error" in quote) ? "Indica dove consegnare" : "Nessun addebito finché il noleggiatore non conferma"}</p>
               </div>
               <a href="#prenota" className="btn-primary min-h-12 flex-none px-6">{dal && al ? "Completa" : "Scegli le date"}</a>

@@ -9,6 +9,7 @@ import { idFromRef } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
 import type { ProviderReviews } from "@/lib/data";
+import { isHourlyCategory } from "@/lib/catalog";
 import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getProviderReviews, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
@@ -70,7 +71,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
     })
     .filter(Boolean) as { label: string; value: string }[];
 
-  const fromPrice = prices.find((p) => p.unit === "day" && !p.valid_from)?.price_cents ?? (prices.length ? Math.min(...prices.map((p) => p.price_cents)) : 0);
+  const hourly = isHourlyCategory(l.category_slug);
+  const fromPrice = prices.find((p) => p.unit === (hourly ? "hour" : "day") && !p.valid_from)?.price_cents ?? (prices.length ? Math.min(...prices.map((p) => p.price_cents)) : 0);
   const sortedPrices = [...prices].sort((a, b) => ["hour", "half_day", "day", "week"].indexOf(a.unit) - ["hour", "half_day", "day", "week"].indexOf(b.unit));
 
   return (
@@ -111,7 +113,7 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
               <p className="text-sm text-mute">Tariffe</p>
               <p className="text-sm">{sortedPrices.map((p) => `${euro(p.price_cents)} ${priceUnitShort[p.unit] ?? ""}${p.valid_from ? ` (dal ${formatDateIt(p.valid_from)})` : ""}`).join(" · ")}</p>
             </div>
-            <BookingBox id={id} from={from} busy={[...busy]} delivery={delivery} forCompany={forCompany} fromPrice={fromPrice} initial={{ dal, al, oraR, oraC }}
+            <BookingBox id={id} from={from} busy={[...busy]} delivery={delivery} forCompany={forCompany} fromPrice={fromPrice} unit={hourly ? "ora" : "giorno"} initial={{ dal, al, oraR, oraC }}
               initialQuote={quote && !("error" in quote) ? { total_cents: quote.total_cents, qty: quote.qty, unit: quote.unit } : quote} />
             <p className="text-center text-xs text-mute">Nessun addebito finché il noleggiatore non conferma.</p>
           </div>}

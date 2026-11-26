@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PlaceInput } from "./PlaceInput";
 import { DateRange, DateOne } from "./RangePicker";
 import { CategoryPicker } from "./CategoryPicker";
-import { CATEGORIES } from "@/lib/catalog";
+import { CATEGORIES, isSelectCategory } from "@/lib/catalog";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
@@ -28,7 +28,7 @@ function shortcut(kind: "oggi" | "domani" | "weekend") {
 /** Categorie del menu scorrevole in alto (stile Booking): la scelta vale per la ricerca sotto. */
 export const PILLS: { key: string; label: string }[] = [
   { key: "", label: "Tutti" },
-  ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })),
+  ...CATEGORIES.filter((c) => !isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })),
   { key: "lungo", label: "Lungo termine" },
   { key: "select", label: "✦ Select" },
 ];
