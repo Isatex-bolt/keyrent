@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSelectMake } from "@/lib/select";
 import { matchKeyword } from "@/lib/keyword";
+import { SelectShowcase } from "@/components/SelectShowcase";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
@@ -123,9 +124,11 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   // Select e normali non si mescolano: nella ricerca normale i mezzi Select diventano solo un invito in cima
   const isSel = (id: string) => !!ratings.get(id)?.is_select;
   const shown = byTerm.filter((r) => isSel(r.id) === select);
-  const selectCount = select ? 0 : byTerm.filter((r) => isSel(r.id)).length;
   const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
+  // nella ricerca normale le Select diventano una vetrina in cima (foto vere, scorrevoli)
+  const selectItems: ResultItem[] = select ? [] : byTerm.filter((r) => isSel(r.id)).slice(0, 12)
+    .map((r) => ({ ...r, href: listingHref(r, keep), ...ratings.get(r.id) }));
   const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined, ...ratings.get(r.id) }));
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
@@ -134,7 +137,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, sp.kw ?? make?.name ?? categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
-  const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
+  const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina", "kw", "nonfound"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
 
   const top = (
     <>
@@ -147,15 +150,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
           <p className="mt-1 text-sm text-white/70">Supercar e veicoli d&apos;eccezione, controllati uno per uno dal team KeyRent.</p>
         </div>
       )}
-      {selectCount > 0 && (
-        <Link href={selectHref} className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-navy-950 px-4 py-3 text-white transition hover:bg-navy-900">
-          <span className="min-w-0">
-            <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">KeyRent Select</span>
-            <span className="block truncate text-sm font-semibold">{selectCount} {selectCount === 1 ? "mezzo esclusivo" : "mezzi esclusivi"} per la tua ricerca</span>
-          </span>
-          <span className="flex-none text-sm font-semibold text-amber-300">Scopri →</span>
-        </Link>
-      )}
+      <SelectShowcase items={selectItems} allHref={selectHref} />
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">{what} {where}</h1>
         <p className="text-sm text-mute">

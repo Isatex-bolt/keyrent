@@ -97,7 +97,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   con voto/recensioni del mezzo (vuoto se nessuna) e badge Premium al posto di "Paghi solo se confermato".
 - KeyRent Select (26/11, sempre in 0030): listings.is_select (solo staff: "Metti in Select" in /admin/anagrafiche/[id]/annunci/[lid];
   marche di lusso automatiche via trigger private.auto_select_listing, lista anche in lib/select.ts). Ricerca /cerca?select=1 = sezione
-  Select (banda blu notte/oro); nella ricerca normale i Select sono esclusi e compare l'invito "N mezzi esclusivi →".
+  Select (banda blu notte/oro); nella ricerca normale i Select sono esclusi e in cima c'è la vetrina SelectShowcase (foto vere scorrevoli + "Vedi tutte").
   marca=ferrari & co. reindirizza a select=1. Pillola "✦ Select" in home e /cerca. Prossimo: preventivi per jet/elicotteri/NCC.
 - 0031 (26/11): categorie solo Select ncc / jet / elicotteri (lib/catalog SELECT_CATEGORIES, prezzo "/ ora", fuori dalle pillole normali,
   cat=jet → select=1), trigger auto Select anche per categoria, fix overflow commissione (v_total::numeric) in create_booking_request
