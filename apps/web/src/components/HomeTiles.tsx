@@ -67,7 +67,7 @@ const NEED_FALLBACK: Collection[] = ([
 export function NeedsRow({ items }: { items: Collection[] }) {
   const list = items.length ? items : NEED_FALLBACK;
   return (
-    <LoopRow auto className="-mx-4 snap-x snap-mandatory scroll-px-4 gap-3 px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+    <LoopRow auto everyMs={1500} className="-mx-4 snap-x snap-mandatory scroll-px-4 gap-3 px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
       {list.map((c) => (
         <Link key={c.slug} href={`/cerca${c.query ? `?${c.query}` : ""}`} className="group w-[44%] flex-none snap-start sm:w-[30%] lg:w-[19%]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
