@@ -49,6 +49,16 @@ export async function setOrgVerification(f: FormData) {
   redirect("/admin/anagrafiche?ok=1");
 }
 
+/** Noleggiatore Premium: lo decide lo staff (compare nelle schede dei risultati). */
+export async function setOrgPremium(f: FormData) {
+  await requireStaff();
+  const id = str(f, "id");
+  const { error } = await serviceDb().from("organizations").update({ is_premium: str(f, "premium") === "1" }).eq("id", id).eq("kind", "provider");
+  if (error) redirect(`/admin/anagrafiche/${id}?errore=${encodeURIComponent(dbMessage(error.message))}`);
+  revalidatePath(`/admin/anagrafiche/${id}`);
+  redirect(`/admin/anagrafiche/${id}?ok=1`);
+}
+
 // ---------- Immagini indicative di catalogo ----------
 async function ensureListingsBucket() {
   const admin = serviceDb();

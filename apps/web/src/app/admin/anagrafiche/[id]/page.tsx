@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { setOrgPremium } from "@/app/admin/actions";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { serviceDb } from "@/lib/supabase/admin";
@@ -24,13 +25,27 @@ async function Org({ params, searchParams }: { params: Promise<{ id: string }>; 
     db.from("locations").select("id").eq("organization_id", id).eq("active", true),
   ]);
   if (!o) notFound();
+  // a parte: se il database non è ancora aggiornato (0030) la pagina funziona lo stesso
+  const { data: prem } = await db.from("organizations").select("is_premium").eq("id", id).maybeSingle();
+  const isPremium = !!(prem as { is_premium?: boolean } | null)?.is_premium;
   type L = { id: string; title: string; status: string; price_from_cents: number | null; locations: { name: string; city: string } | null };
   return (
     <div className="space-y-5">
       <Link href="/admin/anagrafiche" className="text-sm text-mute hover:text-navy-900">← Anagrafiche</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <ProHeader title={o.trade_name ?? o.legal_name} subtitle={`${o.legal_name} · P.IVA ${o.vat_number} · ${o.business_email ?? "—"} · ${o.business_phone ?? "—"}`} />
-        <Badge map={orgStatus} value={o.verification_status} />
+        <div className="flex items-center gap-2">
+          {o.kind === "provider" && (
+            <form action={setOrgPremium}>
+              <input type="hidden" name="id" value={o.id} />
+              <input type="hidden" name="premium" value={isPremium ? "0" : "1"} />
+              <button className={isPremium ? "rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900" : "btn-ghost"}>
+                {isPremium ? "★ Premium · togli" : "Rendi Premium"}
+              </button>
+            </form>
+          )}
+          <Badge map={orgStatus} value={o.verification_status} />
+        </div>
       </div>
       <Flash sp={sp} />
       <section className="card space-y-4 p-5">

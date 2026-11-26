@@ -93,6 +93,8 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - 25/11 sera: 0029 public.provider_reviews (recensioni clienti sul noleggiatore, anonimo, in scheda mezzo; sui demo "di esempio"),
   risultati su telefono a schede orizzontali (ListingCard row), pulsanti prenota tutti turchesi (btn-primary), barre fisse in basso
   con fondo bianco fino al bordo, mappa /cerca alta 100svh (niente rimbalzi con la barra di Safari).
+- 26/11: 0030 organizations.is_premium (staff: "Rendi Premium" in /admin/anagrafiche/[id]) + public.listing_ratings: schede risultati
+  con voto/recensioni del mezzo (vuoto se nessuna) e badge Premium al posto di "Paghi solo se confermato".
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

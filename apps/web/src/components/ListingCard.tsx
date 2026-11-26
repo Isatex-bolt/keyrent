@@ -4,7 +4,8 @@ import { CategoryIcon } from "./CategoryIcon";
 import { euro } from "@/lib/format";
 import type { SearchResult } from "@/lib/data";
 
-type CardData = SearchResult & { total_cents?: number | null; instant_book?: boolean; monthly_from_cents?: number | null };
+type CardData = SearchResult & { total_cents?: number | null; instant_book?: boolean; monthly_from_cents?: number | null;
+  rating_avg?: number | null; rating_count?: number; premium?: boolean };
 
 /** Scheda mezzo. `row`: su telefono foto a sinistra e dati a destra (stile Booking), da tablet in su scheda verticale. */
 export function ListingCard({ r, href, active = false, row = false }: { r: CardData; href: string; active?: boolean; row?: boolean }) {
@@ -77,11 +78,17 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
           <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none text-mute" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
           <span className="truncate">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</span>
         </p>
-        <p className="flex items-center gap-1.5 font-medium text-emerald-700">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12l5 5L20 7" /></svg>
-          Paghi solo se confermato
-        </p>
-        <p className="mt-auto pt-1 text-right sm:text-left"><Price r={r} /></p>
+        {(r.premium || (r.rating_count ?? 0) > 0) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(r.rating_count ?? 0) > 0 && r.rating_avg != null && (
+              <span className="flex items-center gap-1.5">
+                <span className="rounded-md bg-navy-900 px-1.5 py-0.5 text-xs font-bold text-white">{r.rating_avg.toLocaleString("it-IT", { minimumFractionDigits: 1 })}</span>
+                <span className="text-mute">{r.rating_count} {r.rating_count === 1 ? "recensione" : "recensioni"}</span>
+              </span>
+            )}
+            {r.premium && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">★ Premium</span>}
+          </div>
+        )}        <p className="mt-auto pt-1 text-right sm:text-left"><Price r={r} /></p>
       </div>
     </Link>
   );

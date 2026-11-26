@@ -14,6 +14,9 @@ select test.ok((public.provider_reviews(:urus) ->> 'count')::int > 0, 'le recens
 select test.ok(jsonb_array_length(public.provider_reviews(:urus, 2) -> 'items') <= 2, 'limite rispettato');
 select test.ok(not (public.provider_reviews(:urus)::text like '%@%'), 'nessuna email del cliente');
 select test.ok(not (public.provider_reviews(:urus)::text ilike '%' || (select legal_name from organizations where id = :orgB) || '%'), 'il noleggiatore resta anonimo');
+select test.ok((select rating_count from public.listing_ratings(array[:urus::uuid])) > 0, 'scheda risultati: numero recensioni');
+select test.ok((select rating_avg between 1 and 5 from public.listing_ratings(array[:urus::uuid])), 'scheda risultati: voto medio');
+select test.ok((select count(*) from public.listing_ratings(array['00000000-0000-0000-0000-000000000000'::uuid])) = 0, 'scheda risultati: niente per annunci non pubblici');
 update listings set status = 'unpublished' where id = :urus;
 select test.ok((public.provider_reviews(:urus) ->> 'count')::int = 0, 'annuncio non pubblico: niente recensioni');
 update listings set status = 'published' where id = :urus;

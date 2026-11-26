@@ -10,7 +10,7 @@ import { findPlace } from "@/lib/places";
 import { formatDateIt, romeToIso } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { isSupabaseConfigured } from "@/lib/supabase/public";
-import { attributesForCategory, getOffers, makesForCategory, searchMap, MAP_LIMIT } from "@/lib/data";
+import { attributesForCategory, getOffers, getRatings, makesForCategory, searchMap, MAP_LIMIT } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Cerca mezzi a noleggio" };
 
@@ -94,11 +94,11 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
     sort: sp.ordina,
   });
   // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
-  const offers = await getOffers(results.map((r) => r.id));
+  const [offers, ratings] = await Promise.all([getOffers(results.map((r) => r.id)), getRatings(results.map((r) => r.id))]);
   const shown = results.filter((r) => { const o = offers.get(r.id); return lungo ? !!o?.long_term : !o || o.short_term; });
   const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
-  const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined }));
+  const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined, ...ratings.get(r.id) }));
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "Mezzi";
