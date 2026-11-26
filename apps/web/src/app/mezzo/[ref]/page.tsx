@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
 import type { ProviderReviews } from "@/lib/data";
 import { isHourlyCategory } from "@/lib/catalog";
+import { ListingMap } from "@/components/ListingMap";
 import { bookingsOpen } from "@/lib/launch";
 import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getProviderReviews, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
@@ -151,6 +152,8 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
           )}
 
           {reviews.items.length > 0 && <Reviews r={reviews} demo={isDemo} />}
+
+          <ListingMap lat={l.approx_latitude} lng={l.approx_longitude} city={l.city} province={l.province} />
 
           {/* dettagli: si aprono solo se interessano */}
           <div className="card divide-y divide-line overflow-hidden">

@@ -32,7 +32,7 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   L'utente è admin (staff_members) e ha una sua attività di prova.
 - Fase 2a FATTA (18/11): badge (0009), selettore attività in /pro, ricerca mappa `public.search_map` (0010, bbox + totale per date + ⚡),
   nuova home (Prenota/Lungo termine), campo Dove con Mapbox Search Box (token pubblico NEXT_PUBLIC_MAPBOX_TOKEN su Vercel), /cerca con mappa,
-  cluster, "Cerca in questa zona", pannello mobile a 3 altezze. api.mapbox.com non raggiungibile dalla sandbox: la mappa la prova l'utente.
+  cluster, "Cerca in questa zona". 26/11: su telefono niente mappa nei risultati (solo elenco), mappa statica della zona nella scheda (ListingMap). api.mapbox.com non raggiungibile dalla sandbox: la mappa la prova l'utente.
 - Email: dominio keyrent.it verificato su Resend (record DNS su Register.it, li gestisce l'utente). Supabase Auth usa SMTP Resend.
   Le notifiche partono da `lib/email.ts` (flushEmails) subito dopo le azioni (`sendEmailsSoon`, after()) e con il cron giornaliero
   /api/email/flush (CRON_SECRET). Senza RESEND_API_KEY restano pending.
