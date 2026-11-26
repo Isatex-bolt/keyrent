@@ -5,10 +5,10 @@ import { Fragment, useEffect, useRef } from "react";
 /**
  * Riga orizzontale a scorrimento infinito: finito l'ultimo elemento si riparte dal primo, in entrambe le direzioni.
  * Gli elementi sono ripetuti tre volte e si resta sempre nella copia centrale (salto invisibile).
- * Con `auto` avanza da sola di una scheda ogni `everyMs`; si ferma quando la tocchi o ci passi sopra e riparte dopo qualche secondo.
+ * Con `auto` scorre da sola, continua e lenta (`speed` pixel al secondo); si ferma quando la tocchi o ci passi sopra e riparte dopo qualche secondo.
  * Chi ha chiesto meno animazioni al telefono (riduci movimento) la vede ferma.
  */
-export function LoopRow({ children, className = "", auto = false, everyMs = 3000 }: { children: React.ReactNode; className?: string; auto?: boolean; everyMs?: number }) {
+export function LoopRow({ children, className = "", auto = false, speed = 30 }: { children: React.ReactNode; className?: string; auto?: boolean; speed?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -27,18 +27,28 @@ export function LoopRow({ children, className = "", auto = false, everyMs = 3000
     };
     el.addEventListener("scroll", onScroll, { passive: true });
 
-    // scorrimento automatico
-    let timer: ReturnType<typeof setInterval> | undefined;
+    // scorrimento automatico continuo e lento (pixel al secondo); durante il movimento niente "aggancio" alle schede
+    let raf = 0, last = 0, pos = 0;
     let resume: ReturnType<typeof setTimeout> | undefined;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const step = () => {
-      const first = el.firstElementChild as HTMLElement | null;
-      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
-      if (first && document.visibilityState === "visible") el.scrollBy({ left: first.offsetWidth + gap, behavior: "smooth" });
+    const snap = el.style.scrollSnapType;
+    const frame = (t: number) => {
+      if (last && document.visibilityState === "visible") {
+        pos += (speed * Math.min(t - last, 100)) / 1000;
+        el.scrollLeft = pos;
+        if (Math.abs(el.scrollLeft - pos) > 2) pos = el.scrollLeft; // dopo il salto del giro infinito
+      }
+      last = t;
+      raf = requestAnimationFrame(frame);
     };
-    const start = () => { if (auto && !reduce && !timer) timer = setInterval(step, everyMs); };
-    const stop = () => { clearInterval(timer); timer = undefined; clearTimeout(resume); };
-    const pause = () => { stop(); resume = setTimeout(start, 6000); };
+    const start = () => {
+      if (!auto || reduce || raf) return;
+      el.style.scrollSnapType = "none";
+      pos = el.scrollLeft; last = 0;
+      raf = requestAnimationFrame(frame);
+    };
+    const stop = () => { cancelAnimationFrame(raf); raf = 0; clearTimeout(resume); el.style.scrollSnapType = snap; };
+    const pause = () => { stop(); resume = setTimeout(start, 4000); };
     start();
     el.addEventListener("pointerdown", pause, { passive: true });
     el.addEventListener("touchstart", pause, { passive: true });
@@ -54,7 +64,7 @@ export function LoopRow({ children, className = "", auto = false, everyMs = 3000
       el.removeEventListener("mouseenter", stop);
       el.removeEventListener("mouseleave", pause);
     };
-  }, [auto, everyMs]);
+  }, [auto, speed]);
   return (
     <div ref={ref} className={`no-scrollbar flex overflow-x-auto ${className}`}>
       {[0, 1, 2].map((k) => <Fragment key={k}>{children}</Fragment>)}
