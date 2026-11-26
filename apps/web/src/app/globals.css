@@ -105,3 +105,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; }
 body:has([data-demo-focus]) header nav,
 body:has([data-demo-focus]) .site-footer { display: none; }
 body:has([data-demo-focus]) header a[aria-label="KeyRent, home"] { pointer-events: none; }
+
+/* rete di sicurezza: su telefono nessun elemento troppo largo può spostare tutta la pagina di lato */
+html, body { overflow-x: clip; }

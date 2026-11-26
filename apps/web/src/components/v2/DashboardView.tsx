@@ -71,10 +71,10 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
         <Kpi label="Utilizzo flotta (mese)" value={`${util}%`} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-5 lg:col-span-2">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="card min-w-0 p-4 sm:p-5 lg:col-span-2">
           <h2 className="mb-3 font-semibold">Oggi</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <EventList title="Ritiri previsti" empty="Nessun ritiro oggi" items={pickupsToday.map((b) => ({ b, at: b.pickupAt }))} name={title} />
             <EventList title="Riconsegne previste" empty="Nessuna riconsegna oggi" items={returnsToday.map((b) => ({ b, at: b.returnAt }))} name={title} />
           </div>
@@ -90,7 +90,7 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
             </div>
           )}
         </div>
-        <div className="card p-5">
+        <div className="card min-w-0 p-4 sm:p-5">
           <h2 className="mb-3 font-semibold">Flotta oggi</h2>
           <div className="flex h-3 overflow-hidden rounded-full bg-slate-100">
             <span className="bg-emerald-500 transition-all" style={{ width: `${(free / Math.max(1, data.vehicles.length)) * 100}%` }} />
@@ -106,22 +106,25 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-5 lg:col-span-2">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="card min-w-0 p-4 sm:p-5 lg:col-span-2">
           <h2 className="mb-3 font-semibold">Prossimi 7 giorni</h2>
           {nextEvents.length ? (
             <ul className="divide-y divide-line">
               {nextEvents.map(({ b, kind, at }) => (
                 <li key={`${b.id}${kind}`} className="flex items-center gap-3 py-2.5 text-sm">
                   <span className={`w-16 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-semibold ${kind === "Ritiro" ? "bg-teal-50 text-teal-600" : "bg-navy-50 text-navy-800"}`}>{kind}</span>
-                  <span className="min-w-0 flex-1 truncate"><b>{title(b)}</b> · {b.customer}</span>
-                  <span className="shrink-0 text-xs text-mute">{shortDate(at)}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate"><b>{title(b)}</b><span className="hidden sm:inline"> · {b.customer}</span></span>
+                    <span className="block truncate text-xs text-mute sm:hidden">{b.customer} · {shortDate(at)}</span>
+                  </span>
+                  <span className="hidden shrink-0 text-xs text-mute sm:block">{shortDate(at)}</span>
                 </li>
               ))}
             </ul>
           ) : <p className="text-sm text-mute">Nessun ritiro o rientro nei prossimi 7 giorni.</p>}
         </div>
-        <div className="card p-5">
+        <div className="card min-w-0 p-4 sm:p-5">
           <h2 className="mb-1 font-semibold">Ricavi</h2>
           <p className="text-3xl font-bold tracking-tight">{euroShort(net)}</p>
           <p className="text-xs text-mute">netto del mese · {euroShort(gross)} lordo</p>
