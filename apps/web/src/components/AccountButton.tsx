@@ -62,8 +62,10 @@ export async function AccountButton() {
             </span>
           )}
           <span className="max-w-[9rem] truncate">{who}</span>
-          <LiveCount keys={pro ? ["provider"] : ["customer_bookings", "support"]} initial={pro ? providerTotal(b) : b.customer_bookings + b.support} className="hidden sm:inline-flex" />
-          <LiveCount keys={["messages", ...(memberships.length ? ["provider"] : ["customer_bookings", "support"]), ...(staff ? ["admin"] : [])]} initial={total - (memberships.length ? b.customer_bookings : 0)} className="sm:hidden" />
+          {/* un solo pallino: su computer le novità di quest'area, su telefono tutte (messaggi inclusi). Il "nascondi"
+              va sul contenitore, non sul pallino, che ha già la sua visualizzazione (inline-flex) */}
+          <span className="hidden sm:contents"><LiveCount keys={pro ? ["provider"] : ["customer_bookings", "support"]} initial={pro ? providerTotal(b) : b.customer_bookings + b.support} /></span>
+          <span className="contents sm:hidden"><LiveCount keys={["messages", ...(memberships.length ? ["provider"] : ["customer_bookings", "support"]), ...(staff ? ["admin"] : [])]} initial={total - (memberships.length ? b.customer_bookings : 0)} /></span>
           <svg viewBox="0 0 20 20" className="h-4 w-4 text-mute transition group-open:rotate-180" fill="currentColor"><path d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" /></svg>
         </summary>
         <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-xl">
