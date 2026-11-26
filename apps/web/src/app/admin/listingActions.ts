@@ -121,3 +121,14 @@ export async function staffUpdateModes(f: FormData) {
   revalidatePath(back);
   redirect(`${back}?ok=salvato`);
 }
+
+/** KeyRent Select: lo staff decide quali annunci sono esclusivi (le marche di lusso entrano da sole). */
+export async function staffSetSelect(f: FormData) {
+  await requireStaff();
+  const id = str(f, "id"), org = str(f, "org");
+  const path = `/admin/anagrafiche/${org}/annunci/${id}`;
+  const { error } = await serviceDb().from("listings").update({ is_select: str(f, "select") === "1" }).eq("id", id).eq("organization_id", org);
+  if (error) fail(path, dbMessage(error.message));
+  revalidatePath(path);
+  redirect(`${path}?ok=salvato`);
+}

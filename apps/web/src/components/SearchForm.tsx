@@ -8,7 +8,7 @@ import { CATEGORIES } from "@/lib/catalog";
 
 export type SearchValues = {
   luogo?: string; lat?: string; lng?: string; dal?: string; al?: string; cat?: string;
-  ora_ritiro?: string; ora_riconsegna?: string; mesi?: string;
+  ora_ritiro?: string; ora_riconsegna?: string; mesi?: string; select?: string;
 };
 
 function ymd(d: Date) {
@@ -30,6 +30,7 @@ export const PILLS: { key: string; label: string }[] = [
   { key: "", label: "Tutti" },
   ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })),
   { key: "lungo", label: "Lungo termine" },
+  { key: "select", label: "✦ Select" },
 ];
 
 /**
@@ -55,14 +56,15 @@ export function HomeSearch() {
         {PILLS.map((p) => (
           <button key={p.key || "all"} type="button" role="tab" aria-selected={pill === p.key} onClick={() => setPill(p.key)}
             className={`flex-none rounded-full border px-4 py-2 text-sm font-semibold transition ${
-              pill === p.key ? "border-white bg-white/15 text-white" : "border-transparent text-white/80 hover:bg-white/10"}`}>
+              pill === p.key ? (p.key === "select" ? "border-amber-300 bg-white/15 text-amber-300" : "border-white bg-white/15 text-white") : p.key === "select" ? "border-transparent text-amber-300 hover:bg-white/10" : "border-transparent text-white/80 hover:bg-white/10"}`}>
             {p.label}
           </button>
         ))}
       </div>
 
       <form action="/cerca" method="get">
-        {pill && !lungo && <input type="hidden" name="cat" value={pill} />}
+        {pill && !lungo && pill !== "select" && <input type="hidden" name="cat" value={pill} />}
+        {pill === "select" && <input type="hidden" name="select" value="1" />}
         {/* riquadro ben delimitato, una riga per campo */}
         <div className="overflow-visible rounded-2xl border-[3px] border-teal-500 bg-white shadow-xl shadow-navy-950/30 lg:flex lg:items-stretch">
           <div className={`${row} border-b border-line lg:flex-[1.4] lg:border-b-0 lg:border-r`}>
@@ -124,6 +126,7 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
         <span className="label">Ritiro → Riconsegna</span>
         <div className="field flex items-center !py-0"><DateRange dal={dates.dal} al={dates.al} onChange={setDates} className="!py-2.5" /></div>
       </div>
+      {values.select === "1" && <input type="hidden" name="select" value="1" />}
       {values.ora_ritiro && <input type="hidden" name="ora_ritiro" value={values.ora_ritiro} />}
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}
       <div>

@@ -11,7 +11,8 @@ export function QuickSearch({ steps = false }: { steps?: boolean }) {
   const [dal, setDal] = useState(""); const [al, setAl] = useState(""); const [cat, setCat] = useState("");
   const show = (n: number) => !steps || step === n;
   return (
-    <form action="/cerca" method="get" className="space-y-3 rounded-3xl border border-line bg-white p-4 shadow-sm">
+    // Invio della tastiera (es. nel campo Dove) passa al passo dopo invece di cercare subito
+    <form action="/cerca" method="get" onSubmit={(e) => { if (steps && step < 2) { e.preventDefault(); setStep(step + 1); } }} className="space-y-3 rounded-3xl border border-line bg-white p-4 shadow-sm">
       {steps && (
         <div className="flex gap-1.5">{["Dove", "Quando", "Cosa"].map((s, i) => (
           <button type="button" key={s} onClick={() => setStep(i)} className={`flex-1 rounded-full py-1.5 text-xs font-semibold ${step === i ? "bg-navy-900 text-white" : "bg-navy-50 text-mute"}`}>{i + 1}. {s}</button>
@@ -38,8 +39,10 @@ export function QuickSearch({ steps = false }: { steps?: boolean }) {
         <input type="hidden" name="cat" value={cat} />
       </div>
       {steps && step < 2
-        ? <button type="button" onClick={() => setStep(step + 1)} className="btn-primary w-full py-4 text-base">Avanti</button>
-        : <button className="btn-primary w-full py-4 text-base">Mostra risultati</button>}
+        // key diverse: sono due pulsanti distinti. Con lo stesso pulsante, al tocco su "Avanti" il browser
+        // lo vedeva già diventato "Mostra risultati" e cercava subito, saltando la scelta di "Cosa".
+        ? <button key="avanti" type="button" onClick={() => setStep(step + 1)} className="btn-primary w-full py-4 text-base">Avanti</button>
+        : <button key="cerca" type="submit" className="btn-primary w-full py-4 text-base">Mostra risultati</button>}
     </form>
   );
 }

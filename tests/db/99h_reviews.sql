@@ -17,6 +17,11 @@ select test.ok(not (public.provider_reviews(:urus)::text ilike '%' || (select le
 select test.ok((select rating_count from public.listing_ratings(array[:urus::uuid])) > 0, 'scheda risultati: numero recensioni');
 select test.ok((select rating_avg between 1 and 5 from public.listing_ratings(array[:urus::uuid])), 'scheda risultati: voto medio');
 select test.ok((select count(*) from public.listing_ratings(array['00000000-0000-0000-0000-000000000000'::uuid])) = 0, 'scheda risultati: niente per annunci non pubblici');
+select test.ok((select is_select from public.listing_ratings(array[:urus::uuid])), 'Lamborghini: entra in KeyRent Select da sola');
+set request.jwt.claim.sub = 'b0000000-0000-0000-0000-000000000001';
+set role authenticated;
+select test.fails($$ update listings set is_select = false where id = '3b000000-0000-0000-0000-000000000001' $$, '42501|permission', 'il noleggiatore non può cambiare Select');
+reset role; reset request.jwt.claim.sub;
 update listings set status = 'unpublished' where id = :urus;
 select test.ok((public.provider_reviews(:urus) ->> 'count')::int = 0, 'annuncio non pubblico: niente recensioni');
 update listings set status = 'published' where id = :urus;

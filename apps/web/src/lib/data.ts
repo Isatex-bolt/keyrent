@@ -248,11 +248,11 @@ export async function getProviderReviews(id: string): Promise<ProviderReviews> {
   return data as ProviderReviews;
 }
 
-export type Rating = { rating_avg: number | null; rating_count: number; premium: boolean };
+export type Rating = { rating_avg: number | null; rating_count: number; premium: boolean; is_select: boolean };
 /** Voto/recensioni di ogni annuncio e noleggiatore Premium, per le schede dei risultati (vuoto se il database non è aggiornato). */
 export async function getRatings(ids: string[]): Promise<Map<string, Rating>> {
   if (!ids.length) return new Map();
   const { data, error } = await publicDb().rpc("listing_ratings", { p_ids: ids });
   if (error || !Array.isArray(data)) return new Map();
-  return new Map((data as (Rating & { listing_id: string })[]).map((r) => [r.listing_id, { rating_avg: r.rating_avg != null ? Number(r.rating_avg) : null, rating_count: Number(r.rating_count), premium: !!r.premium }]));
+  return new Map((data as (Rating & { listing_id: string })[]).map((r) => [r.listing_id, { rating_avg: r.rating_avg != null ? Number(r.rating_avg) : null, rating_count: Number(r.rating_count), premium: !!r.premium, is_select: !!r.is_select }]));
 }

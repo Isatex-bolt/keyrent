@@ -16,7 +16,7 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
   loading: () => <div className="h-full w-full animate-pulse bg-navy-50" />,
 });
 
-export type ResultItem = MapResult & { href: string; monthly_from_cents?: number | null; rating_avg?: number | null; rating_count?: number; premium?: boolean };
+export type ResultItem = MapResult & { href: string; monthly_from_cents?: number | null; rating_avg?: number | null; rating_count?: number; premium?: boolean; is_select?: boolean };
 
 const PEEK = 0.55; // su telefono l'elenco parte dal 55% della mappa; scorrendo la pagina sale e copre la mappa
 

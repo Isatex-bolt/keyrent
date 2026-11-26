@@ -95,6 +95,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   con fondo bianco fino al bordo, mappa /cerca alta 100svh (niente rimbalzi con la barra di Safari).
 - 26/11: 0030 organizations.is_premium (staff: "Rendi Premium" in /admin/anagrafiche/[id]) + public.listing_ratings: schede risultati
   con voto/recensioni del mezzo (vuoto se nessuna) e badge Premium al posto di "Paghi solo se confermato".
+- KeyRent Select (26/11, sempre in 0030): listings.is_select (solo staff: "Metti in Select" in /admin/anagrafiche/[id]/annunci/[lid];
+  marche di lusso automatiche via trigger private.auto_select_listing, lista anche in lib/select.ts). Ricerca /cerca?select=1 = sezione
+  Select (banda blu notte/oro); nella ricerca normale i Select sono esclusi e compare l'invito "N mezzi esclusivi →".
+  marca=ferrari & co. reindirizza a select=1. Pillola "✦ Select" in home e /cerca. Prossimo: preventivi per jet/elicotteri/NCC.
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;

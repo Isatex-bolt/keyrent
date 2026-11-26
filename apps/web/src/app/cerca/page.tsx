@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isSelectMake } from "@/lib/select";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
@@ -42,6 +44,13 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const sp: Record<string, string | undefined> = Object.fromEntries(Object.keys(raw).map((k) => [k, first(raw[k])]));
   const cat = categoryName(sp.cat) ? sp.cat : undefined;
   const notes: string[] = [];
+  // KeyRent Select: chi cerca una marca esclusiva (es. Ferrari) va direttamente nella sezione Select
+  const select = sp.select === "1";
+  if (!select && isSelectMake(sp.marca)) {
+    const q = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
+    q.set("select", "1");
+    redirect(`/cerca?${q.toString()}`);
+  }
 
   // Dove: coordinate dall'autocompletamento, altrimenti città dell'elenco, oppure area della mappa
   const zona = sp.zona?.split(",").map(Number);
@@ -95,22 +104,43 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   });
   // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
   const [offers, ratings] = await Promise.all([getOffers(results.map((r) => r.id)), getRatings(results.map((r) => r.id))]);
-  const shown = results.filter((r) => { const o = offers.get(r.id); return lungo ? !!o?.long_term : !o || o.short_term; });
+  const byTerm = results.filter((r) => { const o = offers.get(r.id); return lungo ? !!o?.long_term : !o || o.short_term; });
+  // Select e normali non si mescolano: nella ricerca normale i mezzi Select diventano solo un invito in cima
+  const isSel = (id: string) => !!ratings.get(id)?.is_select;
+  const shown = byTerm.filter((r) => isSel(r.id) === select);
+  const selectCount = select ? 0 : byTerm.filter((r) => isSel(r.id)).length;
   const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
   const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined, ...ratings.get(r.id) }));
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
-  const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? "Mezzi";
+  const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? (select ? "Mezzi esclusivi" : "Mezzi");
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
-  const summary = [sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, categoryName(cat)].filter(Boolean).join(" · ");
+  const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
-  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata"];
+  const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
+  const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
 
   const top = (
     <>
       <SaveSearch title={[sp.luogo || "Tutta Italia", what !== "Mezzi" ? what : ""].filter(Boolean).join(" · ")}
         sub={lungo ? `Lungo termine${sp.durata ? ` · ${sp.durata} mesi` : ""}` : when || "Date da scegliere"} />
+      {select && (
+        <div className="mb-4 overflow-hidden rounded-2xl bg-navy-950 px-5 py-5 text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">KeyRent Select</p>
+          <p className="mt-1 text-lg font-semibold">Mezzi esclusivi, noleggiatori selezionati</p>
+          <p className="mt-1 text-sm text-white/70">Supercar e veicoli d&apos;eccezione, controllati uno per uno dal team KeyRent.</p>
+        </div>
+      )}
+      {selectCount > 0 && (
+        <Link href={selectHref} className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-navy-950 px-4 py-3 text-white transition hover:bg-navy-900">
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">KeyRent Select</span>
+            <span className="block truncate text-sm font-semibold">{selectCount} {selectCount === 1 ? "mezzo esclusivo" : "mezzi esclusivi"} per la tua ricerca</span>
+          </span>
+          <span className="flex-none text-sm font-semibold text-amber-300">Scopri →</span>
+        </Link>
+      )}
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">{what} {where}</h1>
         <p className="text-sm text-mute">
@@ -208,16 +238,20 @@ function Shell({ sp, summary, children }: { sp: Record<string, string | undefine
       <div className="sticky top-16 z-20 border-b border-line bg-white lg:relative lg:top-0">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <SearchForm summary={summary}
-            values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna }} />
+            values={{ luogo: sp.luogo, lat: sp.lat, lng: sp.lng, dal: sp.dal, al: sp.al, cat: sp.cat, ora_ritiro: sp.ora_ritiro, ora_riconsegna: sp.ora_riconsegna, select: sp.select }} />
           {/* menu categorie scorrevole, come in home */}
           <nav aria-label="Categorie" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-            {[{ key: "", label: "Tutti" }, ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }].map((p) => {
-              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata"].includes(k)) as [string, string][]);
-              if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); } else if (p.key) q.set("cat", p.key);
-              const on = p.key === "lungo" ? sp.lungo === "1" : sp.lungo !== "1" && (sp.cat ?? "") === p.key;
+            {[{ key: "", label: "Tutti" }, ...CATEGORIES.map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }, { key: "select", label: "✦ Select" }].map((p) => {
+              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "select"].includes(k)) as [string, string][]);
+              const inSelect = sp.select === "1";
+              if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); }
+              else if (p.key === "select") q.set("select", "1");
+              else if (p.key) { q.set("cat", p.key); if (inSelect) q.set("select", "1"); } // "Tutti" esce da Select
+              const on = p.key === "select" ? inSelect && !sp.cat : p.key === "lungo" ? sp.lungo === "1" : sp.lungo !== "1" && (sp.cat ?? "") === p.key && (!!p.key || !inSelect);
+              const gold = p.key === "select";
               return (
                 <Link key={p.key || "all"} href={`/cerca?${q.toString()}`} aria-current={on ? "page" : undefined}
-                  className={`flex-none rounded-full border px-4 py-1.5 text-sm font-semibold transition ${on ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-900/30"}`}>
+                  className={`flex-none rounded-full border px-4 py-1.5 text-sm font-semibold transition ${gold ? (on ? "border-navy-950 bg-navy-950 text-amber-300" : "border-navy-950 bg-white text-navy-950") : on ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-900/30"}`}>
                   {p.label}
                 </Link>
               );

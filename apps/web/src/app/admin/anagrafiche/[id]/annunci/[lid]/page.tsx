@@ -8,7 +8,7 @@ import { priceUnitLabel } from "@/lib/format";
 import { listingHref } from "@/lib/urls";
 import { Flash, ProHeader, Skeleton, type SP } from "@/components/ProPage";
 import { DeliveryFields } from "@/components/DeliveryFields";
-import { staffSubmitListing, staffUpdateDelivery, staffUpdateDetails, staffUpdateModes, staffUpdatePrices } from "@/app/admin/listingActions";
+import { staffSetSelect, staffSubmitListing, staffUpdateDelivery, staffUpdateDetails, staffUpdateModes, staffUpdatePrices } from "@/app/admin/listingActions";
 import { LongTermFields } from "@/components/LongTermFields";
 
 export const metadata = { title: "Modifica annuncio del noleggiatore" };
@@ -28,6 +28,9 @@ async function Edit({ params, searchParams }: { params: Promise<{ id: string; li
     db.from("rental_terms").select("*").eq("listing_id", lid).maybeSingle(),
   ]);
   if (!l) notFound();
+  // a parte: se il database non è ancora aggiornato (0030) la pagina funziona lo stesso
+  const { data: selRow } = await db.from("listings").select("is_select").eq("id", lid).maybeSingle();
+  const isSelect = !!(selRow as { is_select?: boolean } | null)?.is_select;
   const org = l.organizations as unknown as { legal_name: string; trade_name: string | null } | null;
   const base = (u: string) => (prices ?? []).find((p) => p.unit === u && !p.valid_from)?.price_cents;
   const draftLike = ["draft", "changes_required"].includes(l.status);
@@ -46,6 +49,18 @@ async function Edit({ params, searchParams }: { params: Promise<{ id: string; li
         </div>
       )}
       {l.status === "published" && <Link href={listingHref({ id: lid, slug: l.slug })} className="text-sm font-semibold text-teal-600">Vedi l&apos;annuncio online →</Link>}
+
+      <section className="card flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <h2 className="font-semibold">KeyRent Select</h2>
+          <p className="text-sm text-mute">{isSelect ? "Questo annuncio è nella sezione Select: non compare nella ricerca normale, solo nell'invito Select." : "Annuncio normale. Mettilo in Select se è un mezzo esclusivo (supercar, lusso…)."}</p>
+        </div>
+        <form action={staffSetSelect}>
+          <input type="hidden" name="id" value={lid} /><input type="hidden" name="org" value={id} />
+          <input type="hidden" name="select" value={isSelect ? "0" : "1"} />
+          <button className={isSelect ? "rounded-full bg-navy-950 px-4 py-2 text-sm font-semibold text-amber-300" : "btn-ghost"}>{isSelect ? "✦ In Select · togli" : "Metti in Select"}</button>
+        </form>
+      </section>
 
       <section className="card p-5">
         <h2 className="mb-3 font-semibold">Titolo e descrizione</h2>
