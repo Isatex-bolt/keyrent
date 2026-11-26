@@ -104,6 +104,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   e demo_seed_bookings. Demo: supabase/demo/select_setup.sql = 6 annunci Select n. 11–16 (Vito NCC, Ferrari 296, Huracán, GT3 RS,
   Phenom 300E a Linate, AW109 a Cortina) + sedi Milano e Linate. 0031 aggiunge anche 4 idee Select in home_collections
   (angolo nero ✦ Select in HomeTiles quando query contiene select=1).
+- 0032 (26/11): lungo termine a km: lt_prices {"36": {"15000": cents}} (vecchio {"36": cents} = rata per lt_km_per_year,
+  ancora letto da lib/longTerm ratesFor/kmFor). Fasce LT_KM 10–40 mila; il noleggiatore sceglie le fasce e compila la griglia
+  (LongTermFields), lt_km_per_year = fascia più bassa; il cliente sceglie durata + km nel LongTermConfigurator. listing_offers e
+  vincolo rental_terms_modes_check leggono anche il formato annidato. Esempi demo 1, 2, 8 con griglia (fondo di select_setup.sql).
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).

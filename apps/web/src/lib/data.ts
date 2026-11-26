@@ -230,7 +230,7 @@ export async function getIsDemo(id: string): Promise<boolean> {
   return !error && data === true;
 }
 
-export type Offer = { listing_id: string; short_term: boolean; long_term: boolean; lt_prices: Record<string, number>;
+export type Offer = { listing_id: string; short_term: boolean; long_term: boolean; lt_prices: import("@/lib/longTerm").LtPrices;
   lt_services: Record<string, { offered: boolean; cents: number }>; lt_km_per_year: number | null; lt_extra_km_cents: number | null; lt_from_cents: number | null };
 /** Breve / lungo termine degli annunci pubblicati (mappa vuota se il database non è aggiornato). */
 export async function getOffers(ids: string[]): Promise<Map<string, Offer>> {

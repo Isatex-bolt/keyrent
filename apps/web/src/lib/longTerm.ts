@@ -7,10 +7,14 @@ export const LT_SERVICES = [
   { key: "tagliandi", label: "Tagliandi e manutenzione" },
   { key: "sostitutiva", label: "Auto sostitutiva" },
 ] as const;
+/** Fasce di km all'anno che il noleggiatore può offrire: per ognuna una rata diversa. */
+export const LT_KM = [10000, 15000, 20000, 25000, 30000, 40000] as const;
 export type LtService = { offered: boolean; cents: number };
+/** Rate: { "36": { "15000": 45900 } } (vecchio formato { "36": 45900 } = rata per lt_km_per_year). */
+export type LtPrices = Record<string, number | Record<string, number>>;
 export type LongTermData = {
   short_term_enabled: boolean; long_term_enabled: boolean;
-  lt_prices: Record<string, number>; lt_services: Record<string, LtService>;
+  lt_prices: LtPrices; lt_services: Record<string, LtService>;
   lt_km_per_year: number | null; lt_extra_km_cents: number | null;
 };
 
@@ -24,25 +28,40 @@ const c = (f: FormData, k: string) => {
 export function longTermOf(f: FormData): { data: LongTermData; error?: string } {
   const short = s(f, "mode_short") === "1";
   const long = s(f, "mode_long") === "1";
-  const prices: Record<string, number> = {};
+  const prices: Record<string, Record<string, number>> = {};
   const services: Record<string, LtService> = {};
+  const kms = new Set<number>();
   if (long) {
-    for (const m of LT_DURATIONS) { const v = c(f, `lt_price_${m}`); if (v > 0) prices[String(m)] = v; }
+    for (const m of LT_DURATIONS) for (const k of LT_KM) {
+      const v = c(f, `lt_price_${m}_${k}`);
+      if (v > 0) { (prices[String(m)] ??= {})[String(k)] = v; kms.add(k); }
+    }
     for (const sv of LT_SERVICES) services[sv.key] = { offered: s(f, `lt_srv_${sv.key}`) === "1", cents: c(f, `lt_srv_${sv.key}_price`) };
   }
-  const km = long ? Math.round(Number(s(f, "lt_km_per_year")) || 0) : 0;
+  // km "base" dell'offerta = la fascia più bassa con una rata
+  const km = kms.size ? Math.min(...kms) : 0;
   const data: LongTermData = {
     short_term_enabled: short || !long, long_term_enabled: long, lt_prices: prices, lt_services: services,
     lt_km_per_year: long && km > 0 ? km : null, lt_extra_km_cents: long ? c(f, "lt_extra_km") || null : null,
   };
-  if (long && !Object.keys(prices).length) return { data, error: "Lungo termine: indica la rata mensile per almeno una durata." };
-  if (long && !km) return { data, error: "Lungo termine: indica i km all'anno inclusi." };
+  if (long && !Object.keys(prices).length) return { data, error: "Lungo termine: indica la rata mensile per almeno una durata e una fascia di km." };
   return { data };
 }
 
-/** Rata mensile per durata e servizi scelti (i servizi a 0 € sono inclusi). */
-export function monthlyRate(prices: Record<string, number>, services: Record<string, LtService>, months: number, chosen: string[]) {
-  const base = prices[String(months)] ?? 0;
+/** Rate per durata come { km: cents }, anche dal vecchio formato (una sola fascia = lt_km_per_year). */
+export function ratesFor(prices: LtPrices | null | undefined, months: number, baseKm: number | null): Record<string, number> {
+  const v = prices?.[String(months)];
+  if (typeof v === "number") return v > 0 && baseKm ? { [String(baseKm)]: v } : {};
+  return Object.fromEntries(Object.entries(v ?? {}).filter(([, x]) => Number(x) > 0)) as Record<string, number>;
+}
+/** Fasce di km offerte per una durata, in ordine. */
+export function kmFor(prices: LtPrices | null | undefined, months: number, baseKm: number | null): number[] {
+  return Object.keys(ratesFor(prices, months, baseKm)).map(Number).sort((a, b) => a - b);
+}
+
+/** Rata mensile per durata, km annui e servizi scelti (i servizi a 0 € sono inclusi). */
+export function monthlyRate(prices: LtPrices, services: Record<string, LtService>, months: number, chosen: string[], km: number, baseKm: number | null) {
+  const base = ratesFor(prices, months, baseKm)[String(km)] ?? 0;
   if (!base) return 0;
   return base + LT_SERVICES.reduce((sum, sv) => {
     const x = services[sv.key];
