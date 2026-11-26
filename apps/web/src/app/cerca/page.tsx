@@ -137,6 +137,8 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, sp.kw ?? make?.name ?? categoryName(cat)].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
+  // da Select alla ricerca normale: stessi luogo/date, senza Select (e senza le categorie che esistono solo in Select)
+  const standardHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["select", "marca", "modello", "pagina", "kw", "nonfound"].includes(k)) as [string, string][]); if (isSelectCategory(q.get("cat"))) q.delete("cat"); return `/cerca?${q.toString()}`; })();
   const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina", "kw", "nonfound"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
 
   const top = (
@@ -145,7 +147,10 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
         sub={lungo ? `Lungo termine${sp.durata ? ` · ${sp.durata} mesi` : ""}` : when || "Date da scegliere"} />
       {select && (
         <div className="mb-4 overflow-hidden rounded-2xl bg-navy-950 px-5 py-5 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">KeyRent Select</p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">KeyRent Select</p>
+            <Link href={standardHref} className="-mt-1 flex-none rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10">← Torna alla ricerca standard</Link>
+          </div>
           <p className="mt-1 text-lg font-semibold">Mezzi esclusivi, noleggiatori selezionati</p>
           <p className="mt-1 text-sm text-white/70">Supercar e veicoli d&apos;eccezione, controllati uno per uno dal team KeyRent.</p>
         </div>
