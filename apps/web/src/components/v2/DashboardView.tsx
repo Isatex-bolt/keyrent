@@ -60,7 +60,7 @@ export function DashboardView({ data, all, sede, q, header }: { data: FleetData;
         <Link href={`/pro/mezzi${q}`} className="btn-ghost">I miei mezzi →</Link>
       </header>
 
-      <section className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Richieste da approvare" value={data.requests.length} tone={data.requests.length ? "alert" : "default"} hint={data.requests.length ? "Rispondi entro 24 ore" : "Tutto in ordine"} />
         <Kpi label="Ricavi del mese (netto)" value={euroShort(net)} hint={`${euroShort(gross)} lordo`} tone="good" />
         <Kpi label="Prenotazioni del mese" value={month.length} />

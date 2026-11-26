@@ -10,7 +10,7 @@ export default function ProLayout({ children }: LayoutProps<"/pro">) {
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
       <Suspense fallback={null}><DemoBanner /></Suspense>
       {/* senza attività registrata: niente menu dell'area noleggiatore, solo il ritorno al profilo */}
-      <div className="grid gap-6 lg:grid-cols-[230px_1fr] lg:[&:has([data-nonav])]:grid-cols-1">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:[&:has([data-nonav])]:grid-cols-1">
         <Suspense fallback={<div className="hidden lg:block" />}><NavWithBadges /></Suspense>
         <div className="min-w-0">{children}</div>
       </div>

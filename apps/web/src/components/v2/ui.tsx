@@ -23,9 +23,9 @@ export function Legend({ pool = false }: { pool?: boolean }) {
 export function Kpi({ label, value, hint, tone = "default" }: { label: string; value: string | number; hint?: string; tone?: "default" | "alert" | "good" }) {
   const ring = tone === "alert" ? "ring-1 ring-amber-300 bg-amber-50/60" : tone === "good" ? "bg-teal-50/60" : "bg-white";
   return (
-    <div className={`min-w-[150px] snap-start rounded-2xl border border-line p-4 transition hover:-translate-y-0.5 hover:shadow-md ${ring}`}>
+    <div className={`min-w-0 rounded-2xl border border-line p-3.5 transition sm:p-4 hover:-translate-y-0.5 hover:shadow-md ${ring}`}>
       <p className="text-xs font-medium text-mute">{label}</p>
-      <p className="mt-1 text-2xl font-bold tracking-tight text-navy-900">{value}</p>
+      <p className="mt-1 truncate text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-mute">{hint}</p>}
     </div>
   );
