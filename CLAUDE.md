@@ -123,6 +123,12 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
   i contatti in /pro/lungo-termine (contattato/chiusa, "segnala non valida" entro 7 gg); staff /admin/lungo-termine: decide le
   segnalazioni e riepilogo mensile per noleggiatore da fatturare. Email lt_request. Demo: richieste d'esempio statiche. Chiuso in pre-lancio.
   Breve termine: resta la commissione sul pagato. Documenti NLT (bilanci, buste paga…) li gestisce il noleggiatore fuori da KeyRent.
+- PRENOTAZIONI MANUALI (0035, 26/11): public.manual_bookings (cliente esterno senza account, prezzo concordato, note; RLS solo
+  membri attività/staff, scritture solo svc_manual_create/update/cancel con assert_member). Occupano la disponibilità con
+  unit_reservations kind 'external' (private.manual_reserve, stesso vincolo di non sovrapposizione delle online, pool incluso).
+  Modifica atomica (se conflitto resta l'originale). Nessun pagamento/commissione. UI: BookingSheet (giorno libero → "+ Prenotazione
+  manuale", "Blocca giorno", "Manutenzione" via blockDays), /pro/prenotazioni/manuale/nuova e /[id], sezione in /pro/prenotazioni;
+  fleet.ts le mostra con status "manual". Ricavi dashboard: solo KeyRent.
 - PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
   /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
   Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).

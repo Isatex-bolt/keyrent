@@ -14,7 +14,7 @@ export function ProHeader({ title, subtitle, action }: { title: string; subtitle
 
 export function Flash({ sp, ok }: { sp: Record<string, string | string[] | undefined>; ok?: Record<string, string> }) {
   const e = typeof sp.errore === "string" ? sp.errore : undefined;
-  const o = typeof sp.ok === "string" ? (ok?.[sp.ok] ?? "Salvato.") : undefined;
+  const o = typeof sp.ok === "string" ? (ok?.[sp.ok] ?? (sp.ok.includes(" ") ? sp.ok : "Salvato.")) : undefined;
   return <><FormError message={e} /><FormNotice message={o} /></>;
 }
 

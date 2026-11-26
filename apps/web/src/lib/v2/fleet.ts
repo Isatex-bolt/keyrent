@@ -10,6 +10,8 @@ export type DayState = "free" | "booked" | "pending" | "off" | "partial";
 export type FleetBooking = {
   id: string; code: string; status: string; listingId: string; locationId: string;
   pickupAt: string; returnAt: string; totalCents: number; netCents: number; customer: string;
+  /** prenotazione presa al telefono / al banco (status "manual"): recapito e note visibili solo all'attività */
+  manual?: { contact: string | null; note: string | null };
 };
 export type FleetVehicle = {
   id: string; title: string; status: string; category: string; categorySlug: string; make: string; model: string;
@@ -84,17 +86,21 @@ export async function loadFleet(orgId: string, orgName: string, from: string, to
     db.from("payouts").select("amount_cents, status").eq("organization_id", orgId).in("status", ["pending_pickup", "scheduled"]),
   ]);
   const unitIds = (units ?? []).map((u) => u.id);
-  const [{ data: res }, { data: media }] = await Promise.all([
+  const [{ data: res }, { data: media }, { data: man }] = await Promise.all([
     unitIds.length
-      ? db.from("unit_reservations").select("vehicle_unit_id, kind, booking_id, period, expires_at").in("vehicle_unit_id", unitIds).eq("active", true)
-      : Promise.resolve({ data: [] as { vehicle_unit_id: string; kind: string; booking_id: string | null; period: string; expires_at: string | null }[] }),
+      ? db.from("unit_reservations").select("id, vehicle_unit_id, kind, booking_id, period, expires_at").in("vehicle_unit_id", unitIds).eq("active", true)
+      : Promise.resolve({ data: [] as { id: string; vehicle_unit_id: string; kind: string; booking_id: string | null; period: string; expires_at: string | null }[] }),
     db.from("listing_media").select("listing_id, storage_path, sort").in("listing_id", (listings ?? []).map((l) => l.id)).order("sort"),
+    // prenotazioni manuali (tabella 0035: se manca nel database, semplicemente nessuna)
+    db.from("manual_bookings").select("id, code, listing_id, reservation_id, customer_name, customer_contact, pickup_at, return_at, price_cents, note")
+      .eq("organization_id", orgId).eq("status", "active").lte("pickup_at", `${to}T23:59:59Z`).gte("return_at", `${from}T00:00:00Z`),
   ]);
+  const manualByRes = new Map((man ?? []).filter((m) => m.reservation_id).map((m) => [m.reservation_id as string, m.id as string]));
   const now = Date.now();
   const reservations: UnitRes[] = (res ?? []).flatMap((r) => {
     const p = parseRange(String(r.period));
     if (!p || (r.kind === "hold" && r.expires_at && Date.parse(r.expires_at) < now)) return [];
-    return [{ unit: r.vehicle_unit_id, kind: r.kind, start: p[0], end: p[1], bookingId: r.booking_id }];
+    return [{ unit: r.vehicle_unit_id, kind: r.kind, start: p[0], end: p[1], bookingId: r.booking_id ?? manualByRes.get(r.id) ?? null }];
   });
   const offUnit = new Map((units ?? []).map((u) => [u.id, u.operational_status !== "active"]));
   const cover = new Map<string, string>();
@@ -112,6 +118,15 @@ export async function loadFleet(orgId: string, orgName: string, from: string, to
         customer: [d.first_name, d.last_name].filter(Boolean).join(" ") || "Cliente",
       };
     });
+
+  const listingLoc = new Map((listings ?? []).map((l) => [l.id, l.location_id as string]));
+  for (const m of man ?? []) {
+    bookings.push({
+      id: m.id, code: m.code, status: "manual", listingId: m.listing_id, locationId: listingLoc.get(m.listing_id) ?? "",
+      pickupAt: m.pickup_at, returnAt: m.return_at, totalCents: m.price_cents, netCents: m.price_cents, customer: m.customer_name,
+      manual: { contact: m.customer_contact, note: m.note },
+    });
+  }
 
   const vehicles: FleetVehicle[] = (listings ?? []).map((l) => {
     const cat = one(l.categories as { name_it: string; slug: string } | { name_it: string; slug: string }[] | null);
