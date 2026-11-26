@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP 1
 set role anon;
-select test.ok((select count(*) = 6 from public.home_collections), 'anon legge le esigenze della home');
+select test.ok((select count(*) = 10 from public.home_collections), 'anon legge le esigenze della home');
 select test.ok((select count(*) = 10 from public.destinations), 'anon legge le destinazioni');
 select test.fails($$update public.destinations set name = 'x'$$, 'permission denied', 'anon non modifica le destinazioni');
 reset role;

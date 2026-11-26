@@ -33,3 +33,11 @@ begin
     end if;
   end loop;
 end $$;
+
+-- "Cosa ti serve oggi?": idee KeyRent Select (foto da Admin → Contenuti home)
+insert into public.home_collections (slug, title, subtitle, query, sort) values
+  ('supercar', 'Una supercar per un giorno', 'Ferrari, Lamborghini, Porsche: consegnata dove vuoi', 'select=1&cat=auto', 15),
+  ('ncc-con-autista', 'Un autista per la serata', 'Van e berline di lusso con autista professionista', 'select=1&cat=ncc', 25),
+  ('jet-privato', 'Un jet privato', 'Parti quando vuoi, imbarco riservato', 'select=1&cat=jet', 45),
+  ('elicottero', 'Un volo in elicottero', 'Panoramici sulle Dolomiti e transfer', 'select=1&cat=elicotteri', 65)
+on conflict (slug) do nothing;

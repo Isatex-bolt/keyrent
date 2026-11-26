@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/public";
 import { getBookingContext } from "@/lib/auth";
 import type { ProviderReviews } from "@/lib/data";
 import { isHourlyCategory } from "@/lib/catalog";
+import { bookingsOpen } from "@/lib/launch";
 import { attributesForCategory, getBusyDays, getCancellationRules, getDelivery, getIsDemo, getListing, getProviderReviews, getOffers, quoteOrError } from "@/lib/data";
 import { LongTermConfigurator } from "@/components/LongTermConfigurator";
 
@@ -103,9 +104,13 @@ async function Listing({ params, searchParams }: { params: Promise<{ ref: string
 
         {/* prenotazione: subito sotto il titolo su telefono, a destra su computer */}
         <aside id="prenota" className="min-w-0 scroll-mt-20 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-          {isDemo && (
+          {isDemo ? (
             <p className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <strong>Annuncio dimostrativo.</strong> Serve a mostrare come funziona KeyRent: le prenotazioni apriranno al lancio.
+            </p>
+          ) : !bookingsOpen() && (
+            <p className="mb-3 rounded-xl bg-teal-50 px-4 py-3 text-sm text-navy-800">
+              <strong>KeyRent apre a breve.</strong> Puoi già vedere mezzi, date e prezzi: le prenotazioni saranno attive dal lancio.
             </p>
           )}
           {shortTerm && !(lungo && longTerm) && <div className="card space-y-4 p-5 shadow-sm">

@@ -4,6 +4,7 @@ import { SubmitOnce } from "@/components/SubmitOnce";
 import Link from "next/link";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { notFound } from "next/navigation";
+import { bookingsOpen } from "@/lib/launch";
 import { getBookingContext, requireUser } from "@/lib/auth";
 import { userDb } from "@/lib/supabase/server";
 import { getListing, getQuote, getCancellationRules } from "@/lib/data";
@@ -33,6 +34,7 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
   const def = defaultTimes(dal, al);
   const pick = { oraR: typeof sp.ora_ritiro === "string" ? sp.ora_ritiro : def.oraR, oraC: typeof sp.ora_riconsegna === "string" ? sp.ora_riconsegna : def.oraC };
   const { oraR, oraC } = dal && al ? fixTimes(dal, al, pick.oraR, pick.oraC) : pick;
+  if (!bookingsOpen()) return <BookingsSoon id={id} />;
   const user = await requireUser(`/prenota/${id}?dal=${dal}&al=${al}`);
   const data = await getListing(id);
   if (!data) notFound();
@@ -139,6 +141,27 @@ async function Request({ params, searchParams }: { params: Promise<{ id: string 
           </aside>
         </form>
       )}
+    </div>
+  );
+}
+
+/** Pre-lancio: niente prenotazioni, solo una pagina chiara (e l'invito ai noleggiatori). */
+async function BookingsSoon({ id }: { id: string }) {
+  const data = await getListing(id);
+  if (!data) notFound();
+  const l = data.listing;
+  return (
+    <div className="mx-auto max-w-xl px-4 py-12 text-center sm:py-16">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">KeyRent apre a breve</p>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Le prenotazioni non sono ancora attive</h1>
+      <p className="mt-3 text-mute">
+        Stiamo accogliendo i primi noleggiatori professionali. Quando apriremo potrai prenotare <strong className="text-ink">{l.title}</strong> e
+        tutti gli altri mezzi in pochi tocchi, pagando solo dopo la conferma del noleggiatore.
+      </p>
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        <Link href={`/mezzo/${id}`} className="btn-ghost justify-center py-3">← Torna al mezzo</Link>
+        <Link href="/diventa-partner" className="btn-primary justify-center py-3">Hai un noleggio? Pubblica i tuoi mezzi</Link>
+      </div>
     </div>
   );
 }

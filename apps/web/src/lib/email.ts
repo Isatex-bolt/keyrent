@@ -161,6 +161,10 @@ export async function flushEmails(limit = 25) {
     const { data: u } = await db.auth.admin.getUserById(r.user_id);
     const email = u?.user?.email;
     if (!email) { await finish("skipped", { error: "email mancante" }); skipped++; continue; }
+    // account della demo (clienti finti, visitatori, account condiviso): nessuna email vera, niente rimbalzi
+    if (/@(demo|prova)\.keyrent\.it$/i.test(email) || email.toLowerCase() === "concessionario@keyrent.it") {
+      await finish("skipped", { error: "account demo" }); skipped++; continue;
+    }
     const providerOnly = r.template.startsWith("support_") || r.template.startsWith("listing_") || r.template === "payout_paid" || r.template === "booking_requested";
     const isProvider = providerOnly || await providerSide(db, payload, r.user_id);
     const mail = compose(r.template, payload, isProvider ? "provider" : "customer");

@@ -1,5 +1,6 @@
 "use server";
 
+import { bookingsOpen } from "@/lib/launch";
 import { sendEmailsSoon } from "@/lib/email";
 
 import { redirect } from "next/navigation";
@@ -19,6 +20,7 @@ export async function requestBooking(f: FormData) {
   const listing = str(f, "listing_id");
   const dal = str(f, "dal"), al = str(f, "al");
   const back = `/prenota/${listing}?dal=${dal}&al=${al}`;
+  if (!bookingsOpen()) redirect(back); // pre-lancio: la pagina spiega che le prenotazioni non sono ancora aperte
   const user = await requireUser(back);
   if (!f.get("terms")) redirect(`${back}&errore=${encodeURIComponent("Devi accettare condizioni e policy di cancellazione.")}`);
   const pickup = romeToIso(dal, str(f, "ora_ritiro") || "10:00");

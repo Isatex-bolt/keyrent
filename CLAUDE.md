@@ -102,7 +102,11 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - 0031 (26/11): categorie solo Select ncc / jet / elicotteri (lib/catalog SELECT_CATEGORIES, prezzo "/ ora", fuori dalle pillole normali,
   cat=jet → select=1), trigger auto Select anche per categoria, fix overflow commissione (v_total::numeric) in create_booking_request
   e demo_seed_bookings. Demo: supabase/demo/select_setup.sql = 6 annunci Select n. 11–16 (Vito NCC, Ferrari 296, Huracán, GT3 RS,
-  Phenom 300E a Linate, AW109 a Cortina) + sedi Milano e Linate.
+  Phenom 300E a Linate, AW109 a Cortina) + sedi Milano e Linate. 0031 aggiunge anche 4 idee Select in home_collections
+  (angolo nero ✦ Select in HomeTiles quando query contiene select=1).
+- PRE-LANCIO (26/11): prenotazioni chiuse finché su Vercel non c'è BOOKINGS_OPEN=1 (lib/launch.ts): requestBooking rimanda,
+  /prenota mostra "Le prenotazioni non sono ancora attive", scheda con avviso. Registrazione noleggiatori e annunci restano aperti.
+  Email: destinatari @demo/@prova.keyrent.it e concessionario@keyrent.it → skipped "account demo" (niente rimbalzi).
 - 0026 (25/11): basta una foto per inviare un annuncio in revisione (prima 4). Foto AI tolte dall area noleggiatore (restano solo nei contenuti home admin).
 - Prossimo (spec Product Experience): attributi tipizzati + catalogo/alias; consegna a domicilio; Stripe (wallet, capture); preventivo lungo termine.
 - Poi: prenotazione (richiesta → accettazione → conferma) con Stripe Connect in test mode; area cliente prenotazioni;
