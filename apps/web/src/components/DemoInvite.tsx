@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { enterDemo } from "@/app/accedi/actions";
 import { SubmitOnce } from "./SubmitOnce";
+import { demoRef } from "@/lib/demoRef";
 
 const KEY = "kr_demo_invite"; // ora di arrivo dal link demo (sessionStorage: vale finché la scheda è aperta)
 const CLOSED = "kr_demo_invite_closed";
+const REF = "kr_demo_ref"; // nome del link personale (?da=…)
 const DELAY = 30_000;
 
 /**
@@ -24,7 +26,13 @@ export function DemoInvite() {
       const url = new URL(window.location.href);
       if (url.searchParams.get("demo") === "invito") {
         if (!sessionStorage.getItem(KEY)) sessionStorage.setItem(KEY, String(new Date().getTime()));
+        const ref = demoRef(url.searchParams.get("da"));
+        if (ref && sessionStorage.getItem(REF) !== ref) {
+          sessionStorage.setItem(REF, ref);
+          void fetch("/api/demo/visita", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ref }) }).catch(() => {});
+        }
         url.searchParams.delete("demo");
+        url.searchParams.delete("da");
         window.history.replaceState(null, "", url.pathname + url.search + url.hash);
       }
       const v = sessionStorage.getItem(KEY);
@@ -39,11 +47,13 @@ export function DemoInvite() {
 
   if (state === "off" || /^\/(pro|demo|accedi|registrati|admin)/.test(path)) return null;
 
-  const done = () => { try { sessionStorage.removeItem(KEY); sessionStorage.removeItem(CLOSED); } catch {} };
+  const ref = (() => { try { return sessionStorage.getItem(REF) ?? ""; } catch { return ""; } })();
+  const done = () => { try { sessionStorage.removeItem(KEY); sessionStorage.removeItem(CLOSED); sessionStorage.removeItem(REF); } catch {} };
 
   if (state === "pill") {
     return (
       <form action={enterDemo} onSubmit={done} className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 lg:bottom-6">
+        <input type="hidden" name="ref" value={ref} />
         <SubmitOnce className="whitespace-nowrap rounded-full bg-navy-950 px-5 py-3 text-sm font-semibold text-white shadow-xl ring-2 ring-teal-400" pendingText="Preparo la tua area…">
           Prova la tua area noleggiatore →
         </SubmitOnce>
@@ -61,6 +71,7 @@ export function DemoInvite() {
           Nessuna registrazione, è tutta tua e si cancella da sola dopo 24 ore.
         </p>
         <form action={enterDemo} onSubmit={done} className="mt-6">
+          <input type="hidden" name="ref" value={ref} />
           <SubmitOnce className="w-full rounded-2xl bg-teal-400 px-6 py-4 text-lg font-semibold text-navy-950 hover:bg-teal-300" pendingText="Preparo la tua area…">
             Entra nella tua area
           </SubmitOnce>

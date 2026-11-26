@@ -7,8 +7,13 @@ const DEMO_BLOCKED = ["/registrati", "/account", "/prenota", "/diventa-partner",
 
 export async function proxy(request: NextRequest) {
   // link della demo nelle email: prima si vede il sito come un cliente, dopo 30 s l'invito a entrare (DemoInvite)
-  if (request.nextUrl.pathname === "/demo" && !request.nextUrl.search && request.cookies.get("kr_demo")?.value !== "1") {
-    return NextResponse.redirect(new URL("/?demo=invito", request.url));
+  // link personale keyrent.it/demo?da=nome: il nome segue il visitatore per sapere chi ha aperto la demo (Admin → Account demo)
+  const sp = request.nextUrl.searchParams;
+  if (request.nextUrl.pathname === "/demo" && [...sp.keys()].every((k) => k === "da") && request.cookies.get("kr_demo")?.value !== "1") {
+    const to = new URL("/", request.url);
+    to.searchParams.set("demo", "invito");
+    if (sp.get("da")) to.searchParams.set("da", sp.get("da")!.slice(0, 80));
+    return NextResponse.redirect(to);
   }
   if (request.cookies.get("kr_demo")?.value === "1") {
     const path = request.nextUrl.pathname;

@@ -93,6 +93,8 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - Link demo 26/11: proxy rimanda /demo (senza parametri, senza cookie kr_demo) a /?demo=invito: si gira il sito come cliente,
   dopo 30 s DemoInvite (layout, sessionStorage) mostra "Guarda come sarebbe la tua area riservata" → enterDemo; se chiuso resta
   il pulsante "Prova la tua area noleggiatore". La pagina /demo resta raggiungibile con parametri (es. ?errore=).
+  Link personali (0034): /demo?da=nome → public.demo_visits (visite via /api/demo/visita, ingressi + clone_org da enterDemo con
+  campo ref); Admin → Account demo: generatore di link (DemoLinkMaker) e tabella "Chi ha aperto la demo".
 - 25/11 sera: 0029 public.provider_reviews (recensioni clienti sul noleggiatore, anonimo, in scheda mezzo; sui demo "di esempio"),
   risultati su telefono a schede orizzontali (ListingCard row), pulsanti prenota tutti turchesi (btn-primary), barre fisse in basso
   con fondo bianco fino al bordo, mappa /cerca alta 100svh (niente rimbalzi con la barra di Safari).

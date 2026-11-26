@@ -1,5 +1,6 @@
 "use server";
 
+import { demoRef } from "@/lib/demoRef";
 import { redirect } from "next/navigation";
 import { getMemberships } from "@/lib/auth";
 import { DEMO_COOKIE, DEMO_EMAIL, DEMO_PASSWORD, isDemoUser } from "@/lib/demo";
@@ -139,7 +140,8 @@ export async function changePassword(formData: FormData) {
  * così chi prova nello stesso momento non vede le modifiche degli altri. Le copie si cancellano dopo 24 ore.
  * Se la copia non si può creare (database non aggiornato, troppe demo attive) si entra nell'account demo condiviso.
  */
-export async function enterDemo() {
+export async function enterDemo(f?: FormData) {
+  const ref = demoRef(f?.get("ref"));
   const db = await userDb();
   await db.auth.signOut();
   const admin = serviceDb();
@@ -152,8 +154,9 @@ export async function enterDemo() {
       user_metadata: { first_name: "Concessionario", last_name: "Demo", account_type: "provider" },
     });
     if (!cErr && created.user) {
-      const { error: kErr } = await admin.rpc("svc_demo_clone", { p_user: created.user.id });
+      const { data: cloneOrg, error: kErr } = await admin.rpc("svc_demo_clone", { p_user: created.user.id });
       if (!kErr) {
+        if (ref) await admin.rpc("svc_demo_entered", { p_ref: ref, p_org: cloneOrg ?? null });
         const { error } = await db.auth.signInWithPassword({ email, password });
         if (!error) { await markDemo(true); redirect("/pro"); }
       } else {
@@ -162,6 +165,7 @@ export async function enterDemo() {
       }
     }
   }
+  if (ref) await admin.rpc("svc_demo_entered", { p_ref: ref, p_org: null });
   const { error } = await db.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   if (error) redirect(`/demo?errore=${encodeURIComponent("La demo non è disponibile in questo momento. Riprova tra poco.")}`);
   await markDemo(true);
