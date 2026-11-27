@@ -134,7 +134,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? (select ? "Mezzi esclusivi" : "Mezzi");
   const when = sp.dal && sp.al && pickup ? `${formatDateIt(sp.dal)} → ${formatDateIt(sp.al)}` : "";
-  const summary = [select ? "Select" : "", sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when, sp.kw ?? make?.name ?? categoryName(cat)].filter(Boolean).join(" · ");
+  const summary = [select ? "Select" : "", sp.kw ?? make?.name ?? categoryName(cat), sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
   // da Select alla ricerca normale: stessi luogo/date, senza Select (e senza le categorie che esistono solo in Select)

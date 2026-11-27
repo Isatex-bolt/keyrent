@@ -34,7 +34,7 @@ export const PILLS: { key: string; label: string }[] = [
 ];
 
 /**
- * Ricerca della home: riquadro ben delimitato (Cosa · Dove · Date · Cerca), scorciatoie sotto.
+ * Ricerca della home: riquadro ben delimitato (Cosa · Dove · Date · Cerca), stesso ordine nei risultati, scorciatoie sotto.
  * "Cosa" è una parola libera (Ferrari, gommone, autista…): la interpreta /cerca (lib/keyword).
  */
 export function HomeSearch() {
@@ -110,7 +110,13 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
   const [open, setOpen] = useState(false);
   const [dates, setDates] = useState({ dal: values.dal ?? "", al: values.al ?? "" });
   const form = (
-    <form action="/cerca" method="get" className="grid gap-3 lg:grid-cols-[1.4fr_1.6fr_1fr_auto]">
+    <form action="/cerca" method="get" className="grid gap-3 lg:grid-cols-[1fr_1.4fr_1.6fr_auto]">
+      <div>
+        <label htmlFor="s-cosa" className="label">Cosa</label>
+        {/* parola libera come in home: la interpreta /cerca (Ferrari → Select, gommone → barche…); vuoto = tutto */}
+        <input id="s-cosa" name="q" type="search" enterKeyHint="search" autoComplete="off" defaultValue={values.cosa ?? ""}
+          placeholder="Es. Ferrari, gommone, furgone…" className="field" />
+      </div>
       <div>
         <label htmlFor="s-luogo" className="label">Dove</label>
         <PlaceInput id="s-luogo" name={values.luogo} lat={values.lat} lng={values.lng} />
@@ -122,12 +128,6 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
       {values.select === "1" && <input type="hidden" name="select" value="1" />}
       {values.ora_ritiro && <input type="hidden" name="ora_ritiro" value={values.ora_ritiro} />}
       {values.ora_riconsegna && <input type="hidden" name="ora_riconsegna" value={values.ora_riconsegna} />}
-      <div>
-        <label htmlFor="s-cosa" className="label">Cosa</label>
-        {/* parola libera come in home: la interpreta /cerca (Ferrari → Select, gommone → barche…); vuoto = tutto */}
-        <input id="s-cosa" name="q" type="search" enterKeyHint="search" autoComplete="off" defaultValue={values.cosa ?? ""}
-          placeholder="Es. Ferrari, gommone, furgone…" className="field" />
-      </div>
       <div className="flex items-end">
         <button type="submit" className="btn-primary w-full">Cerca</button>
       </div>
@@ -138,7 +138,7 @@ export function SearchForm({ values = {}, summary }: { values?: SearchValues; su
       <button type="button" onClick={() => setOpen((o) => !o)}
         className="flex min-h-12 w-full items-center gap-3 rounded-xl border-[3px] border-teal-500 bg-white px-4 py-2 text-left lg:hidden">
         <svg viewBox="0 0 24 24" className="h-5 w-5 flex-none text-teal-600" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{summary || "Dove, quando, cosa"}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{summary || "Cosa, dove, quando"}</span>
         <span className="text-xs font-semibold text-teal-600">{open ? "Chiudi" : "Modifica"}</span>
       </button>
       <div className={`${open ? "mt-3 block" : "hidden"} lg:mt-0 lg:block`}>{form}</div>
