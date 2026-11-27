@@ -109,7 +109,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const results = await searchMap({
     bbox, lat: bbox ? undefined : lat, lng: bbox ? undefined : lng, radiusKm: 40, pickup, ret,
     category: cat, subcategory: cat && sp.sub && /^[a-z0-9-]{2,40}$/.test(sp.sub) ? sp.sub : undefined, make: make?.slug, model: model?.slug, filters, priceMaxCents: priceMax,
-    sort: sp.ordina,
+    sort: sp.ordina || "price_asc",   // di base sempre dal più economico
   });
   // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
   const [offers, ratings] = await Promise.all([getOffers(results.map((r) => r.id)), getRatings(results.map((r) => r.id))]);
@@ -119,6 +119,11 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
   const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined, ...ratings.get(r.id) }));
+  // lungo termine: l'ordine per prezzo segue la rata mensile
+  if (lungo && (sp.ordina || "price_asc").startsWith("price")) {
+    const dir = sp.ordina === "price_desc" ? -1 : 1;
+    items.sort((x, y) => ((x.monthly_from_cents ?? Infinity) - (y.monthly_from_cents ?? Infinity)) * dir || 0);
+  }
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
   const what = model ? `${make?.name} ${model.name}` : make?.name ?? categoryName(cat) ?? (select ? "Mezzi esclusivi" : "Mezzi");
@@ -193,11 +198,11 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
               </div>
               <div>
                 <label className="label" htmlFor="f-ordina">Ordina per</label>
-                <select id="f-ordina" name="ordina" className="field" defaultValue={sp.ordina ?? ""}>
-                  <option value="">Consigliati</option>
+                <select id="f-ordina" name="ordina" className="field" defaultValue={sp.ordina || "price_asc"}>
                   <option value="price_asc">Prezzo crescente</option>
                   <option value="price_desc">Prezzo decrescente</option>
                   {center && !bbox && <option value="distance">Distanza</option>}
+                  <option value="relevance">Consigliati</option>
                 </select>
               </div>
             </div>
