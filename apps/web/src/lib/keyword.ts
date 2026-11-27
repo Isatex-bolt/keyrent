@@ -11,9 +11,9 @@ const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,
 
 const WORDS: [RegExp, KeywordMatch][] = [
   [/\b(lungo termine|noleggio lungo|nlt|a lungo)\b/, { lungo: true }],
-  [/\b(ncc|autista|chauffeur|con conducente|transfer)\b/, { cat: "ncc", select: true }],
-  [/\b(jet|aereo|aerei|volo privato)\b/, { cat: "jet", select: true }],
-  [/\b(elicotter\w*|heli)\b/, { cat: "elicotteri", select: true }],
+  [/\b(ncc|autista|chauffeur|con conducente|transfer)\b/, { cat: "ncc" }],
+  [/\b(jet|aereo|aerei|volo privato)\b/, { cat: "jet" }],
+  [/\b(elicotter\w*|heli)\b/, { cat: "elicotteri" }],
   [/\b(supercar|lusso|luxury|sportiva di lusso|select)\b/, { cat: "auto", select: true }],
   [/\b(gommon\w*|barc\w*|yacht|motoscaf\w*|natant\w*|vela|catamaran\w*|imbarcazion\w*)\b/, { cat: "barche" }],
   [/\b(camper|motorhome|autocaravan\w*|caravan|roulotte)\b/, { cat: "camper" }],

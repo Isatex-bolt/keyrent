@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isSelectMake } from "@/lib/select";
 import { matchKeyword } from "@/lib/keyword";
-import { SelectShowcase } from "@/components/SelectShowcase";
 import { SearchForm } from "@/components/SearchForm";
 import { AutoSubmit } from "@/components/AutoSubmit";
 import { ResultsView, type ResultItem } from "@/components/ResultsView";
@@ -49,7 +47,7 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   // "Cosa cerchi?" della home: la parola diventa categoria / marca / modello / Select / lungo termine
   if (sp.q !== undefined) {
     const m = await matchKeyword(sp.q);
-    const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["q", "kw", "cat", "marca", "modello", "select", "nonfound"].includes(k)) as [string, string][]);
+    const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["q", "kw", "cat", "marca", "modello", "nonfound"].includes(k)) as [string, string][]);
     if (m?.cat) q.set("cat", m.cat);
     if (m?.marca) q.set("marca", m.marca);
     if (m?.modello) q.set("modello", m.modello);
@@ -60,13 +58,8 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
     redirect(`/cerca?${q.toString()}`);
   }
   if (sp.nonfound) notes.push(`Non abbiamo trovato «${sp.nonfound}»: ecco tutti i mezzi disponibili. Prova con una marca, un modello o un tipo di mezzo.`);
-  // KeyRent Select: chi cerca una marca esclusiva (es. Ferrari) va direttamente nella sezione Select
+  // Standard = tutti i mezzi (i Select si riconoscono dalla fascia sulla foto) · Select = solo mezzi Select
   const select = sp.select === "1";
-  if (!select && (isSelectMake(sp.marca) || isSelectCategory(sp.cat))) {
-    const q = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
-    q.set("select", "1");
-    redirect(`/cerca?${q.toString()}`);
-  }
 
   // Dove: coordinate dall'autocompletamento, altrimenti città dell'elenco, oppure area della mappa
   const zona = sp.zona?.split(",").map(Number);
@@ -121,14 +114,10 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   // breve / lungo termine: ogni annuncio dice cosa offre (senza dati: solo breve termine)
   const [offers, ratings] = await Promise.all([getOffers(results.map((r) => r.id)), getRatings(results.map((r) => r.id))]);
   const byTerm = results.filter((r) => { const o = offers.get(r.id); return lungo ? !!o?.long_term : !o || o.short_term; });
-  // Select e normali non si mescolano: nella ricerca normale i mezzi Select diventano solo un invito in cima
   const isSel = (id: string) => !!ratings.get(id)?.is_select;
-  const shown = byTerm.filter((r) => isSel(r.id) === select);
+  const shown = select ? byTerm.filter((r) => isSel(r.id)) : byTerm;
   const total = shown.length < results.length ? shown.length : Number(results[0]?.total_count ?? 0);
   const keep = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
-  // nella ricerca normale le Select diventano una vetrina in cima (foto vere, scorrevoli)
-  const selectItems: ResultItem[] = select ? [] : byTerm.filter((r) => isSel(r.id)).slice(0, 12)
-    .map((r) => ({ ...r, href: listingHref(r, keep), ...ratings.get(r.id) }));
   const items: ResultItem[] = shown.map((r) => ({ ...r, href: listingHref(r, keep), monthly_from_cents: lungo ? offers.get(r.id)?.lt_from_cents ?? null : undefined, ...ratings.get(r.id) }));
 
   const where = bbox ? "nella zona della mappa" : sp.luogo && center ? (/^vicino a me$/i.test(sp.luogo) ? "vicino a te" : `vicino a ${sp.luogo}`) : "in Italia";
@@ -137,25 +126,19 @@ async function Results({ searchParams }: { searchParams: Promise<Raw> }) {
   const summary = [select ? "Select" : "", sp.kw ?? make?.name ?? categoryName(cat), sp.luogo || (bbox ? "Zona della mappa" : "Tutta Italia"), lungo ? `Lungo termine${sp.durata ? ` ${sp.durata} mesi` : ""}` : when].filter(Boolean).join(" · ");
   const activeFilters = Number(Boolean(make)) + Object.keys(filters).length + Number(Boolean(priceMax));
   const baseKeys = ["luogo", "lat", "lng", "zona", "dal", "al", "ora_ritiro", "ora_riconsegna", "cat", "sub", "lungo", "durata", "select"];
-  // da Select alla ricerca normale: stessi luogo/date, senza Select (e senza le categorie che esistono solo in Select)
-  const standardHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["select", "marca", "modello", "pagina", "kw", "nonfound"].includes(k)) as [string, string][]); if (isSelectCategory(q.get("cat"))) q.delete("cat"); return `/cerca?${q.toString()}`; })();
-  const selectHref = (() => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["marca", "modello", "pagina", "kw", "nonfound"].includes(k)) as [string, string][]); q.set("select", "1"); return `/cerca?${q.toString()}`; })();
+  // interruttore Standard / Select: stessa ricerca (luogo, date, mezzo, filtri), cambia solo select
+  const modeHref = (on: boolean) => { const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["select", "pagina", "nonfound"].includes(k)) as [string, string][]); if (on) q.set("select", "1"); return `/cerca?${q.toString()}`; };
 
   const top = (
     <>
       <SaveSearch title={[sp.luogo || "Tutta Italia", what !== "Mezzi" ? what : ""].filter(Boolean).join(" · ")}
         sub={lungo ? `Lungo termine${sp.durata ? ` · ${sp.durata} mesi` : ""}` : when || "Date da scegliere"} />
-      {select && (
-        <div className="mb-4 overflow-hidden rounded-2xl bg-navy-950 px-5 py-5 text-white">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">KeyRent Select</p>
-            <Link href={standardHref} className="-mt-1 flex-none rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10">← Torna alla ricerca standard</Link>
-          </div>
-          <p className="mt-1 text-lg font-semibold">Mezzi esclusivi, noleggiatori selezionati</p>
-          <p className="mt-1 text-sm text-white/70">Supercar e veicoli d&apos;eccezione, controllati uno per uno dal team KeyRent.</p>
-        </div>
-      )}
-      <SelectShowcase items={selectItems} allHref={selectHref} />
+      <div className="mb-4 grid grid-cols-2 gap-1 rounded-full border border-line bg-white p-1 sm:inline-grid sm:w-80" role="tablist" aria-label="Tipo di mezzi">
+        <Link href={modeHref(false)} role="tab" aria-selected={!select}
+          className={`rounded-full px-4 py-2 text-center text-sm font-bold tracking-wide transition ${!select ? "bg-navy-900 text-white" : "text-ink hover:bg-navy-50"}`}>STANDARD</Link>
+        <Link href={modeHref(true)} role="tab" aria-selected={select}
+          className={`rounded-full px-4 py-2 text-center text-sm font-bold tracking-wide transition ${select ? "bg-navy-950 text-amber-300" : "text-navy-950 hover:bg-navy-50"}`}>✦ SELECT</Link>
+      </div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">{what} {where}</h1>
         <p className="text-sm text-mute">
@@ -258,21 +241,17 @@ function Shell({ sp, summary, cosa, children }: { sp: Record<string, string | un
               cosa: cosa ?? sp.kw ?? categoryName(sp.cat) ?? "" }} />
           {/* menu categorie scorrevole, come in home */}
           <nav aria-label="Categorie" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-            {(sp.select === "1"
-              // in Select: tutte le Select, le categorie dove ci sono mezzi esclusivi, "Tutti" riporta alla ricerca normale
-              ? [{ key: "select", label: "✦ Tutte le Select" }, ...CATEGORIES.filter((c) => ["auto", "moto", "barche"].includes(c.slug) || isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "", label: "Esci da Select" }]
-              : [{ key: "", label: "Tutti" }, ...CATEGORIES.filter((c) => !isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }, { key: "select", label: "✦ Select" }]
-            ).map((p) => {
-              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "select", "kw", "nonfound"].includes(k)) as [string, string][]);
-              const inSelect = sp.select === "1";
+            {[{ key: "", label: "Tutti" }, ...CATEGORIES.filter((c) => !isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })),
+              ...CATEGORIES.filter((c) => isSelectCategory(c.slug)).map((c) => ({ key: c.slug, label: c.name })), { key: "lungo", label: "Lungo termine" }]
+            .map((p) => {
+              // la scelta Standard / Select resta com'è
+              const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && !["cat", "sub", "marca", "modello", "pagina", "lungo", "durata", "kw", "nonfound"].includes(k)) as [string, string][]);
               if (p.key === "lungo") { q.set("lungo", "1"); q.delete("al"); }
-              else if (p.key === "select") q.set("select", "1");
-              else if (p.key) { q.set("cat", p.key); if (inSelect) q.set("select", "1"); } // "Tutti" esce da Select
-              const on = p.key === "select" ? inSelect && !sp.cat : p.key === "lungo" ? sp.lungo === "1" : sp.lungo !== "1" && (sp.cat ?? "") === p.key && (!!p.key || !inSelect);
-              const gold = p.key === "select";
+              else if (p.key) q.set("cat", p.key);
+              const on = p.key === "lungo" ? sp.lungo === "1" : sp.lungo !== "1" && (sp.cat ?? "") === p.key;
               return (
                 <Link key={p.key || "all"} href={`/cerca?${q.toString()}`} aria-current={on ? "page" : undefined}
-                  className={`flex-none rounded-full border px-4 py-1.5 text-sm font-semibold transition ${gold ? (on ? "border-navy-950 bg-navy-950 text-amber-300" : "border-navy-950 bg-white text-navy-950") : on ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-900/30"}`}>
+                  className={`flex-none rounded-full border px-4 py-1.5 text-sm font-semibold transition ${on ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-900/30"}`}>
                   {p.label}
                 </Link>
               );

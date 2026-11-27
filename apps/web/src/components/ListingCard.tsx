@@ -19,6 +19,9 @@ export function ListingCard({ r, href, active = false, row = false }: { r: CardD
         ) : (
           <div className="grid h-full place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-14 w-14" /></div>
         )}
+        {(r as CardData).is_select && (
+          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-r from-navy-950 to-navy-900 px-2 py-1 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300 sm:text-xs">✦ KeyRent Select</span>
+        )}
         {r.cover && r.cover_indicative && (
           <span className="absolute bottom-2 right-2 rounded-full bg-navy-950/70 px-2 py-0.5 text-[11px] font-medium text-white">
             Immagine indicativa
@@ -66,6 +69,9 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
         ) : (
           <div className="grid h-full min-h-32 place-items-center text-navy-700/40"><CategoryIcon slug={r.category_slug} className="h-10 w-10 sm:h-14 sm:w-14" /></div>
         )}
+        {r.is_select && (
+          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-r from-navy-950 to-navy-900 px-2 py-1 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300 sm:text-xs">✦ KeyRent Select</span>
+        )}
         {r.available_units > 1 && (
           <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-navy-900 sm:left-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-xs">
             {r.available_units} disponibili
@@ -79,7 +85,7 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
           <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none text-mute" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
           <span className="truncate">{r.city} ({r.province}){r.distance_km != null ? ` · ${r.distance_km.toLocaleString("it-IT")} km` : ""}</span>
         </p>
-        {(r.premium || r.is_select || (r.rating_count ?? 0) > 0) && (
+        {(r.premium || (r.rating_count ?? 0) > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {(r.rating_count ?? 0) > 0 && r.rating_avg != null && (
               <span className="flex items-center gap-1.5">
@@ -87,7 +93,6 @@ function RowCard({ r, href, active }: { r: CardData; href: string; active: boole
                 <span className="text-mute">{r.rating_count} {r.rating_count === 1 ? "recensione" : "recensioni"}</span>
               </span>
             )}
-            {r.is_select && <span className="rounded-full bg-navy-950 px-2 py-0.5 text-xs font-semibold text-amber-300">✦ Select</span>}
             {r.premium && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">★ Premium</span>}
           </div>
         )}        <p className="mt-auto pt-1 text-right sm:text-left"><Price r={r} /></p>

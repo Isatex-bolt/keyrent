@@ -101,9 +101,10 @@ Vercel · worker per job (scadenze, payout, email). Brand: blu navy + turchese, 
 - 26/11: 0030 organizations.is_premium (staff: "Rendi Premium" in /admin/anagrafiche/[id]) + public.listing_ratings: schede risultati
   con voto/recensioni del mezzo (vuoto se nessuna) e badge Premium al posto di "Paghi solo se confermato".
 - KeyRent Select (26/11, sempre in 0030): listings.is_select (solo staff: "Metti in Select" in /admin/anagrafiche/[id]/annunci/[lid];
-  marche di lusso automatiche via trigger private.auto_select_listing, lista anche in lib/select.ts). Ricerca /cerca?select=1 = sezione
-  Select (banda blu notte/oro); nella ricerca normale i Select sono esclusi e in cima c'è la vetrina SelectShowcase (foto vere scorrevoli + "Vedi tutte").
-  marca=ferrari & co. reindirizza a select=1. Pillola "✦ Select" in home e /cerca. Prossimo: preventivi per jet/elicotteri/NCC.
+  marche di lusso automatiche via trigger private.auto_select_listing, lista anche in lib/select.ts). 27/11 (decisione utente): ricerca normale = TUTTI i mezzi,
+  Select mescolati e riconoscibili dalla fascia "✦ KeyRent Select" sulla foto (ListingCard); in cima ai risultati interruttore
+  STANDARD | ✦ SELECT (select=1 = solo Select), mantiene luogo/date/mezzo/filtri. Niente più vetrina SelectShowcase né redirect a Select
+  per marche/categorie (resta select=1 solo per parole "lusso/supercar/select"). Ordine per prezzo da Filtri → Ordina per. Pillola "✦ Select" in home e /cerca. Prossimo: preventivi per jet/elicotteri/NCC.
 - 0031 (26/11): categorie solo Select ncc / jet / elicotteri (lib/catalog SELECT_CATEGORIES, prezzo "/ ora", fuori dalle pillole normali,
   cat=jet → select=1), trigger auto Select anche per categoria, fix overflow commissione (v_total::numeric) in create_booking_request
   e demo_seed_bookings. Demo: supabase/demo/select_setup.sql = 6 annunci Select n. 11–16 (Vito NCC, Ferrari 296, Huracán, GT3 RS,
